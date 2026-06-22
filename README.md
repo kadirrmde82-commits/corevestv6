@@ -31,7 +31,7 @@ pnpm build
 3. Aşağıdaki değişkenleri ekleyin:
 
 ```text
-DATABASE_URL=${{MySQL.MYSQL_URL}}
+MYSQL_URL=${{MySQL.MYSQL_URL}}
 APP_SECRET=uzun-rastgele-bir-deger
 ADMIN_EMAIL=yonetici-epostaniz
 ADMIN_PASSWORD=guclu-yonetici-sifreniz
