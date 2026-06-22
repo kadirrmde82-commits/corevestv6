@@ -1,0 +1,175 @@
+{
+  "brand": "Corevest",
+  "slogan": "Akıllı Yatırım, Günlük Kazanç",
+  "login": {
+    "title": "Giriş Yap",
+    "subtitle": "Corevest hesabınıza güvenli giriş yapın.",
+    "email": "E-posta",
+    "phone": "Telefon",
+    "emailPlaceholder": "ornek@email.com",
+    "phonePlaceholder": "+90 555 123 4567",
+    "password": "Şifre",
+    "passwordPlaceholder": "Şifrenizi girin",
+    "loginButton": "Giriş Yap",
+    "noAccount": "Hesabınız yok mu?",
+    "registerLink": "Kayıt Ol",
+    "forgotPassword": "Şifremi unuttum?"
+  },
+  "register": {
+    "title": "Hesap Oluştur",
+    "subtitle": "Tek adımda güvenli erişim sağlayın.",
+    "email": "E-posta",
+    "emailPlaceholder": "ornek@email.com",
+    "referralCode": "Referans Kodu",
+    "referralPlaceholder": "Davet kodu, varsa",
+    "password": "Şifre",
+    "confirmPassword": "Şifre Tekrar",
+    "securityCode": "Güvenlik Kodu",
+    "enterCode": "Kodu Girin",
+    "registerButton": "Kayıt Ol",
+    "hasAccount": "Zaten hesabınız var mı?",
+    "loginLink": "Giriş Yap",
+    "refreshCode": "Kodu Yenile"
+  },
+  "nav": {
+    "home": "Ana Sayfa",
+    "quantify": "Quantify",
+    "referral": "Referans",
+    "account": "Hesabım"
+  },
+  "home": {
+    "welcome": "Hoş Geldiniz",
+    "welcomeText": "Corevest'e hoş geldiniz. Günlük kazançlarınızı takip edin ve yatırımlarınızı büyütün.",
+    "vipStatus": "VIP Durumunuz",
+    "currentLevel": "Mevcut Seviye",
+    "upgradeVip": "Yatırım yaparak VIP seviyenizi yükseltin.",
+    "marketPrices": "Piyasa Fiyatları",
+    "marketSubtitle": "Anlık kripto para değerleri",
+    "price": "Fiyat",
+    "change24h": "24s Değişim",
+    "yourStats": "İstatistikleriniz",
+    "totalClicks": "Toplam Tıklama",
+    "totalEarnings": "Toplam Kazanç",
+    "currentInvestment": "Mevcut Yatırım",
+    "nextVip": "Sonraki VIP"
+  },
+  "quantify": {
+    "title": "Günlük Quantify",
+    "subtitle": "24 saatte bir tıklayarak günlük ödülünüzü kazanın",
+    "clickButton": "Günlük Ödülü Al",
+    "nextClick": "Sonraki tıklama için kalan süre:",
+    "hours": "saat",
+    "minutes": "dakika",
+    "seconds": "saniye",
+    "yourVipLevel": "VIP Seviyeniz",
+    "dailyEarning": "Günlük Kazanç Oranı",
+    "totalEarned": "Toplam Kazanç",
+    "lastClick": "Son Tıklama",
+    "investmentAmount": "Yatırım Miktarı",
+    "clickArea": "Tıklama Alanı",
+    "vipTable": {
+      "title": "VIP Seviyeleri",
+      "level": "Seviye",
+      "investment": "Yatırım Aralığı",
+      "dailyRate": "Günlük Oran",
+      "status": "Durum"
+    },
+    "yourLevel": "Sizin Seviyeniz",
+    "upgrade": "Yükselt",
+    "earnings": {
+      "title": "Kazanç Özeti",
+      "today": "Bugünkü Kazanç",
+      "thisWeek": "Bu Hafta",
+      "thisMonth": "Bu Ay",
+      "projected": "Tahmini Aylık"
+    },
+    "vip0notice": "VIP 0 seviyesindesiniz. Yatırım yaparak günlük kazanç elde etmeye başlayabilirsiniz."
+  },
+  "referral": {
+    "title": "Referans Sistemi",
+    "subtitle": "Arkadaşlarınızı davet edin, onların kazançlarından komisyon alın",
+    "yourCode": "Referans Kodunuz",
+    "copyCode": "Kodu Kopyala",
+    "copied": "Kopyalandı!",
+    "yourLink": "Davet Linkiniz",
+    "copyLink": "Linki Kopyala",
+    "tier1": "1. Kademe (Doğrudan)",
+    "tier2": "2. Kademe",
+    "tier3": "3. Kademe",
+    "tier1rate": "%7 Komisyon",
+    "tier2rate": "%5 Komisyon",
+    "tier3rate": "%2 Komisyon",
+    "totalReferrals": "Toplam Referans",
+    "totalCommission": "Toplam Komisyon",
+    "referralList": "Referans Listesi",
+    "noReferrals": "Henüz referansınız bulunmuyor.",
+    "howItWorks": "Nasıl Çalışır?",
+    "step1": "Referans kodunuzu arkadaşlarınızla paylaşın",
+    "step2": "Arkadaşlarınız kayıt olduğunda 1. kademeye eklenir (%7)",
+    "step3": "Onların referansları 2. kademe olur (%5)",
+    "step4": "2. kademenin referansları 3. kademe olur (%2)",
+    "commissionEarned": "Kazanılan Komisyon",
+    "fromClicks": "tıklamalardan"
+  },
+  "account": {
+    "title": "Hesabım",
+    "subtitle": "Hesap ayarlarınız ve işlemleriniz",
+    "memberSince": "Üyelik Tarihi",
+    "vipLevel": "VIP Seviyesi",
+    "balance": "Bakiyeniz",
+    "actions": {
+      "title": "İşlemler",
+      "deposit": "Para Yatır",
+      "withdraw": "Para Çek",
+      "support": "Destek",
+      "logout": "Çıkış Yap"
+    },
+    "deposit": {
+      "title": "Para Yatır",
+      "amount": "Yatırım Miktarı",
+      "amountPlaceholder": "Örn: 100",
+      "selectMethod": "Ödeme Yöntemi",
+      "crypto": "Kripto Para",
+      "bank": "Banka Transferi",
+      "confirm": "Yatırımı Onayla",
+      "note": "Yatırımınız onaylandıktan sonra VIP seviyeniz otomatik güncellenecektir."
+    },
+    "withdraw": {
+      "title": "Para Çek",
+      "amount": "Çekim Miktarı",
+      "amountPlaceholder": "Çekilecek miktar",
+      "address": "Cüzdan Adresi",
+      "addressPlaceholder": "USDT (TRC20) adresi",
+      "confirm": "Çekim Talebi Gönder",
+      "note": "Çekim işlemleri 24 saat içinde onaylanır."
+    },
+    "support": {
+      "title": "Destek",
+      "message": "Mesajınız",
+      "messagePlaceholder": "Sorununuzu veya isteğinizi yazın...",
+      "send": "Gönder",
+      "history": "Destek Geçmişi",
+      "noTickets": "Henüz destek talebiniz bulunmuyor."
+    },
+    "logout": {
+      "title": "Çıkış Yap",
+      "confirm": "Çıkış yapmak istediğinize emin misiniz?",
+      "cancel": "İptal",
+      "confirmButton": "Çıkış Yap"
+    }
+  },
+  "vipLevels": {
+    "vip0": "VIP 0",
+    "vip1": "VIP 1",
+    "vip2": "VIP 2",
+    "vip3": "VIP 3",
+    "vip4": "VIP 4",
+    "vip5": "VIP 5",
+    "vip6": "VIP 6"
+  },
+  "language": {
+    "tr": "Türkçe",
+    "en": "English",
+    "select": "Dil Seçin"
+  }
+}

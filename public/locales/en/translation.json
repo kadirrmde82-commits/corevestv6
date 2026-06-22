@@ -1,0 +1,175 @@
+{
+  "brand": "Corevest",
+  "slogan": "Invest Smart, Earn Daily",
+  "login": {
+    "title": "Sign in",
+    "subtitle": "Access your secure Corevest workspace.",
+    "email": "Email",
+    "phone": "Phone",
+    "emailPlaceholder": "name@example.com",
+    "phonePlaceholder": "+1 555 123 4567",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "loginButton": "Login",
+    "noAccount": "Need an account?",
+    "registerLink": "Register",
+    "forgotPassword": "Forgot password?"
+  },
+  "register": {
+    "title": "Create account",
+    "subtitle": "Set up protected access in one step.",
+    "email": "Email",
+    "emailPlaceholder": "name@example.com",
+    "referralCode": "Referral code",
+    "referralPlaceholder": "Invitation code, if you have one",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "securityCode": "Security code",
+    "enterCode": "Enter code",
+    "registerButton": "Register",
+    "hasAccount": "Already have an account?",
+    "loginLink": "Login",
+    "refreshCode": "Refresh code"
+  },
+  "nav": {
+    "home": "Home",
+    "quantify": "Quantify",
+    "referral": "Referral",
+    "account": "My Account"
+  },
+  "home": {
+    "welcome": "Welcome",
+    "welcomeText": "Welcome to Corevest. Track your daily earnings and grow your investments.",
+    "vipStatus": "Your VIP Status",
+    "currentLevel": "Current Level",
+    "upgradeVip": "Invest to upgrade your VIP level and start earning daily.",
+    "marketPrices": "Market Prices",
+    "marketSubtitle": "Live cryptocurrency prices",
+    "price": "Price",
+    "change24h": "24h Change",
+    "yourStats": "Your Statistics",
+    "totalClicks": "Total Clicks",
+    "totalEarnings": "Total Earnings",
+    "currentInvestment": "Current Investment",
+    "nextVip": "Next VIP"
+  },
+  "quantify": {
+    "title": "Daily Quantify",
+    "subtitle": "Click once every 24 hours to earn your daily reward",
+    "clickButton": "Claim Daily Reward",
+    "nextClick": "Next click available in:",
+    "hours": "hours",
+    "minutes": "minutes",
+    "seconds": "seconds",
+    "yourVipLevel": "Your VIP Level",
+    "dailyEarning": "Daily Earning Rate",
+    "totalEarned": "Total Earned",
+    "lastClick": "Last Click",
+    "investmentAmount": "Investment Amount",
+    "clickArea": "Click Area",
+    "vipTable": {
+      "title": "VIP Levels",
+      "level": "Level",
+      "investment": "Investment Range",
+      "dailyRate": "Daily Rate",
+      "status": "Status"
+    },
+    "yourLevel": "Your Level",
+    "upgrade": "Upgrade",
+    "earnings": {
+      "title": "Earnings Summary",
+      "today": "Today's Earnings",
+      "thisWeek": "This Week",
+      "thisMonth": "This Month",
+      "projected": "Projected Monthly"
+    },
+    "vip0notice": "You are at VIP 0 level. Make an investment to start earning daily rewards."
+  },
+  "referral": {
+    "title": "Referral System",
+    "subtitle": "Invite friends and earn commissions from their earnings",
+    "yourCode": "Your Referral Code",
+    "copyCode": "Copy Code",
+    "copied": "Copied!",
+    "yourLink": "Your Invite Link",
+    "copyLink": "Copy Link",
+    "tier1": "Tier 1 (Direct)",
+    "tier2": "Tier 2",
+    "tier3": "Tier 3",
+    "tier1rate": "%7 Commission",
+    "tier2rate": "%5 Commission",
+    "tier3rate": "%2 Commission",
+    "totalReferrals": "Total Referrals",
+    "totalCommission": "Total Commission",
+    "referralList": "Referral List",
+    "noReferrals": "No referrals yet.",
+    "howItWorks": "How It Works?",
+    "step1": "Share your referral code with friends",
+    "step2": "When they register, they become Tier 1 (%7)",
+    "step3": "Their referrals become Tier 2 (%5)",
+    "step4": "Tier 2's referrals become Tier 3 (%2)",
+    "commissionEarned": "Commission Earned",
+    "fromClicks": "from clicks"
+  },
+  "account": {
+    "title": "My Account",
+    "subtitle": "Account settings and transactions",
+    "memberSince": "Member Since",
+    "vipLevel": "VIP Level",
+    "balance": "Your Balance",
+    "actions": {
+      "title": "Actions",
+      "deposit": "Deposit",
+      "withdraw": "Withdraw",
+      "support": "Support",
+      "logout": "Logout"
+    },
+    "deposit": {
+      "title": "Deposit",
+      "amount": "Investment Amount",
+      "amountPlaceholder": "e.g. 100",
+      "selectMethod": "Payment Method",
+      "crypto": "Cryptocurrency",
+      "bank": "Bank Transfer",
+      "confirm": "Confirm Deposit",
+      "note": "Your VIP level will be automatically updated after your deposit is confirmed."
+    },
+    "withdraw": {
+      "title": "Withdraw",
+      "amount": "Withdrawal Amount",
+      "amountPlaceholder": "Amount to withdraw",
+      "address": "Wallet Address",
+      "addressPlaceholder": "USDT (TRC20) address",
+      "confirm": "Submit Withdrawal Request",
+      "note": "Withdrawals are processed within 24 hours."
+    },
+    "support": {
+      "title": "Support",
+      "message": "Your Message",
+      "messagePlaceholder": "Describe your issue or request...",
+      "send": "Send",
+      "history": "Support History",
+      "noTickets": "No support tickets yet."
+    },
+    "logout": {
+      "title": "Logout",
+      "confirm": "Are you sure you want to logout?",
+      "cancel": "Cancel",
+      "confirmButton": "Logout"
+    }
+  },
+  "vipLevels": {
+    "vip0": "VIP 0",
+    "vip1": "VIP 1",
+    "vip2": "VIP 2",
+    "vip3": "VIP 3",
+    "vip4": "VIP 4",
+    "vip5": "VIP 5",
+    "vip6": "VIP 6"
+  },
+  "language": {
+    "tr": "Turkish",
+    "en": "English",
+    "select": "Select Language"
+  }
+}
