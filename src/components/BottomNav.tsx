@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, MousePointerClick, Users, UserCircle } from 'lucide-react';
+import { Home, MousePointerClick, Users, UserCircle, HelpCircle } from 'lucide-react';
 
 export default function BottomNav() {
   const { t } = useTranslation();
@@ -11,6 +11,7 @@ export default function BottomNav() {
     { key: 'home', label: t('nav.home'), icon: Home, path: '/home' },
     { key: 'quantify', label: t('nav.quantify'), icon: MousePointerClick, path: '/quantify' },
     { key: 'referral', label: t('nav.referral'), icon: Users, path: '/referral' },
+    { key: 'faq', label: 'SSS', icon: HelpCircle, path: '/faq' },
     { key: 'account', label: t('nav.account'), icon: UserCircle, path: '/account' },
   ];
 

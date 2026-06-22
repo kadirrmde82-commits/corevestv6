@@ -1,38 +1,43 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Copy, Check, Users, DollarSign, Link2, UserPlus } from 'lucide-react';
 import Layout from '../components/Layout';
-import { getUser, getReferrals, REFERRAL_COMMISSIONS } from '../store';
-import type { ReferralEntry } from '../store';
+import { trpc } from '@/providers/trpc';
+import { REFERRAL_COMMISSIONS } from '../store';
 
 export default function Referral() {
   const { t } = useTranslation();
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  const [user, setUser] = useState(getUser());
-  const [referrals, setReferrals] = useState<ReferralEntry[]>(getReferrals());
 
-  useEffect(() => {
-    setUser(getUser());
-    setReferrals(getReferrals());
-    const handler = () => { setUser(getUser()); setReferrals(getReferrals()); };
-    window.addEventListener('focus', handler);
-    return () => window.removeEventListener('focus', handler);
-  }, []);
+  // Fetch profile and referral network from tRPC
+  const { data: profile } = trpc.profile.me.useQuery(undefined, {
+    staleTime: 1000 * 30,
+    retry: false,
+  });
+  const { data: network } = trpc.referral.myNetwork.useQuery(undefined, {
+    staleTime: 1000 * 30,
+    retry: false,
+  });
+  const { data: counts } = trpc.referral.count.useQuery(undefined, {
+    staleTime: 1000 * 30,
+    retry: false,
+  });
 
-  const myCode = user?.referralCode || 'CV-----';
+  const myCode = profile?.referralCode || 'CV-----';
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const referralLink = `${baseUrl}/#/register?ref=${myCode}`;
 
-  const tier1 = referrals.filter(r => r.tier === 1);
-  const tier2 = referrals.filter(r => r.tier === 2);
-  const tier3 = referrals.filter(r => r.tier === 3);
+  const tier1 = network?.tier1 || [];
+  const tier2 = network?.tier2 || [];
+  const tier3 = network?.tier3 || [];
 
-  // NEW Commission: 10% / 6% / 3%
+  // Commission calculation: each person in the network earns commission
   const tier1Commission = tier1.length * REFERRAL_COMMISSIONS.tier1;
   const tier2Commission = tier2.length * REFERRAL_COMMISSIONS.tier2;
   const tier3Commission = tier3.length * REFERRAL_COMMISSIONS.tier3;
   const totalCommission = tier1Commission + tier2Commission + tier3Commission;
+  const totalRefs = tier1.length + tier2.length + tier3.length;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(myCode);
@@ -45,6 +50,13 @@ export default function Referral() {
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   };
+
+  // Combine all referrals for the list view with tier info
+  const allReferrals = [
+    ...tier1.map(r => ({ ...r, tier: 1 as const })),
+    ...tier2.map(r => ({ ...r, tier: 2 as const })),
+    ...tier3.map(r => ({ ...r, tier: 3 as const })),
+  ];
 
   return (
     <Layout>
@@ -86,7 +98,12 @@ export default function Referral() {
           <div className="glass-card">
             <div className="flex items-center gap-2 mb-2"><div className="grid place-items-center rounded-xl" style={{ width: '38px', height: '38px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }}><Users size={18} /></div></div>
             <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>{t('referral.totalReferrals')}</span>
-            <strong className="block text-xl text-white mt-1">{referrals.length}</strong>
+            <strong className="block text-xl text-white mt-1">{totalRefs}</strong>
+            <div className="flex gap-2 mt-1">
+              <span className="text-[10px]" style={{ color: '#FFD700' }}>{counts?.tier1 || 0} T1</span>
+              <span className="text-[10px]" style={{ color: '#FFA500' }}>{counts?.tier2 || 0} T2</span>
+              <span className="text-[10px]" style={{ color: '#FF8C00' }}>{counts?.tier3 || 0} T3</span>
+            </div>
           </div>
           <div className="glass-card">
             <div className="flex items-center gap-2 mb-2"><div className="grid place-items-center rounded-xl" style={{ width: '38px', height: '38px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }}><DollarSign size={18} /></div></div>
@@ -95,55 +112,71 @@ export default function Referral() {
           </div>
         </div>
 
-        {/* Tier System - NEW RATES */}
+        {/* 3-Tier System with Live Counts */}
         <div className="glass-card">
           <h2 className="text-base font-bold text-white mb-4">{t('referral.howItWorks')}</h2>
           <div className="grid gap-3">
             {[
-              { tier: 1, label: t('referral.tier1'), rate: `%${REFERRAL_COMMISSIONS.tier1} Komisyon`, count: tier1.length, commission: tier1Commission, color: '#FFD700', bg: 'rgba(255,215,0,0.08)', border: 'rgba(255,215,0,0.15)' },
-              { tier: 2, label: t('referral.tier2'), rate: `%${REFERRAL_COMMISSIONS.tier2} Komisyon`, count: tier2.length, commission: tier2Commission, color: '#FFA500', bg: 'rgba(255,165,0,0.08)', border: 'rgba(255,165,0,0.15)' },
-              { tier: 3, label: t('referral.tier3'), rate: `%${REFERRAL_COMMISSIONS.tier3} Komisyon`, count: tier3.length, commission: tier3Commission, color: '#FF8C00', bg: 'rgba(255,140,0,0.08)', border: 'rgba(255,140,0,0.15)' },
+              { tier: 1, label: t('referral.tier1'), rate: `%${REFERRAL_COMMISSIONS.tier1}`, count: tier1.length, commission: tier1Commission, color: '#FFD700', bg: 'rgba(255,215,0,0.08)', border: 'rgba(255,215,0,0.15)', desc: 'Doğrudan referanslarınız' },
+              { tier: 2, label: t('referral.tier2'), rate: `%${REFERRAL_COMMISSIONS.tier2}`, count: tier2.length, commission: tier2Commission, color: '#FFA500', bg: 'rgba(255,165,0,0.08)', border: 'rgba(255,165,0,0.15)', desc: 'Referanslarinizin referanslari' },
+              { tier: 3, label: t('referral.tier3'), rate: `%${REFERRAL_COMMISSIONS.tier3}`, count: tier3.length, commission: tier3Commission, color: '#FF8C00', bg: 'rgba(255,140,0,0.08)', border: 'rgba(255,140,0,0.15)', desc: '2. kademenin referanslari' },
             ].map((tItem) => (
-              <div key={tItem.tier} className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: tItem.bg, border: `1px solid ${tItem.border}` }}>
-                <div className="grid place-items-center rounded-full font-extrabold text-sm shrink-0" style={{ width: '42px', height: '42px', background: `${tItem.color}20`, color: tItem.color }}>{tItem.tier}</div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm font-bold text-white block">{tItem.label}</span>
-                  <span className="text-xs" style={{ color: tItem.color }}>{tItem.rate} - {tItem.count} kişi</span>
+              <div key={tItem.tier} className="rounded-xl px-4 py-3" style={{ background: tItem.bg, border: `1px solid ${tItem.border}` }}>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="grid place-items-center rounded-full font-extrabold text-sm shrink-0" style={{ width: '42px', height: '42px', background: `${tItem.color}20`, color: tItem.color }}>{tItem.tier}</div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-bold text-white block">{tItem.label}</span>
+                    <span className="text-xs" style={{ color: tItem.color }}>{tItem.rate} - {tItem.count} kişi</span>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-sm font-extrabold" style={{ color: tItem.color }}>${tItem.commission}</span>
+                  </div>
                 </div>
-                <div className="text-right shrink-0">
-                  <span className="text-sm font-extrabold" style={{ color: tItem.color }}>${tItem.commission}</span>
-                  <span className="text-xs block" style={{ color: '#8fa5b8' }}>{t('referral.commissionEarned')}</span>
-                </div>
+                <p className="text-xs" style={{ color: '#5a6a7a' }}>{tItem.desc}</p>
+                {/* Mini list of people in this tier */}
+                {tItem.count > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {(tItem.tier === 1 ? tier1 : tItem.tier === 2 ? tier2 : tier3).slice(0, 3).map(p => (
+                      <div key={p.id} className="flex items-center gap-2 text-xs" style={{ color: '#8fa5b8' }}>
+                        <UserPlus size={10} style={{ color: tItem.color }} />
+                        <span>{p.name || 'Kullanici'}</span>
+                        <span className="text-[10px]" style={{ color: '#5a6a7a' }}>{p.email}</span>
+                      </div>
+                    ))}
+                    {tItem.count > 3 && <span className="text-[10px]" style={{ color: '#5a6a7a' }}>+{tItem.count - 3} daha...</span>}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Referral List */}
+        {/* Full Referral List */}
         <div className="glass-card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-white">{t('referral.referralList')}</h2>
-            <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(255,215,0,0.1)', color: '#FFD700' }}>{referrals.length} kişi</span>
+            <h2 className="text-base font-bold text-white">Referans Ağım</h2>
+            <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(255,215,0,0.1)', color: '#FFD700' }}>{totalRefs} kişi</span>
           </div>
 
-          {referrals.length === 0 ? (
+          {allReferrals.length === 0 ? (
             <div className="text-center py-6">
               <Users size={32} style={{ color: '#3a4a5a', margin: '0 auto' }} />
               <p className="text-sm mt-3" style={{ color: '#5a6a7a' }}>{t('referral.noReferrals')}</p>
-              <p className="text-xs mt-1" style={{ color: '#5a6a7a' }}>Referans kodunuzu paylaşmaya başlayın.</p>
+              <p className="text-xs mt-1" style={{ color: '#5a6a7a' }}>Referans kodunuzu paylasmaya baslayin.</p>
             </div>
           ) : (
             <div className="grid gap-2">
-              {referrals.map((person) => {
+              {allReferrals.map((person) => {
                 const tierColors = ['', '#FFD700', '#FFA500', '#FF8C00'];
+                const tierLabels = ['', 'Dogrudan', '2. Kademe', '3. Kademe'];
                 return (
-                  <div key={person.id} className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.05)' }}>
+                  <div key={`${person.id}-${person.tier}`} className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.05)' }}>
                     <div className="grid place-items-center rounded-full shrink-0" style={{ width: '38px', height: '38px', background: `${tierColors[person.tier]}18`, color: tierColors[person.tier] }}><UserPlus size={16} /></div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm font-bold text-white block">{person.name}</span>
+                      <span className="text-sm font-bold text-white block">{person.name || 'Kullanici'}</span>
                       <span className="text-xs" style={{ color: '#8fa5b8' }}>{person.date}</span>
                     </div>
-                    <div className="text-[10px] font-extrabold px-2 py-1 rounded-full shrink-0" style={{ background: `${tierColors[person.tier]}15`, color: tierColors[person.tier] }}>{person.tier}. Kademe</div>
+                    <div className="text-[10px] font-extrabold px-2 py-1 rounded-full shrink-0" style={{ background: `${tierColors[person.tier]}15`, color: tierColors[person.tier] }}>{tierLabels[person.tier]}</div>
                   </div>
                 );
               })}

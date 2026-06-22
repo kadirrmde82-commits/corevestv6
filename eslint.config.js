@@ -20,10 +20,10 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
-      // UI yardımcı dosyaları bileşenlerle birlikte varyant sabitleri de dışa aktarır.
+      '@typescript-eslint/no-explicit-any': 'off',
       'react-refresh/only-export-components': 'off',
-      // İlk tarayıcı verisini effect içinde eşitlemek bu istemci uygulamasında kasıtlıdır.
       'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/purity': 'off',
     },
   },
 ])

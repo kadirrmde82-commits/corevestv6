@@ -2,39 +2,76 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   TrendingUp, TrendingDown, MousePointerClick,
-  DollarSign, Wallet, Crown, ChevronRight
+  DollarSign, Wallet, Crown, ChevronRight, X, Gift
 } from 'lucide-react';
 import Layout from '../components/Layout';
-import { getUser, getVipLevel, VIP_TABLE } from '../store';
-
-const COINS = [
-  { symbol: 'BTC', name: 'Bitcoin', basePrice: 84732.45, change: 2.34, color: '#FFD700' },
-  { symbol: 'ETH', name: 'Ethereum', basePrice: 4521.18, change: -1.12, color: '#8C8C8C' },
-  { symbol: 'SOL', name: 'Solana', basePrice: 198.76, change: 5.67, color: '#00D4AA' },
-  { symbol: 'DOGE', name: 'Dogecoin', basePrice: 0.3421, change: -3.45, color: '#C2A633' },
-  { symbol: 'LTC', name: 'Litecoin', basePrice: 98.54, change: 1.23, color: '#345D9D' },
-];
+import { trpc } from '@/providers/trpc';
+import { VIP_TABLE } from '../store';
+import Wheel from '../components/Wheel';
 
 export default function Home() {
   const { t } = useTranslation();
-  const [user, setUser] = useState(getUser());
-  const [animatedPrices, setAnimatedPrices] = useState(COINS.map(c => c.basePrice));
+  const [showAnnouncement, setShowAnnouncement] = useState(() => {
+    return localStorage.getItem('corevest_announcement_seen') !== 'true';
+  });
 
-  // Refresh user data on mount
+  // Fetch market prices from API
+  const { data: marketCoins = [] } = trpc.marketPrice.list.useQuery(undefined, {
+    staleTime: 1000 * 60,
+    refetchInterval: 1000 * 30,
+  });
+
+  const [animatedPrices, setAnimatedPrices] = useState<number[]>([]);
+
+  // Sync animated prices when market coins load
   useEffect(() => {
-    setUser(getUser());
-  }, []);
+    if (marketCoins.length > 0 && animatedPrices.length === 0) {
+      setAnimatedPrices(marketCoins.map((c: { basePrice: string | number }) => Number(c.basePrice)));
+    }
+  }, [marketCoins, animatedPrices.length]);
 
-  // Also refresh when window gains focus
+  const dismissAnnouncement = () => {
+    setShowAnnouncement(false);
+    localStorage.setItem('corevest_announcement_seen', 'true');
+  };
+
+  // Fetch profile from tRPC
+  const { data: profile } = trpc.profile.me.useQuery(undefined, {
+    staleTime: 1000 * 30,
+    retry: false,
+  });
+
+  // Auto-create referral relationship if ref code exists in localStorage
+  const { mutate: createReferral } = trpc.referral.create.useMutation();
   useEffect(() => {
-    const handler = () => setUser(getUser());
-    window.addEventListener('focus', handler);
-    return () => window.removeEventListener('focus', handler);
-  }, []);
+    const refCode = localStorage.getItem('corevest_ref_by');
+    if (profile && refCode && !profile.referredBy) {
+      createReferral(
+        { referralCode: refCode },
+        {
+          onSuccess: () => {
+            localStorage.removeItem('corevest_ref_by');
+          },
+          onError: () => {
+            localStorage.removeItem('corevest_ref_by');
+          },
+        }
+      );
+    }
+  }, [profile, createReferral]);
 
-  const currentVip = useMemo(() => getVipLevel(user?.investment || 0), [user?.investment]);
+  // Calculate VIP level from investment
+  const currentVip = useMemo(() => {
+    if (!profile) return 0;
+    const investment = Number(profile.investment);
+    for (let i = VIP_TABLE.length - 1; i >= 0; i--) {
+      if (investment >= VIP_TABLE[i].min) return VIP_TABLE[i].level;
+    }
+    return 0;
+  }, [profile]);
+
   const nextVip = useMemo(() => {
-    return VIP_TABLE.find(v => v.level === (currentVip || 0) + 1);
+    return VIP_TABLE.find(v => v.level === currentVip + 1);
   }, [currentVip]);
 
   // Simulate live prices
@@ -50,10 +87,96 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  if (!user) return null;
+  if (!profile) return null;
 
   return (
     <Layout>
+      {/* ─── Announcement Popup ─── */}
+      {showAnnouncement && (
+        <div
+          className="relative mb-3 animate-fade-in"
+          style={{
+            border: '1px solid rgba(255,215,0,0.25)',
+            borderRadius: '18px',
+            padding: '20px',
+            background: 'radial-gradient(circle at 30% 20%, rgba(255,215,0,0.12), transparent 50%), radial-gradient(circle at 80% 80%, rgba(255,165,0,0.08), transparent 40%), linear-gradient(135deg, rgba(5,9,20,0.95), rgba(15,10,5,0.95))',
+            boxShadow: '0 8px 32px rgba(255,215,0,0.1)',
+          }}
+        >
+          {/* Close button */}
+          <button
+            onClick={dismissAnnouncement}
+            className="absolute top-3 right-3 grid place-items-center rounded-full transition-all hover:scale-110"
+            style={{
+              width: '28px',
+              height: '28px',
+              background: 'rgba(255,255,255,0.08)',
+              color: '#8fa5b8',
+            }}
+          >
+            <X size={14} />
+          </button>
+
+          <div className="pr-6">
+            <h3
+              className="text-base font-extrabold mb-3"
+              style={{ color: '#FFD700' }}
+            >
+              <Gift size={18} className="inline mr-1" />
+              &#x1F389; &#x1F3A1; CARK AKTIF! &#x1F3A1; &#x1F389;
+            </h3>
+
+            <p className="text-sm font-bold text-white mb-2">
+              1.000$&apos;a kadar hediye bonus kazanma fırsatı sizi bekliyor!
+            </p>
+
+            <p className="text-xs mb-3" style={{ color: '#a9bccf' }}>
+              Sans carkini cevirin ve birbirinden degerli ödülleri kazanma şansını yakalayın. &#x1F680;
+            </p>
+
+            <div
+              className="rounded-xl p-3 mb-3"
+              style={{
+                background: 'rgba(255,215,0,0.06)',
+                border: '1px solid rgba(255,215,0,0.12)',
+              }}
+            >
+              <p className="text-xs font-bold mb-2" style={{ color: '#FFD700' }}>
+                &#x1F381; Kampanya Kuralları:
+              </p>
+              <ul className="space-y-1">
+                {[
+                  'Her 100$ yatırım için 1 SPIN hakki kazanırsınız.',
+                  'Davet ettiğiniz bir üyenin 100$ veya üzeri yatırım yapması durumunda 1 ek SPIN hakki elde edersiniz.',
+                  'Ne kadar çok yatırım ve davet, o kadar çok çevirme hakki!',
+                ].map((rule, i) => (
+                  <li key={i} className="text-xs flex items-start gap-2" style={{ color: '#c8d6e5' }}>
+                    <span style={{ color: '#10b981' }}>&#x2705;</span>
+                    <span>{rule}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <p className="text-xs mb-3" style={{ color: '#8fa5b8' }}>
+              &#x1F340; Şansınızı deneyin, sürpriz bonusları kaçirmayin!
+            </p>
+
+            <p className="text-xs font-bold mb-4" style={{ color: '#FFD700' }}>
+              &#x1F3A1; Çark sizi bekliyor! &#x1F680; CoreVest ile kazanmaya devam edin.
+            </p>
+
+            <button
+              onClick={dismissAnnouncement}
+              className="btn-primary"
+              style={{ minHeight: '42px', fontSize: '14px' }}
+            >
+              Tamam
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-3">
         {/* Welcome Banner */}
         <div
@@ -96,7 +219,7 @@ export default function Home() {
               </div>
             </div>
             <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>{t('home.totalClicks')}</span>
-            <strong className="block text-xl text-white mt-1">{user.totalClicks}</strong>
+            <strong className="block text-xl text-white mt-1">{profile.totalClicks}</strong>
           </div>
           <div className="glass-card">
             <div className="flex items-center gap-2 mb-2">
@@ -105,7 +228,7 @@ export default function Home() {
               </div>
             </div>
             <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>{t('home.totalEarnings')}</span>
-            <strong className="block text-xl mt-1" style={{ color: '#FFD700' }}>${user.totalEarned.toFixed(2)}</strong>
+            <strong className="block text-xl mt-1" style={{ color: '#FFD700' }}>${Number(profile.totalEarned).toFixed(2)}</strong>
           </div>
           <div className="glass-card">
             <div className="flex items-center gap-2 mb-2">
@@ -114,7 +237,7 @@ export default function Home() {
               </div>
             </div>
             <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>{t('home.currentInvestment')}</span>
-            <strong className="block text-xl text-white mt-1">${user.investment.toLocaleString()}</strong>
+            <strong className="block text-xl text-white mt-1">${Number(profile.investment).toLocaleString()}</strong>
           </div>
           <div className="glass-card">
             <div className="flex items-center gap-2 mb-2">
@@ -126,6 +249,9 @@ export default function Home() {
             <strong className="block text-xl mt-1" style={{ color: '#FFD700' }}>{`VIP ${currentVip}`}</strong>
           </div>
         </div>
+
+        {/* Wheel of Fortune */}
+        <Wheel />
 
         {/* Market Prices */}
         <div className="glass-card">
@@ -140,9 +266,12 @@ export default function Home() {
             </div>
           </div>
           <div className="grid gap-2">
-            {COINS.map((coin, i) => {
-              const isUp = coin.change >= 0;
-              const livePrice = animatedPrices[i];
+            {marketCoins.length === 0 && (
+              <p className="text-xs text-center py-4" style={{ color: '#5a6a7a' }}>Piyasa verisi yukleniyor...</p>
+            )}
+            {marketCoins.map((coin: { id: number; symbol: string; name: string; basePrice: string | number; change: string | number; color: string }, i: number) => {
+              const isUp = Number(coin.change) >= 0;
+              const livePrice = animatedPrices[i] ?? Number(coin.basePrice);
               return (
                 <div key={coin.symbol} className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.05)' }}>
                   <div className="grid place-items-center rounded-lg font-extrabold text-xs shrink-0" style={{ width: '40px', height: '40px', background: `${coin.color}18`, color: coin.color }}>{coin.symbol.slice(0, 2)}</div>
@@ -152,7 +281,7 @@ export default function Home() {
                   </div>
                   <div className="text-right shrink-0">
                     <span className="text-sm font-bold text-white block">${livePrice < 1 ? livePrice.toFixed(4) : livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    <span className="text-xs font-semibold flex items-center justify-end gap-1" style={{ color: isUp ? '#10b981' : '#ef4444' }}>{isUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}{isUp ? '+' : ''}{coin.change}%</span>
+                    <span className="text-xs font-semibold flex items-center justify-end gap-1" style={{ color: isUp ? '#10b981' : '#ef4444' }}>{isUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}{isUp ? '+' : ''}{Number(coin.change).toFixed(2)}%</span>
                   </div>
                 </div>
               );

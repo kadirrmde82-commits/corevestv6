@@ -64,17 +64,6 @@ export const REFERRAL_COMMISSIONS = {
   tier3: 3,  // %3
 };
 
-function readJson<T>(key: string, fallback: T): T {
-  const raw = localStorage.getItem(key);
-  if (!raw) return fallback;
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    localStorage.removeItem(key);
-    return fallback;
-  }
-}
-
 // Get active referral count (tier 1 only)
 export function getActiveReferralCount(): number {
   const refs = getReferrals();
@@ -91,6 +80,12 @@ export function getVipLevel(investment: number): number {
       if (activeRefs >= vip.refsRequired) {
         return vip.level;
       }
+    }
+  }
+  // Fallback: find highest VIP that meets investment (even if refs not met)
+  for (let i = VIP_TABLE.length - 1; i >= 0; i--) {
+    if (investment >= VIP_TABLE[i].min) {
+      return VIP_TABLE[i].level;
     }
   }
   return 0;
@@ -143,7 +138,9 @@ export function initUser(email: string, referralCode?: string) {
 }
 
 export function getUser(): User | null {
-  return readJson<User | null>('corevest_user', null);
+  const raw = localStorage.getItem('corevest_user');
+  if (!raw) return null;
+  return JSON.parse(raw) as User;
 }
 
 export function syncUser(partial: Partial<User>) {
@@ -170,13 +167,14 @@ export function addDeposit(amount: number): Deposit {
 }
 
 export function getDeposits(): Deposit[] {
-  return readJson<Deposit[]>('corevest_deposits', []);
+  const raw = localStorage.getItem('corevest_deposits');
+  return raw ? JSON.parse(raw) : [];
 }
 
 export function approveDeposit(id: string) {
   const deposits = getDeposits();
   const idx = deposits.findIndex(d => d.id === id);
-  if (idx === -1 || deposits[idx].status !== 'pending') return;
+  if (idx === -1) return;
   deposits[idx].status = 'approved';
   localStorage.setItem('corevest_deposits', JSON.stringify(deposits));
   const user = getUser();
@@ -189,7 +187,7 @@ export function approveDeposit(id: string) {
 export function rejectDeposit(id: string) {
   const deposits = getDeposits();
   const idx = deposits.findIndex(d => d.id === id);
-  if (idx !== -1 && deposits[idx].status === 'pending') {
+  if (idx !== -1) {
     deposits[idx].status = 'rejected';
     localStorage.setItem('corevest_deposits', JSON.stringify(deposits));
   }
@@ -215,7 +213,8 @@ export function addWithdrawal(amount: number, email: string, wallet: string): Wi
 }
 
 export function getWithdrawals(): Withdrawal[] {
-  return readJson<Withdrawal[]>('corevest_withdrawals', []);
+  const raw = localStorage.getItem('corevest_withdrawals');
+  return raw ? JSON.parse(raw) : [];
 }
 
 export function cancelWithdrawal(id: string) {
@@ -231,7 +230,7 @@ export function cancelWithdrawal(id: string) {
 export function approveWithdrawal(id: string) {
   const withdrawals = getWithdrawals();
   const idx = withdrawals.findIndex(w => w.id === id);
-  if (idx !== -1 && withdrawals[idx].status === 'pending') {
+  if (idx !== -1) {
     withdrawals[idx].status = 'approved';
     localStorage.setItem('corevest_withdrawals', JSON.stringify(withdrawals));
   }
@@ -240,7 +239,7 @@ export function approveWithdrawal(id: string) {
 export function rejectWithdrawal(id: string) {
   const withdrawals = getWithdrawals();
   const idx = withdrawals.findIndex(w => w.id === id);
-  if (idx === -1 || withdrawals[idx].status !== 'pending') return;
+  if (idx === -1) return;
   const user = getUser();
   if (user) syncUser({ balance: user.balance + withdrawals[idx].amount });
   withdrawals[idx].status = 'rejected';
@@ -266,7 +265,8 @@ export function createSupportTicket(subject: string): SupportTicket {
 }
 
 export function getSupportTickets(): SupportTicket[] {
-  return readJson<SupportTicket[]>('corevest_tickets', []);
+  const raw = localStorage.getItem('corevest_tickets');
+  return raw ? JSON.parse(raw) : [];
 }
 
 export function addTicketMessage(ticketId: string, text: string, sender: 'user' | 'admin') {
@@ -312,7 +312,8 @@ export function addReferral(name: string, email: string, tier: 1 | 2 | 3) {
 }
 
 export function getReferrals(): ReferralEntry[] {
-  return readJson<ReferralEntry[]>('corevest_referrals', []);
+  const raw = localStorage.getItem('corevest_referrals');
+  return raw ? JSON.parse(raw) : [];
 }
 
 // ─── Click with Compound Interest ───
