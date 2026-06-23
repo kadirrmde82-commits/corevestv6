@@ -180,7 +180,7 @@
   },
   "wheel": {
     "title": "Şans Çarkı",
-    "investmentRule": "Her $100 yatırım = 1 çark hakkı",
+    "investmentRule": "İlk 100$ ve üzeri yatırım = 1 çark hakkı",
     "rights": "Hak",
     "spinning": "Çark Dönüyor...",
     "spin": "Çarkı Çevir",

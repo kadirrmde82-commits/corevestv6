@@ -180,7 +180,7 @@
   },
   "wheel": {
     "title": "Roue de la chance",
-    "investmentRule": "Chaque investissement de 100$ = 1 tour de roue",
+    "investmentRule": "Premier dépôt de 100$+ = 1 tour",
     "rights": "Tours",
     "spinning": "La roue tourne...",
     "spin": "Tourner la roue",

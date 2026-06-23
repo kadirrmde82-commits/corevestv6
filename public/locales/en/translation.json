@@ -180,7 +180,7 @@
   },
   "wheel": {
     "title": "Lucky Wheel",
-    "investmentRule": "Every $100 investment = 1 wheel spin",
+    "investmentRule": "First + deposit = 1 wheel spin",
     "rights": "Spins",
     "spinning": "Wheel Spinning...",
     "spin": "Spin the Wheel",

@@ -1,7 +1,7 @@
 import { eq, count, and, desc } from "drizzle-orm";
 import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { profiles, wheelSpins, referrals, wheelReferralBonuses, vipBonuses } from "@db/schema";
+import { deposits, profiles, wheelSpins, referrals, wheelReferralBonuses, vipBonuses } from "@db/schema";
 import { capAmount, getVipLevel } from "./vip-config";
 
 // Wheel prizes displayed on the wheel (user sees these)
@@ -18,6 +18,32 @@ export const WHEEL_PRIZES = [
 
 // ALWAYS gives $10 regardless of what the wheel shows
 const ACTUAL_PRIZE = 10;
+
+async function getOwnFirstDepositSpin(db: ReturnType<typeof getDb>, userId: number) {
+  const approvedDeposits = await db.query.deposits.findMany({
+    where: and(eq(deposits.userId, userId), eq(deposits.status, "approved")),
+    orderBy: [desc(deposits.createdAt)],
+  });
+
+  return approvedDeposits.some((deposit) => Number(deposit.amount) >= 100) ? 1 : 0;
+}
+
+function calculateReferralBonusSpins(
+  bonuses: Array<{ referredUserId: number; spinsEarned: number }>
+) {
+  let manualSpins = 0;
+  const referredUsersWithBonus = new Set<number>();
+
+  for (const bonus of bonuses) {
+    if (bonus.referredUserId === 0) {
+      manualSpins += bonus.spinsEarned;
+    } else if (bonus.spinsEarned > 0) {
+      referredUsersWithBonus.add(bonus.referredUserId);
+    }
+  }
+
+  return manualSpins + referredUsersWithBonus.size;
+}
 
 export const wheelRouter = createRouter({
   // List user's wheel spin history
@@ -70,18 +96,15 @@ export const wheelRouter = createRouter({
 
     const investment = Number(profile.investment);
 
-    // Own investment spins: floor(investment / 100)
-    const ownSpins = Math.floor(investment / 100);
+    // Own investment spin: only one spin for the first approved $100+ deposit.
+    const ownSpins = await getOwnFirstDepositSpin(db, ctx.user.id);
 
     // Referral bonus spins: when tier-1 referrals deposit $100+
     const referralBonuses = await db
       .select()
       .from(wheelReferralBonuses)
       .where(eq(wheelReferralBonuses.userId, ctx.user.id));
-    const referralBonusSpins = referralBonuses.reduce(
-      (sum, b) => sum + b.spinsEarned,
-      0
-    );
+    const referralBonusSpins = calculateReferralBonusSpins(referralBonuses);
 
     const totalEarnedSpins = ownSpins + referralBonusSpins;
 
@@ -116,18 +139,14 @@ export const wheelRouter = createRouter({
     if (!profile) throw new Error("Profile not found");
 
     // 2. Calculate available spins
-    const investment = Number(profile.investment);
-    const ownSpins = Math.floor(investment / 100);
+    const ownSpins = await getOwnFirstDepositSpin(db, ctx.user.id);
 
     // Referral bonus spins
     const referralBonuses = await db
       .select()
       .from(wheelReferralBonuses)
       .where(eq(wheelReferralBonuses.userId, ctx.user.id));
-    const referralBonusSpins = referralBonuses.reduce(
-      (sum, b) => sum + b.spinsEarned,
-      0
-    );
+    const referralBonusSpins = calculateReferralBonusSpins(referralBonuses);
 
     const totalEarnedSpins = ownSpins + referralBonusSpins;
 
@@ -182,7 +201,7 @@ export const wheelRouter = createRouter({
   }),
 });
 
-// Helper: Award referral bonus spins when a tier-1 referral deposits $100+
+// Helper: Award 1 referral bonus spin only once when a direct tier-1 referral makes a $100+ deposit.
 // Called from deposit-router.ts when a deposit is approved
 export async function awardReferralWheelBonus(
   db: ReturnType<typeof getDb>,
@@ -200,28 +219,21 @@ export async function awardReferralWheelBonus(
 
   const referrerId = referral.referrerUserId;
 
-  // Check total deposits from this referred user that already earned bonuses
-  const existingBonuses = await db
-    .select()
-    .from(wheelReferralBonuses)
-    .where(eq(wheelReferralBonuses.referredUserId, referredUserId));
+  if (depositAmount < 100) return;
 
-  const alreadyCounted = existingBonuses.reduce(
-    (sum, b) => sum + Number(b.investmentAmount),
-    0
-  );
-
-  // Only count new deposit amount
-  const totalDeposits = alreadyCounted + depositAmount;
-  const newHundreds = Math.floor(totalDeposits / 100) - Math.floor(alreadyCounted / 100);
-
-  if (newHundreds <= 0) return;
+  const existingBonus = await db.query.wheelReferralBonuses.findFirst({
+    where: and(
+      eq(wheelReferralBonuses.referredUserId, referredUserId),
+      eq(wheelReferralBonuses.userId, referrerId)
+    ),
+  });
+  if (existingBonus) return;
 
   // Award bonus spins to the referrer
   await db.insert(wheelReferralBonuses).values({
     userId: referrerId,
     referredUserId,
     investmentAmount: String(depositAmount),
-    spinsEarned: newHundreds,
+    spinsEarned: 1,
   });
 }

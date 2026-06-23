@@ -180,7 +180,7 @@
   },
   "wheel": {
     "title": "Ruota della fortuna",
-    "investmentRule": "Ogni investimento di $100 = 1 giro",
+    "investmentRule": "Primo deposito da + = 1 giro",
     "rights": "Giri",
     "spinning": "La ruota gira...",
     "spin": "Gira la ruota",

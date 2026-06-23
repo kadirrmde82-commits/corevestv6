@@ -180,7 +180,7 @@
   },
   "wheel": {
     "title": "Glücksrad",
-    "investmentRule": "Jede 100$ Investition = 1 Dreh",
+    "investmentRule": "Erste Einzahlung ab 100$ = 1 Dreh",
     "rights": "Drehs",
     "spinning": "Rad dreht sich...",
     "spin": "Rad drehen",

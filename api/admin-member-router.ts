@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, desc, like, or, count } from "drizzle-orm";
+import { eq, desc, like, or, count, and } from "drizzle-orm";
 import { createRouter, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { hashPassword } from "./local-auth";
@@ -249,6 +249,9 @@ export const adminMemberRouter = createRouter({
         .from(referralEarnings)
         .where(eq(referralEarnings.referrerUserId, input.userId))
         .orderBy(desc(referralEarnings.createdAt));
+      const approvedDeposits = await db.query.deposits.findMany({
+        where: and(eq(deposits.userId, input.userId), eq(deposits.status, "approved")),
+      });
       const latestLogin = await db.query.userLoginEvents.findFirst({
         where: eq(userLoginEvents.userId, input.userId),
         orderBy: [desc(userLoginEvents.createdAt)],
@@ -257,9 +260,11 @@ export const adminMemberRouter = createRouter({
       if (!user) throw new Error("User not found");
 
       // Calculate available spins (same logic as wheel-router)
-      const investment = profile ? Number(profile.investment) : 0;
-      const ownSpins = Math.floor(investment / 100);
-      const referralBonusSpins = bonuses.reduce((sum, b) => sum + b.spinsEarned, 0);
+      const ownSpins = approvedDeposits.some((deposit) => Number(deposit.amount) >= 100) ? 1 : 0;
+      const referralBonusSpins = bonuses.reduce((sum, bonus) => {
+        if (bonus.referredUserId === 0) return sum + bonus.spinsEarned;
+        return sum;
+      }, 0) + new Set(bonuses.filter((bonus) => bonus.referredUserId !== 0 && bonus.spinsEarned > 0).map((bonus) => bonus.referredUserId)).size;
       const totalEarnedSpins = ownSpins + referralBonusSpins;
       const totalSpinsUsed = spins[0]?.count ?? 0;
       const availableSpins = Math.max(0, totalEarnedSpins - totalSpinsUsed);
