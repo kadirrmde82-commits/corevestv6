@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, X } from 'lucide-react';
 import BottomNav from './BottomNav';
@@ -14,6 +14,7 @@ export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const utils = trpc.useUtils();
+  const heartbeat = trpc.presence.heartbeat.useMutation();
   const { data: notifications = [] } = trpc.notification.list.useQuery(undefined, {
     refetchInterval: 15000,
     retry: false,
@@ -29,6 +30,23 @@ export default function Layout({ children }: LayoutProps) {
     },
   });
   const unreadCount = notifications.filter((item) => !item.readAt).length;
+
+  useEffect(() => {
+    const sendHeartbeat = () => {
+      if (document.visibilityState === 'visible') {
+        heartbeat.mutate({ path: window.location.hash || window.location.pathname });
+      }
+    };
+    sendHeartbeat();
+    const interval = window.setInterval(sendHeartbeat, 30000);
+    window.addEventListener('focus', sendHeartbeat);
+    document.addEventListener('visibilitychange', sendHeartbeat);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', sendHeartbeat);
+      document.removeEventListener('visibilitychange', sendHeartbeat);
+    };
+  }, [heartbeat]);
 
   return (
     <div className="page-bg min-h-screen pb-24">

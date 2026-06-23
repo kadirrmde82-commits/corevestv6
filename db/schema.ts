@@ -293,6 +293,21 @@ export const userNotifications = mysqlTable("user_notifications", {
 export type UserNotification = typeof userNotifications.$inferSelect;
 export type InsertUserNotification = typeof userNotifications.$inferInsert;
 
+export const userPresence = mysqlTable("user_presence", {
+  userId: bigint("userId", { mode: "number", unsigned: true }).primaryKey(),
+  lastSeenAt: timestamp("lastSeenAt").defaultNow().notNull(),
+  path: varchar("path", { length: 255 }),
+  ipAddress: varchar("ipAddress", { length: 64 }),
+  userAgent: text("userAgent"),
+  updatedAt: timestamp("updatedAt")
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
+export type UserPresence = typeof userPresence.$inferSelect;
+export type InsertUserPresence = typeof userPresence.$inferInsert;
+
 export const systemSettings = mysqlTable("system_settings", {
   key: varchar("key", { length: 64 }).primaryKey(),
   value: text("value").notNull(),

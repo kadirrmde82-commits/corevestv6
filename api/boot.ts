@@ -94,6 +94,17 @@ async function ensureSystemTables() {
     )
   `);
   await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS user_presence (
+      \`userId\` bigint unsigned NOT NULL,
+      \`lastSeenAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`path\` varchar(255),
+      \`ipAddress\` varchar(64),
+      \`userAgent\` text,
+      \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`userId\`)
+    )
+  `);
+  await db.execute(sql`
     CREATE TABLE IF NOT EXISTS system_settings (
       \`key\` varchar(64) NOT NULL,
       \`value\` text NOT NULL,

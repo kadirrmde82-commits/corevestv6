@@ -5,7 +5,7 @@ import {
   Check, X, Wallet, Shield, LogOut,
   Send, MessageCircle, Lock, ChevronRight, Headphones,
   Search, Edit3, Gift, Eye, RefreshCw, Bell,
-  TrendingUp, Plus, Pencil, Trash2, Bitcoin, Minus, FileText, Download
+  TrendingUp, Plus, Pencil, Trash2, Bitcoin, Minus, FileText, Download, Activity
 } from 'lucide-react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import LanguageSelector from '../components/LanguageSelector';
@@ -13,7 +13,7 @@ import { trpc } from '@/providers/trpc';
 import { VIP_TABLE } from '../store';
 import { ANNOUNCEMENT_CONTENT_KEYS, DEFAULT_SITE_CONTENT, FAQ_CONTENT_KEYS } from '@contracts/site-content';
 
-type AdminTab = 'members' | 'memberData' | 'system' | 'deposits' | 'withdrawals' | 'tickets' | 'content' | 'marketPrices' | 'walletAddresses';
+type AdminTab = 'members' | 'memberStatus' | 'memberData' | 'system' | 'deposits' | 'withdrawals' | 'tickets' | 'content' | 'marketPrices' | 'walletAddresses';
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -66,6 +66,7 @@ export default function Admin() {
   const { data: maintenance } = trpc.adminSystem.maintenance.useQuery(undefined, { refetchInterval: 10000 });
   const { data: analytics } = trpc.adminSystem.analytics.useQuery(undefined, { refetchInterval: 10000 });
   const { data: sentNotifications = [] } = trpc.adminSystem.userNotifications.useQuery(undefined, { refetchInterval: 10000 });
+  const { data: memberPresence = [] } = trpc.presence.adminList.useQuery(undefined, { refetchInterval: 10000 });
   const { data: membersData } = trpc.adminMember.list.useQuery(
     { search: searchQuery || undefined, page: 1, limit: 50 },
     { refetchInterval: 10000 }
@@ -365,6 +366,7 @@ export default function Admin() {
         <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
           {[
             { key: 'members' as AdminTab, label: 'Uyeler', icon: Users },
+            { key: 'memberStatus' as AdminTab, label: 'Üyelerin Durumu', icon: Activity },
             { key: 'memberData' as AdminTab, label: 'Üye Dataları', icon: FileText },
             { key: 'system' as AdminTab, label: 'Güvenlik & Sistem', icon: Shield },
             { key: 'deposits' as AdminTab, label: 'Yatırım Talepleri', icon: ArrowDownLeft },
@@ -444,6 +446,73 @@ export default function Admin() {
         )}
 
         {/* ─── DEPOSITS TAB ─── */}
+        {activeTab === 'memberStatus' && (
+          <div className="grid gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { label: 'Online Üye', value: memberPresence.filter((member: any) => member.online).length, color: '#10b981' },
+                { label: 'Toplam Üye', value: memberPresence.length, color: '#FFD700' },
+                { label: 'Son 2 dk Aktif', value: memberPresence.filter((member: any) => member.secondsAgo !== null && member.secondsAgo <= 120).length, color: '#35d7ff' },
+                { label: 'Offline', value: memberPresence.filter((member: any) => !member.online).length, color: '#8fa5b8' },
+              ].map((item) => (
+                <div key={item.label} className="glass-card">
+                  <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>{item.label}</span>
+                  <strong className="block text-2xl mt-1" style={{ color: item.color }}>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(248,251,255,0.08)' }}>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Üyelerin Durumu</h2>
+                  <p className="text-xs mt-1" style={{ color: '#8fa5b8' }}>Site açık olan üyeler yeşil Online olarak görünür. Yaklaşık 2 dakika içinde sinyal gelmezse Offline olur.</p>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-bold" style={{ color: '#10b981' }}>
+                  <span className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: '#10b981' }} />
+                  Canlı Takip
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(248,251,255,0.08)' }}>
+                      {['Durum', 'ID', 'Üye', 'E-posta', 'Son Görülme', 'Sayfa', 'IP / Cihaz'].map((h) => (
+                        <th key={h} className="px-4 py-3 text-[10px] font-bold uppercase" style={{ color: '#8fa5b8' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {memberPresence.map((member: any) => (
+                      <tr key={member.userId} className="transition-all hover:bg-white/5" style={{ borderBottom: '1px solid rgba(248,251,255,0.04)' }}>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center gap-2 text-[10px] font-extrabold px-2 py-1 rounded-full" style={{ background: member.online ? 'rgba(16,185,129,0.12)' : 'rgba(90,106,122,0.15)', color: member.online ? '#10b981' : '#8fa5b8' }}>
+                            <span className="w-2 h-2 rounded-full" style={{ background: member.online ? '#10b981' : '#5a6a7a', boxShadow: member.online ? '0 0 10px rgba(16,185,129,0.8)' : 'none' }} />
+                            {member.online ? 'Online' : 'Offline'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-white font-mono">{member.publicId ?? member.userId}</td>
+                        <td className="px-4 py-3 text-xs text-white">{member.name || '-'}</td>
+                        <td className="px-4 py-3 text-xs" style={{ color: '#8fa5b8' }}>{member.email || '-'}</td>
+                        <td className="px-4 py-3 text-xs" style={{ color: '#c8d6e5' }}>
+                          {member.lastSeenAt ? new Date(member.lastSeenAt).toLocaleString('tr-TR') : '-'}
+                          {member.secondsAgo !== null && <span className="block text-[10px]" style={{ color: '#5a6a7a' }}>{member.secondsAgo < 60 ? `${member.secondsAgo} sn önce` : `${Math.floor(member.secondsAgo / 60)} dk önce`}</span>}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-mono" style={{ color: '#8fa5b8' }}>{member.path || '-'}</td>
+                        <td className="px-4 py-3 text-xs max-w-[260px]">
+                          <span className="block text-white font-mono">{member.ipAddress || '-'}</span>
+                          <span className="block truncate" style={{ color: '#5a6a7a' }}>{member.userAgent || '-'}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {memberPresence.length === 0 && <p className="text-sm text-center py-8" style={{ color: '#5a6a7a' }}>Üye durumu bulunamadı.</p>}
+            </div>
+          </div>
+        )}
+
         {activeTab === 'system' && (
           <div className="grid gap-3">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
