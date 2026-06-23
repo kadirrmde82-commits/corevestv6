@@ -2,7 +2,7 @@ import type { MarketPrice } from "../db/schema";
 
 type MarketCoin = Pick<MarketPrice, "id" | "symbol" | "name" | "basePrice" | "change" | "color" | "active"> & {
   live?: boolean;
-  source?: "coingecko" | "manual";
+  source?: "coingecko" | "binance" | "manual";
   liveUpdatedAt?: string;
 };
 
@@ -12,6 +12,19 @@ type CoinGeckoMarket = {
   name: string;
   current_price: number | null;
   price_change_percentage_24h: number | null;
+};
+
+type BinanceTicker = {
+  symbol: string;
+  lastPrice: string;
+  priceChangePercent: string;
+};
+
+type LivePrice = {
+  price: number;
+  change: number;
+  name: string;
+  source: "coingecko" | "binance";
 };
 
 const COINGECKO_IDS_BY_SYMBOL: Record<string, string> = {
@@ -25,6 +38,32 @@ const COINGECKO_IDS_BY_SYMBOL: Record<string, string> = {
   TRX: "tron",
   AVAX: "avalanche-2",
   TON: "the-open-network",
+};
+
+const BINANCE_SYMBOLS_BY_SYMBOL: Record<string, string> = {
+  BTC: "BTCUSDT",
+  ETH: "ETHUSDT",
+  BNB: "BNBUSDT",
+  SOL: "SOLUSDT",
+  XRP: "XRPUSDT",
+  DOGE: "DOGEUSDT",
+  ADA: "ADAUSDT",
+  TRX: "TRXUSDT",
+  AVAX: "AVAXUSDT",
+  TON: "TONUSDT",
+};
+
+const DISPLAY_NAMES_BY_SYMBOL: Record<string, string> = {
+  BTC: "Bitcoin",
+  ETH: "Ethereum",
+  BNB: "BNB",
+  SOL: "Solana",
+  XRP: "XRP",
+  DOGE: "Dogecoin",
+  ADA: "Cardano",
+  TRX: "TRON",
+  AVAX: "Avalanche",
+  TON: "Toncoin",
 };
 
 export const DEFAULT_MARKET_COINS: MarketCoin[] = [
@@ -42,7 +81,7 @@ export const DEFAULT_MARKET_COINS: MarketCoin[] = [
 
 let cachedLivePrices: {
   expiresAt: number;
-  prices: Map<string, { price: number; change: number; name: string }>;
+  prices: Map<string, LivePrice>;
 } | null = null;
 
 function normalizeSymbol(symbol: string) {
@@ -62,12 +101,7 @@ function combineWithPopularDefaults(rows: MarketPrice[]) {
   return [...activeRows, ...missingDefaults].slice(0, 10);
 }
 
-async function fetchLivePrices() {
-  const now = Date.now();
-  if (cachedLivePrices && cachedLivePrices.expiresAt > now) {
-    return cachedLivePrices.prices;
-  }
-
+async function fetchCoinGeckoPrices() {
   const ids = Object.values(COINGECKO_IDS_BY_SYMBOL).join(",");
   const url = new URL("https://api.coingecko.com/api/v3/coins/markets");
   url.searchParams.set("vs_currency", "usd");
@@ -78,42 +112,105 @@ async function fetchLivePrices() {
   url.searchParams.set("sparkline", "false");
   url.searchParams.set("price_change_percentage", "24h");
 
-  try {
-    const response = await fetch(url, {
-      headers: {
-        accept: "application/json",
-        "user-agent": "CoreVest market ticker",
-      },
-      signal: AbortSignal.timeout(5000),
+  const response = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      "user-agent": "CoreVest market ticker",
+    },
+    signal: AbortSignal.timeout(5000),
+  });
+
+  if (!response.ok) throw new Error(`CoinGecko responded ${response.status}`);
+
+  const data = (await response.json()) as CoinGeckoMarket[];
+  const prices = new Map<string, LivePrice>();
+
+  for (const coin of data) {
+    if (coin.current_price == null) continue;
+    prices.set(coin.symbol.toUpperCase(), {
+      price: coin.current_price,
+      change: coin.price_change_percentage_24h ?? 0,
+      name: coin.name,
+      source: "coingecko",
     });
+  }
 
-    if (!response.ok) throw new Error(`CoinGecko responded ${response.status}`);
+  return prices;
+}
 
-    const data = (await response.json()) as CoinGeckoMarket[];
-    const prices = new Map<string, { price: number; change: number; name: string }>();
+async function fetchBinancePrices() {
+  const symbols = Object.values(BINANCE_SYMBOLS_BY_SYMBOL);
+  const symbolsByPair = new Map(Object.entries(BINANCE_SYMBOLS_BY_SYMBOL).map(([symbol, pair]) => [pair, symbol]));
+  const url = new URL("https://api.binance.com/api/v3/ticker/24hr");
+  url.searchParams.set("symbols", JSON.stringify(symbols));
 
-    for (const coin of data) {
-      if (coin.current_price == null) continue;
-      prices.set(coin.symbol.toUpperCase(), {
-        price: coin.current_price,
-        change: coin.price_change_percentage_24h ?? 0,
-        name: coin.name,
-      });
-    }
+  const response = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      "user-agent": "CoreVest market ticker",
+    },
+    signal: AbortSignal.timeout(5000),
+  });
 
-    cachedLivePrices = {
-      expiresAt: now + 30_000,
-      prices,
-    };
-    return prices;
-  } catch (error) {
-    console.warn("Canlı piyasa verisi alınamadı, manuel fiyatlar gösterilecek.", error);
-    cachedLivePrices = {
-      expiresAt: now + 10_000,
-      prices: new Map(),
-    };
+  if (!response.ok) throw new Error(`Binance responded ${response.status}`);
+
+  const data = (await response.json()) as BinanceTicker[];
+  const prices = new Map<string, LivePrice>();
+
+  for (const ticker of data) {
+    const symbol = symbolsByPair.get(ticker.symbol);
+    if (!symbol) continue;
+
+    const price = Number(ticker.lastPrice);
+    const change = Number(ticker.priceChangePercent);
+    if (!Number.isFinite(price)) continue;
+
+    prices.set(symbol, {
+      price,
+      change: Number.isFinite(change) ? change : 0,
+      name: DISPLAY_NAMES_BY_SYMBOL[symbol] || symbol,
+      source: "binance",
+    });
+  }
+
+  return prices;
+}
+
+async function fetchLivePrices() {
+  const now = Date.now();
+  if (cachedLivePrices && cachedLivePrices.expiresAt > now) {
     return cachedLivePrices.prices;
   }
+
+  const prices = new Map<string, LivePrice>();
+
+  try {
+    const coingeckoPrices = await fetchCoinGeckoPrices();
+    for (const [symbol, live] of coingeckoPrices) prices.set(symbol, live);
+  } catch (error) {
+    console.warn("CoinGecko canlı piyasa verisi alınamadı, Binance deneniyor.", error);
+  }
+
+  if (prices.size < DEFAULT_MARKET_COINS.length) {
+    try {
+      const binancePrices = await fetchBinancePrices();
+      for (const [symbol, live] of binancePrices) {
+        if (!prices.has(symbol)) prices.set(symbol, live);
+      }
+    } catch (error) {
+      console.warn("Binance canlı piyasa verisi alınamadı.", error);
+    }
+  }
+
+  if (prices.size === 0) {
+    console.warn("Canlı piyasa verisi alınamadı, manuel fiyatlar gösterilecek.");
+  }
+
+  cachedLivePrices = {
+    expiresAt: now + (prices.size > 0 ? 30_000 : 10_000),
+    prices,
+  };
+  return prices;
 }
 
 export async function enrichMarketPrices(rows: MarketPrice[]) {
@@ -141,7 +238,7 @@ export async function enrichMarketPrices(rows: MarketPrice[]) {
       basePrice: String(live.price),
       change: String(live.change),
       live: true,
-      source: "coingecko" as const,
+      source: live.source,
       liveUpdatedAt: updatedAt,
     };
   });
