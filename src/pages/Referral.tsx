@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Copy, Check, Users, DollarSign, Link2, UserPlus } from 'lucide-react';
+import { Copy, Check, Users, DollarSign, Link2, UserPlus, QrCode, Download, Share2 } from 'lucide-react';
+import * as QRCode from 'qrcode';
 import Layout from '../components/Layout';
 import { trpc } from '@/providers/trpc';
 import { REFERRAL_COMMISSIONS } from '../store';
@@ -9,6 +10,7 @@ export default function Referral() {
   const { t } = useTranslation();
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState('');
 
   // Fetch profile and referral network from tRPC
   const { data: profile } = trpc.profile.me.useQuery(undefined, {
@@ -32,6 +34,18 @@ export default function Referral() {
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const referralLink = `${baseUrl}/#/register?ref=${myCode}`;
 
+  useEffect(() => {
+    QRCode.toDataURL(referralLink, {
+      width: 420,
+      margin: 2,
+      errorCorrectionLevel: 'M',
+      color: {
+        dark: '#04070d',
+        light: '#ffffff',
+      },
+    }).then(setQrDataUrl).catch(() => setQrDataUrl(''));
+  }, [referralLink]);
+
   const tier1 = network?.tier1 || [];
   const tier2 = network?.tier2 || [];
   const tier3 = network?.tier3 || [];
@@ -52,6 +66,26 @@ export default function Referral() {
     navigator.clipboard.writeText(referralLink);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const handleDownloadQr = () => {
+    if (!qrDataUrl) return;
+    const link = document.createElement('a');
+    link.href = qrDataUrl;
+    link.download = `corevest-referans-${myCode}.png`;
+    link.click();
+  };
+
+  const handleShareReferral = async () => {
+    if (!navigator.share) {
+      handleCopyLink();
+      return;
+    }
+    await navigator.share({
+      title: 'CoreVest davet linkim',
+      text: 'CoreVest’e davet linkimle katıl:',
+      url: referralLink,
+    });
   };
 
   // Combine all referrals for the list view with tier info
@@ -93,6 +127,36 @@ export default function Referral() {
           <div className="flex items-center gap-2">
             <div className="flex-1 text-xs truncate rounded-xl px-3 py-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(248,251,255,0.1)', color: '#c8d6e5' }}>{referralLink}</div>
             <button onClick={handleCopyLink} className="btn-secondary" style={{ minHeight: '42px', width: '42px', padding: 0 }}>{copiedLink ? <Check size={16} /> : <Copy size={16} />}</button>
+          </div>
+          {copiedLink && <p className="text-xs mt-2 text-center" style={{ color: '#10b981' }}>{t('referral.copied')}</p>}
+        </div>
+
+        {/* Referral QR */}
+        <div className="glass-card" style={{ background: 'rgba(255,215,0,0.04)', border: '1px solid rgba(255,215,0,0.15)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <QrCode size={15} style={{ color: '#FFD700' }} />
+            <span className="text-xs font-bold" style={{ color: '#FFD700' }}>QR ile Davet Et</span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-[180px_1fr] sm:items-center">
+            <div className="mx-auto rounded-2xl p-3" style={{ background: '#fff', width: '180px', height: '180px' }}>
+              {qrDataUrl ? (
+                <img src={qrDataUrl} alt="Referans QR kodu" className="w-full h-full" />
+              ) : (
+                <div className="grid place-items-center w-full h-full text-xs" style={{ color: '#5a6a7a' }}>QR hazırlanıyor...</div>
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white mb-1">Davet linkinizi QR kodla paylaşın</p>
+              <p className="text-xs mb-3" style={{ color: '#8fa5b8' }}>Arkadaşınız bu QR kodu okuttuğunda sizin referans linkinizle kayıt sayfasına gider.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={handleDownloadQr} className="btn-secondary" style={{ minHeight: '42px' }} disabled={!qrDataUrl}>
+                  <Download size={15} /> QR’ı İndir
+                </button>
+                <button onClick={handleShareReferral} className="btn-primary" style={{ minHeight: '42px' }}>
+                  <Share2 size={15} /> Paylaş
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

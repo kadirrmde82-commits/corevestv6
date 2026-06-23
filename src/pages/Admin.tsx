@@ -46,6 +46,7 @@ export default function Admin() {
   const [marketEditId, setMarketEditId] = useState<number | null>(null);
   const [marketForm, setMarketForm] = useState({ symbol: '', name: '', basePrice: '', change: '', color: '#FFD700' });
   const [contentForm, setContentForm] = useState<Record<string, string>>(DEFAULT_SITE_CONTENT);
+  const [announcementImageUploading, setAnnouncementImageUploading] = useState(false);
 
   // Data queries
   const utils = trpc.useUtils();
@@ -95,12 +96,6 @@ export default function Admin() {
   const updateMarketPrice = trpc.marketPrice.update.useMutation({ onSuccess: () => { utils.marketPrice.listAll.invalidate(); setMarketEditOpen(false); setMarketEditId(null); } });
   const deleteMarketPrice = trpc.marketPrice.delete.useMutation({ onSuccess: () => utils.marketPrice.listAll.invalidate() });
   const updateSiteContent = trpc.siteContent.updateMany.useMutation({ onSuccess: () => { utils.siteContent.adminList.invalidate(); utils.siteContent.public.invalidate(); } });
-  const uploadAnnouncementImage = trpc.siteContent.uploadAnnouncementImage.useMutation({
-    onSuccess: () => {
-      utils.siteContent.adminList.invalidate();
-      utils.siteContent.public.invalidate();
-    },
-  });
 
   // Detail modals
   const [detailDeposit, setDetailDeposit] = useState<typeof allDeposits[0] | null>(null);
@@ -112,7 +107,7 @@ export default function Admin() {
     setContentForm((current) => ({ ...current, [key]: value }));
   };
 
-  const handleAnnouncementImageUpload = (file: File | undefined) => {
+  const handleAnnouncementImageUpload = async (file: File | undefined) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
       alert('Lütfen JPG, PNG veya WEBP formatında bir görsel seçin.');
@@ -123,17 +118,33 @@ export default function Admin() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = String(reader.result || '');
-      setContentValue(ANNOUNCEMENT_CONTENT_KEYS.imageUrl, dataUrl);
-      uploadAnnouncementImage.mutate({ dataUrl });
-    };
-    reader.readAsDataURL(file);
+    try {
+      setAnnouncementImageUploading(true);
+      const formData = new FormData();
+      formData.append('image', file);
+      const response = await fetch('/api/admin/announcement-image', {
+        method: 'POST',
+        headers: {
+          'x-local-auth-token': localStorage.getItem('corevest_token') || '',
+        },
+        body: formData,
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result?.error || 'Görsel yüklenemedi');
+      setContentValue(ANNOUNCEMENT_CONTENT_KEYS.imageUrl, result.imageUrl);
+      await utils.siteContent.adminList.invalidate();
+      await utils.siteContent.public.invalidate();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Görsel yüklenemedi');
+    } finally {
+      setAnnouncementImageUploading(false);
+    }
   };
 
   const saveSiteContent = () => {
-    updateSiteContent.mutate({ values: contentForm });
+    const valuesWithoutImage = { ...contentForm };
+    delete valuesWithoutImage[ANNOUNCEMENT_CONTENT_KEYS.imageUrl];
+    updateSiteContent.mutate({ values: valuesWithoutImage });
   };
 
   const handleLogout = () => {
@@ -415,7 +426,7 @@ export default function Admin() {
                     style={{ minHeight: '42px', paddingTop: '9px' }}
                   />
                   <p className="text-[10px] mt-1" style={{ color: '#5a6a7a' }}>Kare görsel önerilir: 500x500 veya 1000x1000. Maksimum 4MB.</p>
-                  {uploadAnnouncementImage.isPending && <p className="text-[10px] mt-1" style={{ color: '#FFD700' }}>Görsel yükleniyor...</p>}
+                  {announcementImageUploading && <p className="text-[10px] mt-1" style={{ color: '#FFD700' }}>Görsel yükleniyor...</p>}
                   {contentForm[ANNOUNCEMENT_CONTENT_KEYS.imageUrl] && (
                     <div className="mt-3 overflow-hidden rounded-xl" style={{ width: '160px', aspectRatio: '1 / 1', border: '1px solid rgba(255,215,0,0.18)', background: 'rgba(255,255,255,0.04)' }}>
                       <img src={contentForm[ANNOUNCEMENT_CONTENT_KEYS.imageUrl]} alt="Popup önizleme" className="w-full h-full object-cover" />
