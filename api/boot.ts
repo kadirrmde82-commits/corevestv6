@@ -9,9 +9,28 @@ import { ensureAdminAccount } from "./bootstrap";
 import { verifyLocalToken } from "./local-auth";
 import { getDb } from "./queries/connection";
 import { siteAssets, siteContent, users } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 const app = new Hono<{ Bindings: HttpBindings }>();
+
+async function ensureSiteAssetsTable() {
+  const db = getDb();
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS site_assets (
+      \`key\` varchar(64) NOT NULL,
+      \`mimeType\` varchar(128) NOT NULL,
+      \`data\` longtext NOT NULL,
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`key\`)
+    )
+  `);
+}
+
+function errorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
 
 app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
 app.use("/api/trpc/*", async (c) => {
@@ -49,6 +68,8 @@ app.post("/api/admin/announcement-image", async (c) => {
       return c.json({ error: "Görsel en fazla 4MB olabilir" }, 400);
     }
 
+    await ensureSiteAssetsTable();
+
     const bytes = Buffer.from(await image.arrayBuffer());
     const assetKey = "announcement.image";
     const imageUrl = `/api/site-assets/${assetKey}?v=${Date.now()}`;
@@ -83,12 +104,13 @@ app.post("/api/admin/announcement-image", async (c) => {
     return c.json({ success: true, imageUrl });
   } catch (error) {
     console.error("Announcement image upload failed", error);
-    return c.json({ error: "Görsel yüklenemedi. Lütfen daha küçük bir JPG/PNG/WEBP deneyin." }, 500);
+    return c.json({ error: `Görsel yüklenemedi: ${errorMessage(error)}` }, 500);
   }
 });
 
 app.get("/api/site-assets/:key", async (c) => {
   const key = c.req.param("key");
+  await ensureSiteAssetsTable();
   const db = getDb();
   const asset = await db.query.siteAssets.findFirst({
     where: eq(siteAssets.key, key),
