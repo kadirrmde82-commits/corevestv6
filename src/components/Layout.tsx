@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Bell, X } from 'lucide-react';
 import BottomNav from './BottomNav';
 import LanguageSelector from './LanguageSelector';
+import { trpc } from '@/providers/trpc';
 
 interface LayoutProps {
   children: ReactNode;
@@ -9,6 +12,23 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const utils = trpc.useUtils();
+  const { data: notifications = [] } = trpc.notification.list.useQuery(undefined, {
+    refetchInterval: 15000,
+    retry: false,
+  });
+  const markRead = trpc.notification.markRead.useMutation({
+    onSuccess: () => {
+      utils.notification.list.invalidate();
+    },
+  });
+  const markAllRead = trpc.notification.markAllRead.useMutation({
+    onSuccess: () => {
+      utils.notification.list.invalidate();
+    },
+  });
+  const unreadCount = notifications.filter((item) => !item.readAt).length;
 
   return (
     <div className="page-bg min-h-screen pb-24">
@@ -31,13 +51,80 @@ export default function Layout({ children }: LayoutProps) {
             <span style={{ color: '#FFD700' }}>VEST</span>
           </span>
         </div>
-        <LanguageSelector />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setNotificationsOpen(true)}
+            className="relative grid place-items-center rounded-xl"
+            style={{
+              width: 38,
+              height: 38,
+              color: unreadCount > 0 ? '#FFD700' : '#8fa5b8',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(248,251,255,0.08)',
+            }}
+            aria-label="Bildirimler"
+          >
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full grid place-items-center text-[10px] font-extrabold text-black" style={{ background: '#FFD700' }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+          <LanguageSelector />
+        </div>
       </div>
 
       {/* Content */}
       <div className="px-4" style={{ width: 'min(100%, 1180px)', margin: '0 auto' }}>
         {children}
       </div>
+
+      {notificationsOpen && (
+        <div className="fixed inset-0 z-50 grid place-items-start md:place-items-center p-4" style={{ background: 'rgba(0,0,0,0.62)' }}>
+          <div className="glass-card w-full max-w-md mt-16 md:mt-0" style={{ maxHeight: '80vh', overflow: 'hidden' }}>
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div>
+                <h2 className="text-lg font-extrabold text-white">Bildirimler</h2>
+                <p className="text-xs" style={{ color: '#8fa5b8' }}>{unreadCount} okunmamış bildirim</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {notifications.length > 0 && (
+                  <button onClick={() => markAllRead.mutate()} className="text-xs font-bold" style={{ color: '#FFD700' }}>
+                    Tümünü okundu yap
+                  </button>
+                )}
+                <button onClick={() => setNotificationsOpen(false)} className="grid place-items-center rounded-xl" style={{ width: 34, height: 34, background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+            <div className="grid gap-2 overflow-y-auto pr-1" style={{ maxHeight: '62vh' }}>
+              {notifications.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => !item.readAt && markRead.mutate({ id: item.id })}
+                  className="text-left rounded-xl px-4 py-3"
+                  style={{
+                    background: item.readAt ? 'rgba(255,255,255,0.03)' : 'rgba(255,215,0,0.10)',
+                    border: item.readAt ? '1px solid rgba(248,251,255,0.06)' : '1px solid rgba(255,215,0,0.18)',
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-extrabold text-white">{item.title}</span>
+                    {!item.readAt && <span className="w-2 h-2 rounded-full" style={{ background: '#FFD700' }} />}
+                  </div>
+                  <p className="text-xs mt-1 whitespace-pre-wrap" style={{ color: '#b8c7d6' }}>{item.message}</p>
+                  <p className="text-[10px] mt-2" style={{ color: '#5a6a7a' }}>{new Date(item.createdAt).toLocaleString('tr-TR')}</p>
+                </button>
+              ))}
+              {notifications.length === 0 && (
+                <p className="text-sm text-center py-10" style={{ color: '#5a6a7a' }}>Henüz bildirimin yok.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <BottomNav />
     </div>

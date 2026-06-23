@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, or } from "drizzle-orm";
 import { z } from "zod";
 import { createRouter, adminQuery, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
@@ -12,6 +12,7 @@ import {
   ticketMessages,
   tickets,
   userLoginEvents,
+  userNotifications,
   users,
   vipBonuses,
   wheelReferralBonuses,
@@ -105,6 +106,84 @@ export const adminSystemRouter = createRouter({
     };
   }),
 
+  analytics: adminQuery.query(async () => {
+    const db = getDb();
+    const [allUsers, allProfiles, allDeposits, allWithdrawals, allReferrals] = await Promise.all([
+      db.query.users.findMany({ orderBy: [desc(users.createdAt)] }),
+      db.query.profiles.findMany(),
+      db.query.deposits.findMany(),
+      db.query.withdrawals.findMany(),
+      db.query.referrals.findMany(),
+    ]);
+
+    const dayMs = 24 * 60 * 60 * 1000;
+    const today = new Date();
+    const last7Days = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(today.getTime() - (6 - index) * dayMs);
+      const key = date.toISOString().slice(0, 10);
+      return {
+        key,
+        label: date.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit" }),
+        deposits: 0,
+        withdrawals: 0,
+        users: 0,
+      };
+    });
+    const dayMap = new Map(last7Days.map((item) => [item.key, item]));
+
+    for (const deposit of allDeposits) {
+      if (deposit.status !== "approved") continue;
+      const row = dayMap.get(deposit.createdAt.toISOString().slice(0, 10));
+      if (row) row.deposits += Number(deposit.amount);
+    }
+    for (const withdrawal of allWithdrawals) {
+      if (withdrawal.status !== "approved") continue;
+      const row = dayMap.get(withdrawal.createdAt.toISOString().slice(0, 10));
+      if (row) row.withdrawals += Number(withdrawal.amount);
+    }
+    for (const user of allUsers) {
+      const row = dayMap.get(user.createdAt.toISOString().slice(0, 10));
+      if (row) row.users += 1;
+    }
+
+    const vipCounts = new Map<number, number>();
+    for (const profile of allProfiles) {
+      vipCounts.set(profile.vipLevel, (vipCounts.get(profile.vipLevel) ?? 0) + 1);
+    }
+
+    const topBalances = allProfiles
+      .sort((a, b) => Number(b.balance) - Number(a.balance))
+      .slice(0, 8)
+      .map((profile) => ({
+        userId: profile.userId,
+        vipLevel: profile.vipLevel,
+        balance: Number(profile.balance),
+        investment: Number(profile.investment),
+      }));
+
+    const totals = {
+      users: allUsers.length,
+      activeUsers: allProfiles.filter((profile) => profile.totalClicks > 0).length,
+      totalBalance: allProfiles.reduce((sum, profile) => sum + Number(profile.balance), 0),
+      totalInvestment: allProfiles.reduce((sum, profile) => sum + Number(profile.investment), 0),
+      approvedDeposits: allDeposits.filter((item) => item.status === "approved").reduce((sum, item) => sum + Number(item.amount), 0),
+      approvedWithdrawals: allWithdrawals.filter((item) => item.status === "approved").reduce((sum, item) => sum + Number(item.amount), 0),
+      pendingDeposits: allDeposits.filter((item) => item.status === "pending").length,
+      pendingWithdrawals: allWithdrawals.filter((item) => item.status === "pending").length,
+      referrals: allReferrals.length,
+    };
+
+    return {
+      totals,
+      daily: last7Days,
+      vipDistribution: Array.from({ length: 7 }, (_, level) => ({
+        level: `VIP ${level}`,
+        count: vipCounts.get(level) ?? 0,
+      })),
+      topBalances,
+    };
+  }),
+
   withdrawalRisks: adminQuery.query(async () => {
     const db = getDb();
     const [allWithdrawals, allProfiles] = await Promise.all([
@@ -160,6 +239,75 @@ export const adminSystemRouter = createRouter({
       .orderBy(desc(userLoginEvents.createdAt))
       .limit(100);
   }),
+
+  clearLoginEvents: adminQuery.mutation(async ({ ctx }) => {
+    const db = getDb();
+    await db.delete(userLoginEvents);
+    await logAdminActivity({
+      adminUserId: ctx.user.id,
+      action: "login_events.cleared",
+      targetType: "security",
+      req: ctx.req,
+    });
+    return { success: true };
+  }),
+
+  userNotifications: adminQuery.query(async () => {
+    const db = getDb();
+    return db
+      .select({
+        id: userNotifications.id,
+        userId: userNotifications.userId,
+        email: users.email,
+        name: users.name,
+        title: userNotifications.title,
+        message: userNotifications.message,
+        type: userNotifications.type,
+        readAt: userNotifications.readAt,
+        createdAt: userNotifications.createdAt,
+      })
+      .from(userNotifications)
+      .leftJoin(users, eq(userNotifications.userId, users.id))
+      .orderBy(desc(userNotifications.createdAt))
+      .limit(100);
+  }),
+
+  sendNotification: adminQuery
+    .input(z.object({
+      targetUserId: z.number().int().positive().optional(),
+      title: z.string().min(2).max(160),
+      message: z.string().min(2).max(2000),
+      type: z.enum(["info", "success", "warning"]).default("info"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = getDb();
+      const targetUsers = input.targetUserId
+        ? await db.query.users.findMany({ where: or(eq(users.id, input.targetUserId), eq(users.publicId, input.targetUserId)) })
+        : await db.query.users.findMany({ where: eq(users.role, "user") });
+
+      if (targetUsers.length === 0) {
+        return { success: false, count: 0 };
+      }
+
+      await db.insert(userNotifications).values(targetUsers.map((user) => ({
+        userId: user.id,
+        title: input.title,
+        message: input.message,
+        type: input.type,
+        createdBy: ctx.user.id,
+      })));
+
+      await logAdminActivity({
+        adminUserId: ctx.user.id,
+        action: "notification.sent",
+        targetType: input.targetUserId ? "user" : "all_users",
+        targetId: input.targetUserId,
+        details: { title: input.title, count: targetUsers.length },
+        req: ctx.req,
+      });
+
+      return { success: true, count: targetUsers.length };
+    }),
 
   logs: adminQuery.query(async () => {
     const db = getDb();
@@ -233,6 +381,7 @@ export const adminSystemRouter = createRouter({
       wheelSpins: await db.select().from(wheelSpins),
       wheelReferralBonuses: await db.select().from(wheelReferralBonuses),
       vipBonuses: await db.select().from(vipBonuses),
+      userNotifications: await db.select().from(userNotifications),
     };
   }),
 });

@@ -70,6 +70,19 @@ async function ensureSystemTables() {
     )
   `);
   await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS user_notifications (
+      \`id\` bigint unsigned NOT NULL AUTO_INCREMENT,
+      \`userId\` bigint unsigned NOT NULL,
+      \`title\` varchar(160) NOT NULL,
+      \`message\` text NOT NULL,
+      \`type\` varchar(32) NOT NULL DEFAULT 'info',
+      \`readAt\` timestamp NULL,
+      \`createdBy\` bigint unsigned,
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`id\`)
+    )
+  `);
+  await db.execute(sql`
     CREATE TABLE IF NOT EXISTS system_settings (
       \`key\` varchar(64) NOT NULL,
       \`value\` text NOT NULL,

@@ -4,9 +4,10 @@ import {
   ArrowLeft, ArrowDownLeft, ArrowUpRight, Users,
   Check, X, Wallet, Shield, LogOut,
   Send, MessageCircle, Lock, ChevronRight, Headphones,
-  Search, Edit3, Gift, Eye, RefreshCw,
+  Search, Edit3, Gift, Eye, RefreshCw, Bell,
   TrendingUp, Plus, Pencil, Trash2, Bitcoin, Minus, FileText, Download
 } from 'lucide-react';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import LanguageSelector from '../components/LanguageSelector';
 import { trpc } from '@/providers/trpc';
 import { VIP_TABLE } from '../store';
@@ -47,6 +48,12 @@ export default function Admin() {
   const [marketForm, setMarketForm] = useState({ symbol: '', name: '', basePrice: '', change: '', color: '#FFD700' });
   const [contentForm, setContentForm] = useState<Record<string, string>>(DEFAULT_SITE_CONTENT);
   const [announcementImageUploading, setAnnouncementImageUploading] = useState(false);
+  const [notificationForm, setNotificationForm] = useState({
+    targetUserId: '',
+    title: '',
+    message: '',
+    type: 'info' as 'info' | 'success' | 'warning',
+  });
 
   // Data queries
   const utils = trpc.useUtils();
@@ -57,6 +64,8 @@ export default function Admin() {
   const { data: loginEvents = [] } = trpc.adminSystem.loginEvents.useQuery(undefined, { refetchInterval: 10000 });
   const { data: adminLogs = [] } = trpc.adminSystem.logs.useQuery(undefined, { refetchInterval: 10000 });
   const { data: maintenance } = trpc.adminSystem.maintenance.useQuery(undefined, { refetchInterval: 10000 });
+  const { data: analytics } = trpc.adminSystem.analytics.useQuery(undefined, { refetchInterval: 10000 });
+  const { data: sentNotifications = [] } = trpc.adminSystem.userNotifications.useQuery(undefined, { refetchInterval: 10000 });
   const { data: membersData } = trpc.adminMember.list.useQuery(
     { search: searchQuery || undefined, page: 1, limit: 50 },
     { refetchInterval: 10000 }
@@ -103,6 +112,15 @@ export default function Admin() {
   const deleteMarketPrice = trpc.marketPrice.delete.useMutation({ onSuccess: () => utils.marketPrice.listAll.invalidate() });
   const updateSiteContent = trpc.siteContent.updateMany.useMutation({ onSuccess: () => { utils.siteContent.adminList.invalidate(); utils.siteContent.public.invalidate(); } });
   const setMaintenance = trpc.adminSystem.setMaintenance.useMutation({ onSuccess: () => { utils.adminSystem.maintenance.invalidate(); utils.adminSystem.publicMaintenance.invalidate(); utils.adminSystem.logs.invalidate(); } });
+  const clearLoginEvents = trpc.adminSystem.clearLoginEvents.useMutation({ onSuccess: () => { utils.adminSystem.loginEvents.invalidate(); utils.adminSystem.logs.invalidate(); } });
+  const sendUserNotification = trpc.adminSystem.sendNotification.useMutation({
+    onSuccess: (result) => {
+      utils.adminSystem.userNotifications.invalidate();
+      utils.notification.list.invalidate();
+      setNotificationForm({ targetUserId: '', title: '', message: '', type: 'info' });
+      alert(`${result.count} kullanıcıya bildirim gönderildi.`);
+    },
+  });
   const backupQuery = trpc.adminSystem.backup.useQuery(undefined, { enabled: false });
 
   // Detail modals
@@ -297,6 +315,21 @@ export default function Admin() {
     );
   };
 
+  const sendNotification = () => {
+    if (!notificationForm.title.trim() || !notificationForm.message.trim()) {
+      alert('Bildirim başlığı ve mesajı zorunlu.');
+      return;
+    }
+    sendUserNotification.mutate({
+      title: notificationForm.title.trim(),
+      message: notificationForm.message.trim(),
+      type: notificationForm.type,
+      targetUserId: notificationForm.targetUserId.trim() ? Number(notificationForm.targetUserId) : undefined,
+    });
+  };
+
+  const chartColors = ['#FFD700', '#35d7ff', '#10b981', '#a78bfa', '#f97316', '#ef4444', '#8fa5b8'];
+
   return (
     <div className="page-bg min-h-screen">
       {/* Topbar */}
@@ -446,6 +479,139 @@ export default function Admin() {
               </div>
             </div>
 
+            <div className="grid lg:grid-cols-2 gap-3">
+              <div className="glass-card">
+                <h2 className="text-lg font-bold text-white mb-1">Gelir / Çekim Grafiği</h2>
+                <p className="text-xs mb-3" style={{ color: '#8fa5b8' }}>Son 7 gün onaylı yatırım ve çekim hareketleri.</p>
+                <div style={{ height: 260 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={analytics?.daily ?? []}>
+                      <defs>
+                        <linearGradient id="depositGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.5} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="withdrawGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#FFD700" stopOpacity={0.5} />
+                          <stop offset="95%" stopColor="#FFD700" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="rgba(248,251,255,0.08)" vertical={false} />
+                      <XAxis dataKey="label" stroke="#8fa5b8" fontSize={11} />
+                      <YAxis stroke="#8fa5b8" fontSize={11} />
+                      <Tooltip contentStyle={{ background: '#08111f', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, color: '#fff' }} />
+                      <Area type="monotone" dataKey="deposits" name="Yatırım" stroke="#10b981" fill="url(#depositGradient)" strokeWidth={2} />
+                      <Area type="monotone" dataKey="withdrawals" name="Çekim" stroke="#FFD700" fill="url(#withdrawGradient)" strokeWidth={2} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="glass-card">
+                <h2 className="text-lg font-bold text-white mb-1">VIP Dağılımı</h2>
+                <p className="text-xs mb-3" style={{ color: '#8fa5b8' }}>Üyelerin VIP seviyelerine göre dağılımı.</p>
+                <div style={{ height: 260 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={analytics?.vipDistribution ?? []} dataKey="count" nameKey="level" innerRadius={55} outerRadius={90} paddingAngle={3}>
+                        {(analytics?.vipDistribution ?? []).map((entry: any, index: number) => (
+                          <Cell key={entry.level} fill={chartColors[index % chartColors.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ background: '#08111f', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, color: '#fff' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-3">
+              <div className="glass-card">
+                <h2 className="text-lg font-bold text-white mb-1">Yeni Üye Grafiği</h2>
+                <p className="text-xs mb-3" style={{ color: '#8fa5b8' }}>Son 7 gün kayıt olan kullanıcı sayısı.</p>
+                <div style={{ height: 220 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={analytics?.daily ?? []}>
+                      <CartesianGrid stroke="rgba(248,251,255,0.08)" vertical={false} />
+                      <XAxis dataKey="label" stroke="#8fa5b8" fontSize={11} />
+                      <YAxis stroke="#8fa5b8" fontSize={11} />
+                      <Tooltip contentStyle={{ background: '#08111f', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, color: '#fff' }} />
+                      <Bar dataKey="users" name="Yeni Üye" fill="#35d7ff" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="glass-card">
+                <h2 className="text-lg font-bold text-white mb-3">Rapor Özeti</h2>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: 'Toplam Bakiye', value: `$${Math.round(analytics?.totals.totalBalance ?? 0).toLocaleString()}` },
+                    { label: 'Onaylı Yatırım', value: `$${Math.round(analytics?.totals.approvedDeposits ?? 0).toLocaleString()}` },
+                    { label: 'Onaylı Çekim', value: `$${Math.round(analytics?.totals.approvedWithdrawals ?? 0).toLocaleString()}` },
+                    { label: 'Referans Kaydı', value: analytics?.totals.referrals ?? 0 },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.06)' }}>
+                      <span className="text-xs" style={{ color: '#8fa5b8' }}>{item.label}</span>
+                      <strong className="block text-lg text-white mt-1">{item.value}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="glass-card">
+              <div className="flex items-center gap-2 mb-3">
+                <Bell size={18} style={{ color: '#FFD700' }} />
+                <h2 className="text-lg font-bold text-white">Kullanıcı Bildirim Sistemi</h2>
+              </div>
+              <div className="grid lg:grid-cols-[1fr_1fr] gap-3">
+                <div className="grid gap-2">
+                  <input
+                    value={notificationForm.targetUserId}
+                    onChange={(e) => setNotificationForm((current) => ({ ...current, targetUserId: e.target.value }))}
+                    placeholder="Üye ID boş kalırsa herkese gider"
+                    className="glass-input"
+                  />
+                  <select
+                    value={notificationForm.type}
+                    onChange={(e) => setNotificationForm((current) => ({ ...current, type: e.target.value as 'info' | 'success' | 'warning' }))}
+                    className="glass-input"
+                  >
+                    <option value="info">Bilgi</option>
+                    <option value="success">Başarılı / Güzel Haber</option>
+                    <option value="warning">Uyarı</option>
+                  </select>
+                  <input
+                    value={notificationForm.title}
+                    onChange={(e) => setNotificationForm((current) => ({ ...current, title: e.target.value }))}
+                    placeholder="Bildirim başlığı"
+                    className="glass-input"
+                  />
+                  <textarea
+                    value={notificationForm.message}
+                    onChange={(e) => setNotificationForm((current) => ({ ...current, message: e.target.value }))}
+                    placeholder="Kullanıcıya gidecek mesaj"
+                    className="glass-input"
+                    rows={4}
+                  />
+                  <button onClick={sendNotification} className="btn-primary" disabled={sendUserNotification.isPending}>
+                    <Send size={15} /> Bildirim Gönder
+                  </button>
+                </div>
+                <div className="grid gap-2 max-h-[300px] overflow-y-auto pr-1">
+                  {sentNotifications.slice(0, 12).map((item: any) => (
+                    <div key={item.id} className="rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.06)' }}>
+                      <span className="text-sm font-bold text-white">{item.title}</span>
+                      <p className="text-xs mt-1" style={{ color: '#8fa5b8' }}>{item.email || `Üye #${item.userId}`} · {item.readAt ? 'Okundu' : 'Okunmadı'}</p>
+                      <p className="text-[10px] mt-1 line-clamp-2" style={{ color: '#5a6a7a' }}>{item.message}</p>
+                    </div>
+                  ))}
+                  {sentNotifications.length === 0 && <p className="text-sm text-center py-8" style={{ color: '#5a6a7a' }}>Henüz bildirim gönderilmedi.</p>}
+                </div>
+              </div>
+            </div>
+
             <div className="glass-card">
               <h2 className="text-lg font-bold text-white mb-3">Çekim Güvenlik Kontrolü</h2>
               <div className="grid gap-2">
@@ -469,7 +635,21 @@ export default function Admin() {
 
             <div className="grid lg:grid-cols-2 gap-3">
               <div className="glass-card">
-                <h2 className="text-lg font-bold text-white mb-3">IP / Cihaz Takibi</h2>
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <h2 className="text-lg font-bold text-white">IP / Cihaz Takibi</h2>
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Tüm IP / cihaz giriş logları silinsin mi?')) {
+                        clearLoginEvents.mutate();
+                      }
+                    }}
+                    className="btn-secondary"
+                    style={{ minHeight: '34px', padding: '0 12px', color: '#ef4444', borderColor: 'rgba(239,68,68,0.22)' }}
+                    disabled={clearLoginEvents.isPending || loginEvents.length === 0}
+                  >
+                    <Trash2 size={14} /> Logları Sil
+                  </button>
+                </div>
                 <div className="grid gap-2 max-h-[420px] overflow-y-auto pr-1">
                   {loginEvents.map((event: any) => (
                     <div key={event.id} className="rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.06)' }}>
@@ -478,6 +658,7 @@ export default function Admin() {
                       <p className="text-[10px] mt-1 truncate" style={{ color: '#5a6a7a' }}>{event.userAgent || '-'}</p>
                     </div>
                   ))}
+                  {loginEvents.length === 0 && <p className="text-sm text-center py-6" style={{ color: '#5a6a7a' }}>IP / cihaz logu yok.</p>}
                 </div>
               </div>
 

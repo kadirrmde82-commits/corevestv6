@@ -12,6 +12,7 @@ import { marketPriceRouter } from "./market-price-router";
 import { walletAddressRouter } from "./wallet-address-router";
 import { siteContentRouter } from "./site-content-router";
 import { adminSystemRouter } from "./admin-system-router";
+import { notificationRouter } from "./notification-router";
 import { createRouter, publicQuery } from "./middleware";
 
 export const appRouter = createRouter({
@@ -30,6 +31,7 @@ export const appRouter = createRouter({
   walletAddress: walletAddressRouter,
   siteContent: siteContentRouter,
   adminSystem: adminSystemRouter,
+  notification: notificationRouter,
 });
 
 export type AppRouter = typeof appRouter;

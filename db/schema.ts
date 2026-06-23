@@ -277,6 +277,20 @@ export const userLoginEvents = mysqlTable("user_login_events", {
 export type UserLoginEvent = typeof userLoginEvents.$inferSelect;
 export type InsertUserLoginEvent = typeof userLoginEvents.$inferInsert;
 
+export const userNotifications = mysqlTable("user_notifications", {
+  id: serial("id").primaryKey(),
+  userId: bigint("userId", { mode: "number", unsigned: true }).notNull(),
+  title: varchar("title", { length: 160 }).notNull(),
+  message: text("message").notNull(),
+  type: varchar("type", { length: 32 }).default("info").notNull(),
+  readAt: timestamp("readAt"),
+  createdBy: bigint("createdBy", { mode: "number", unsigned: true }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserNotification = typeof userNotifications.$inferSelect;
+export type InsertUserNotification = typeof userNotifications.$inferInsert;
+
 export const systemSettings = mysqlTable("system_settings", {
   key: varchar("key", { length: 64 }).primaryKey(),
   value: text("value").notNull(),
