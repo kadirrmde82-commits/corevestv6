@@ -13,6 +13,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [selectedNotificationId, setSelectedNotificationId] = useState<number | null>(null);
   const utils = trpc.useUtils();
   const heartbeat = trpc.presence.heartbeat.useMutation();
   const { data: notifications = [] } = trpc.notification.list.useQuery(undefined, {
@@ -29,7 +30,14 @@ export default function Layout({ children }: LayoutProps) {
       utils.notification.list.invalidate();
     },
   });
+  const clearAllNotifications = trpc.notification.clearAll.useMutation({
+    onSuccess: () => {
+      setSelectedNotificationId(null);
+      utils.notification.list.invalidate();
+    },
+  });
   const unreadCount = notifications.filter((item) => !item.readAt).length;
+  const selectedNotification = notifications.find((item) => item.id === selectedNotificationId) ?? null;
 
   useEffect(() => {
     const sendHeartbeat = () => {
@@ -106,10 +114,23 @@ export default function Layout({ children }: LayoutProps) {
                 <h2 className="text-lg font-extrabold text-white">Bildirimler</h2>
                 <p className="text-xs" style={{ color: '#8fa5b8' }}>{unreadCount} okunmamış bildirim</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
                 {notifications.length > 0 && (
                   <button onClick={() => markAllRead.mutate()} className="text-xs font-bold" style={{ color: '#FFD700' }}>
                     Tümünü okundu yap
+                  </button>
+                )}
+                {notifications.length > 0 && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Tüm bildirimler silinsin mi?')) {
+                        clearAllNotifications.mutate();
+                      }
+                    }}
+                    className="text-xs font-bold"
+                    style={{ color: '#ef4444' }}
+                  >
+                    Tümünü temizle
                   </button>
                 )}
                 <button onClick={() => setNotificationsOpen(false)} className="grid place-items-center rounded-xl" style={{ width: 34, height: 34, background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
@@ -121,7 +142,10 @@ export default function Layout({ children }: LayoutProps) {
               {notifications.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => !item.readAt && markRead.mutate({ id: item.id })}
+                  onClick={() => {
+                    setSelectedNotificationId(item.id);
+                    if (!item.readAt) markRead.mutate({ id: item.id });
+                  }}
                   className="text-left rounded-xl px-4 py-3"
                   style={{
                     background: item.readAt ? 'rgba(255,255,255,0.03)' : 'rgba(255,215,0,0.10)',
@@ -132,7 +156,8 @@ export default function Layout({ children }: LayoutProps) {
                     <span className="text-sm font-extrabold text-white">{item.title}</span>
                     {!item.readAt && <span className="w-2 h-2 rounded-full" style={{ background: '#FFD700' }} />}
                   </div>
-                  <p className="text-xs mt-1 whitespace-pre-wrap" style={{ color: '#b8c7d6' }}>{item.message}</p>
+                  <p className="text-xs mt-1 truncate" style={{ color: '#b8c7d6' }}>{item.message}</p>
+                  <p className="text-[10px] mt-1 font-bold" style={{ color: '#FFD700' }}>Okumak için tıkla</p>
                   <p className="text-[10px] mt-2" style={{ color: '#5a6a7a' }}>{new Date(item.createdAt).toLocaleString('tr-TR')}</p>
                 </button>
               ))}
@@ -141,6 +166,26 @@ export default function Layout({ children }: LayoutProps) {
               )}
             </div>
           </div>
+
+          {selectedNotification && (
+            <div className="absolute inset-0 z-10 grid place-items-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }}>
+              <div className="glass-card w-full max-w-sm animate-fade-in">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <h3 className="text-lg font-extrabold text-white">{selectedNotification.title}</h3>
+                    <p className="text-[10px] mt-1" style={{ color: '#5a6a7a' }}>{new Date(selectedNotification.createdAt).toLocaleString('tr-TR')}</p>
+                  </div>
+                  <button onClick={() => setSelectedNotificationId(null)} className="grid place-items-center rounded-xl" style={{ width: 34, height: 34, background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
+                    <X size={16} />
+                  </button>
+                </div>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: '#c8d6e5' }}>{selectedNotification.message}</p>
+                <button onClick={() => setSelectedNotificationId(null)} className="btn-primary w-full mt-4" style={{ minHeight: '42px' }}>
+                  Tamam
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -42,4 +42,12 @@ export const notificationRouter = createRouter({
       .where(eq(userNotifications.userId, ctx.user.id));
     return { success: true };
   }),
+
+  clearAll: authedQuery.mutation(async ({ ctx }) => {
+    const db = getDb();
+    await db
+      .delete(userNotifications)
+      .where(eq(userNotifications.userId, ctx.user.id));
+    return { success: true };
+  }),
 });
