@@ -1,8 +1,10 @@
-import type { MarketPrice } from "../db/schema";
+import { eq } from "drizzle-orm";
+import { marketPrices, type MarketPrice } from "../db/schema";
+import { getDb } from "./queries/connection";
 
-type MarketCoin = Pick<MarketPrice, "id" | "symbol" | "name" | "basePrice" | "change" | "color" | "active"> & {
+type MarketCoin = Pick<MarketPrice, "id" | "symbol" | "name" | "basePrice" | "change" | "color" | "active" | "updatedAt"> & {
   live?: boolean;
-  source?: "coingecko" | "binance" | "manual";
+  source?: "coingecko" | "binance" | "manual" | "cached";
   liveUpdatedAt?: string;
 };
 
@@ -25,6 +27,7 @@ type LivePrice = {
   change: number;
   name: string;
   source: "coingecko" | "binance";
+  stale?: boolean;
 };
 
 const COINGECKO_IDS_BY_SYMBOL: Record<string, string> = {
@@ -67,20 +70,25 @@ const DISPLAY_NAMES_BY_SYMBOL: Record<string, string> = {
 };
 
 export const DEFAULT_MARKET_COINS: MarketCoin[] = [
-  { id: -1, symbol: "BTC", name: "Bitcoin", basePrice: "65000", change: "0", color: "#F7931A", active: 1 },
-  { id: -2, symbol: "ETH", name: "Ethereum", basePrice: "3500", change: "0", color: "#627EEA", active: 1 },
-  { id: -3, symbol: "BNB", name: "BNB", basePrice: "600", change: "0", color: "#F3BA2F", active: 1 },
-  { id: -4, symbol: "SOL", name: "Solana", basePrice: "150", change: "0", color: "#14F195", active: 1 },
-  { id: -5, symbol: "XRP", name: "XRP", basePrice: "0.60", change: "0", color: "#25A768", active: 1 },
-  { id: -6, symbol: "DOGE", name: "Dogecoin", basePrice: "0.12", change: "0", color: "#C2A633", active: 1 },
-  { id: -7, symbol: "ADA", name: "Cardano", basePrice: "0.45", change: "0", color: "#0033AD", active: 1 },
-  { id: -8, symbol: "TRX", name: "TRON", basePrice: "0.12", change: "0", color: "#FF060A", active: 1 },
-  { id: -9, symbol: "AVAX", name: "Avalanche", basePrice: "35", change: "0", color: "#E84142", active: 1 },
-  { id: -10, symbol: "TON", name: "Toncoin", basePrice: "6", change: "0", color: "#0098EA", active: 1 },
+  { id: -1, symbol: "BTC", name: "Bitcoin", basePrice: "65000", change: "0", color: "#F7931A", active: 1, updatedAt: new Date(0) },
+  { id: -2, symbol: "ETH", name: "Ethereum", basePrice: "3500", change: "0", color: "#627EEA", active: 1, updatedAt: new Date(0) },
+  { id: -3, symbol: "BNB", name: "BNB", basePrice: "600", change: "0", color: "#F3BA2F", active: 1, updatedAt: new Date(0) },
+  { id: -4, symbol: "SOL", name: "Solana", basePrice: "150", change: "0", color: "#14F195", active: 1, updatedAt: new Date(0) },
+  { id: -5, symbol: "XRP", name: "XRP", basePrice: "0.60", change: "0", color: "#25A768", active: 1, updatedAt: new Date(0) },
+  { id: -6, symbol: "DOGE", name: "Dogecoin", basePrice: "0.12", change: "0", color: "#C2A633", active: 1, updatedAt: new Date(0) },
+  { id: -7, symbol: "ADA", name: "Cardano", basePrice: "0.45", change: "0", color: "#0033AD", active: 1, updatedAt: new Date(0) },
+  { id: -8, symbol: "TRX", name: "TRON", basePrice: "0.12", change: "0", color: "#FF060A", active: 1, updatedAt: new Date(0) },
+  { id: -9, symbol: "AVAX", name: "Avalanche", basePrice: "35", change: "0", color: "#E84142", active: 1, updatedAt: new Date(0) },
+  { id: -10, symbol: "TON", name: "Toncoin", basePrice: "6", change: "0", color: "#0098EA", active: 1, updatedAt: new Date(0) },
 ];
 
 let cachedLivePrices: {
   expiresAt: number;
+  prices: Map<string, LivePrice>;
+} | null = null;
+
+let lastSuccessfulLivePrices: {
+  updatedAt: string;
   prices: Map<string, LivePrice>;
 } | null = null;
 
@@ -92,7 +100,8 @@ function combineWithPopularDefaults(rows: MarketPrice[]) {
   const activeRows: MarketCoin[] = rows.map((row) => ({
     ...row,
     symbol: normalizeSymbol(row.symbol),
-    source: "manual",
+    source: "cached",
+    liveUpdatedAt: row.updatedAt?.toISOString(),
   }));
 
   const existingSymbols = new Set(activeRows.map((row) => row.symbol));
@@ -202,15 +211,69 @@ async function fetchLivePrices() {
     }
   }
 
-  if (prices.size === 0) {
-    console.warn("Canlı piyasa verisi alınamadı, manuel fiyatlar gösterilecek.");
+  if (prices.size > 0) {
+    lastSuccessfulLivePrices = {
+      updatedAt: new Date().toISOString(),
+      prices: new Map(prices),
+    };
+    cachedLivePrices = {
+      expiresAt: now + 30_000,
+      prices,
+    };
+    return prices;
+  }
+
+  if (lastSuccessfulLivePrices) {
+    const stalePrices = new Map<string, LivePrice>();
+    for (const [symbol, live] of lastSuccessfulLivePrices.prices) {
+      stalePrices.set(symbol, { ...live, stale: true });
+    }
+    cachedLivePrices = {
+      expiresAt: now + 10_000,
+      prices: stalePrices,
+    };
+    return stalePrices;
   }
 
   cachedLivePrices = {
-    expiresAt: now + (prices.size > 0 ? 30_000 : 10_000),
+    expiresAt: now + 10_000,
     prices,
   };
   return prices;
+}
+
+async function persistLivePrices(prices: Map<string, LivePrice>) {
+  if (prices.size === 0) return;
+  const db = getDb();
+  const existingRows = await db.select().from(marketPrices);
+  const rowsBySymbol = new Map(existingRows.map((row) => [normalizeSymbol(row.symbol), row]));
+
+  for (const [symbol, live] of prices) {
+    if (live.stale) continue;
+    const existing = rowsBySymbol.get(symbol);
+    const values = {
+      symbol,
+      name: live.name || DISPLAY_NAMES_BY_SYMBOL[symbol] || symbol,
+      basePrice: String(live.price),
+      change: String(live.change),
+      color: DEFAULT_MARKET_COINS.find((coin) => coin.symbol === symbol)?.color || "#FFD700",
+      active: 1,
+    };
+
+    if (existing) {
+      await db
+        .update(marketPrices)
+        .set({
+          name: values.name,
+          basePrice: values.basePrice,
+          change: values.change,
+          active: existing.active,
+        })
+        .where(eq(marketPrices.id, existing.id));
+    } else {
+      await db.insert(marketPrices).values(values);
+    }
+  }
 }
 
 export async function enrichMarketPrices(rows: MarketPrice[]) {
@@ -218,16 +281,22 @@ export async function enrichMarketPrices(rows: MarketPrice[]) {
   const livePrices = await fetchLivePrices();
   const updatedAt = new Date().toISOString();
 
+  persistLivePrices(livePrices).catch((error) => {
+    console.warn("Canlı piyasa fiyatları veritabanına kaydedilemedi.", error);
+  });
+
   return coins.map((coin) => {
     const symbol = normalizeSymbol(coin.symbol);
     const live = livePrices.get(symbol);
 
     if (!live) {
+      const hasSavedPrice = coin.id > 0;
       return {
         ...coin,
         symbol,
         live: false,
-        source: "manual" as const,
+        source: hasSavedPrice ? "cached" as const : "manual" as const,
+        liveUpdatedAt: hasSavedPrice && coin.updatedAt ? coin.updatedAt.toISOString() : undefined,
       };
     }
 
@@ -237,9 +306,9 @@ export async function enrichMarketPrices(rows: MarketPrice[]) {
       name: coin.name || live.name,
       basePrice: String(live.price),
       change: String(live.change),
-      live: true,
-      source: live.source,
-      liveUpdatedAt: updatedAt,
+      live: !live.stale,
+      source: live.stale ? "cached" as const : live.source,
+      liveUpdatedAt: live.stale && lastSuccessfulLivePrices ? lastSuccessfulLivePrices.updatedAt : updatedAt,
     };
   });
 }

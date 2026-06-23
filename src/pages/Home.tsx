@@ -20,6 +20,7 @@ export default function Home() {
     refetchInterval: 1000 * 30,
   });
   const hasLiveMarketData = marketCoins.some((coin: { live?: boolean }) => coin.live);
+  const hasSavedMarketData = marketCoins.some((coin: { source?: string }) => coin.source === 'cached');
   const { data: siteContentData } = trpc.siteContent.public.useQuery(undefined, {
     staleTime: 1000 * 30,
     retry: false,
@@ -287,7 +288,7 @@ export default function Home() {
             </div>
             <div className="status-badge text-[10px]">
               <span className={`w-2 h-2 rounded-full ${hasLiveMarketData ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'}`} />
-              {hasLiveMarketData ? 'CANLI' : 'YEDEK VERİ'}
+              {hasLiveMarketData ? 'CANLI' : hasSavedMarketData ? 'SON VERİ' : 'YÜKLENİYOR'}
             </div>
           </div>
           <div className="grid gap-2">
