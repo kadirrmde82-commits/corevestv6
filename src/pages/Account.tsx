@@ -5,7 +5,7 @@ import {
   Headphones, LogOut, ChevronRight, Clock, Check,
   Copy, MessageCircle, Lock, X, Receipt, Ban,
   ExternalLink, Plus, Send, MousePointerClick,
-  DollarSign, Calendar, Gift,
+  DollarSign, Calendar, Gift, Download,
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { trpc } from '@/providers/trpc';
@@ -16,6 +16,11 @@ type HistoryTab = 'deposits' | 'withdrawals' | 'bonuses';
 const MIN_WITHDRAWAL_AMOUNT = 50;
 const MAX_WITHDRAWAL_AMOUNT = 20000;
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+};
+
 // Wallet addresses are fetched from API now
 
 export default function Account() {
@@ -23,6 +28,9 @@ export default function Account() {
   const [view, setView] = useState<ActionView>('main');
   const [historyTab, setHistoryTab] = useState<HistoryTab>('withdrawals');
   const [showLogout, setShowLogout] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [showInstallHelp, setShowInstallHelp] = useState(false);
+  const [installMessage, setInstallMessage] = useState('');
 
   const { data: profile } = trpc.profile.me.useQuery(undefined, {
     staleTime: 1000 * 30,
@@ -47,6 +55,52 @@ export default function Account() {
     staleTime: 1000 * 30,
     retry: false,
   });
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as BeforeInstallPromptEvent);
+    };
+    const handleAppInstalled = () => {
+      setInstallPrompt(null);
+      setInstallMessage(t('accountExtra.appInstalled'));
+      setShowInstallHelp(false);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, [t]);
+
+  const isStandaloneApp = () => {
+    return window.matchMedia('(display-mode: standalone)').matches || (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+  };
+
+  const isIosDevice = () => /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+
+  const handleInstallApp = async () => {
+    setInstallMessage('');
+
+    if (isStandaloneApp()) {
+      setInstallMessage(t('accountExtra.appInstalled'));
+      return;
+    }
+
+    if (installPrompt) {
+      await installPrompt.prompt();
+      const choice = await installPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        setInstallMessage(t('accountExtra.appInstalled'));
+      }
+      setInstallPrompt(null);
+      return;
+    }
+
+    setShowInstallHelp(true);
+  };
 
   // Withdrawal eligibility
   const { data: canWithdrawData } = trpc.withdrawal.canWithdraw.useQuery(undefined, {
@@ -612,6 +666,32 @@ export default function Account() {
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        <div className="glass-card" style={{ background: 'rgba(255,215,0,0.04)', border: '1px solid rgba(255,215,0,0.15)' }}>
+          <div className="flex items-start gap-3">
+            <div className="grid place-items-center rounded-xl shrink-0" style={{ width: '44px', height: '44px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }}>
+              <Download size={20} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-base font-bold text-white mb-1">{t('accountExtra.installApp')}</h2>
+              <p className="text-xs mb-3" style={{ color: '#8fa5b8' }}>{t('accountExtra.installAppDesc')}</p>
+              <button onClick={handleInstallApp} className="btn-primary w-full" style={{ minHeight: '42px' }}>
+                <Download size={16} /> {t('accountExtra.installAppButton')}
+              </button>
+              {installMessage && <p className="text-xs font-bold mt-3 text-center" style={{ color: '#10b981' }}>{installMessage}</p>}
+              {showInstallHelp && (
+                <div className="mt-3 rounded-xl p-3 text-left" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(248,251,255,0.08)' }}>
+                  <p className="text-xs font-bold mb-1" style={{ color: '#FFD700' }}>
+                    {isIosDevice() ? t('accountExtra.iosInstallTitle') : t('accountExtra.manualInstallTitle')}
+                  </p>
+                  <p className="text-xs" style={{ color: '#8fa5b8' }}>
+                    {isIosDevice() ? t('accountExtra.iosInstallSteps') : t('accountExtra.manualInstallSteps')}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

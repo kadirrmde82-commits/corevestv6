@@ -265,6 +265,14 @@
     "noDeposits": "You do not have any deposit transactions yet.",
     "noWheelBonus": "You do not have any wheel bonuses yet.",
     "wheelReward": "Wheel Reward",
-    "cancelRequest": "Cancel Request"
+    "cancelRequest": "Cancel Request",
+    "installApp": "Install as App",
+    "installAppDesc": "Add Corevest to your phone home screen and open it quickly like an app.",
+    "installAppButton": "Install as App",
+    "iosInstallTitle": "For iPhone / Safari",
+    "iosInstallSteps": "In Safari, tap the share icon, then choose “Add to Home Screen”.",
+    "manualInstallTitle": "Add to home screen",
+    "manualInstallSteps": "Open your browser menu and choose “Install app” or “Add to Home Screen”.",
+    "appInstalled": "Corevest has been added to your home screen."
   }
 }

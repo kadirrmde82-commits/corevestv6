@@ -265,6 +265,14 @@
     "noDeposits": "У вас пока нет депозитов.",
     "noWheelBonus": "У вас пока нет бонусов колеса.",
     "wheelReward": "Награда колеса",
-    "cancelRequest": "Отменить заявку"
+    "cancelRequest": "Отменить заявку",
+    "installApp": "Установить как приложение",
+    "installAppDesc": "Добавьте Corevest на главный экран телефона и открывайте его быстро как приложение.",
+    "installAppButton": "Установить как приложение",
+    "iosInstallTitle": "Для iPhone / Safari",
+    "iosInstallSteps": "В Safari нажмите значок “Поделиться”, затем выберите “На экран Домой”.",
+    "manualInstallTitle": "Добавить на главный экран",
+    "manualInstallSteps": "Откройте меню браузера и выберите “Установить приложение” или “Добавить на главный экран”.",
+    "appInstalled": "Corevest добавлен на главный экран."
   }
 }

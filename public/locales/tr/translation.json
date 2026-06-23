@@ -265,6 +265,14 @@
     "noDeposits": "Henüz yatırım işleminiz bulunmuyor.",
     "noWheelBonus": "Henüz çark bonusunuz bulunmuyor.",
     "wheelReward": "Çark Ödülü",
-    "cancelRequest": "İptal Et"
+    "cancelRequest": "İptal Et",
+    "installApp": "Uygulama Olarak İndir",
+    "installAppDesc": "Corevest’i telefonunuzun ana ekranına ekleyip uygulama gibi hızlıca açabilirsiniz.",
+    "installAppButton": "Uygulama Olarak İndir",
+    "iosInstallTitle": "iPhone / Safari için",
+    "iosInstallSteps": "Safari’de paylaş simgesine dokunun, ardından “Ana Ekrana Ekle” seçeneğini seçin.",
+    "manualInstallTitle": "Ana ekrana ekle",
+    "manualInstallSteps": "Tarayıcı menüsünü açın ve “Uygulamayı yükle” veya “Ana ekrana ekle” seçeneğini seçin.",
+    "appInstalled": "Corevest ana ekranınıza eklendi."
   }
 }

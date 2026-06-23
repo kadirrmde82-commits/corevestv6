@@ -265,6 +265,14 @@
     "noDeposits": "Du hast noch keine Einzahlungen.",
     "noWheelBonus": "Du hast noch keine Rad-Boni.",
     "wheelReward": "Rad-Belohnung",
-    "cancelRequest": "Anfrage abbrechen"
+    "cancelRequest": "Anfrage abbrechen",
+    "installApp": "Als App installieren",
+    "installAppDesc": "Füge Corevest zum Startbildschirm deines Telefons hinzu und öffne es schnell wie eine App.",
+    "installAppButton": "Als App installieren",
+    "iosInstallTitle": "Für iPhone / Safari",
+    "iosInstallSteps": "Tippe in Safari auf das Teilen-Symbol und wähle dann “Zum Home-Bildschirm”.",
+    "manualInstallTitle": "Zum Startbildschirm hinzufügen",
+    "manualInstallSteps": "Öffne das Browser-Menü und wähle “App installieren” oder “Zum Startbildschirm hinzufügen”.",
+    "appInstalled": "Corevest wurde deinem Startbildschirm hinzugefügt."
   }
 }

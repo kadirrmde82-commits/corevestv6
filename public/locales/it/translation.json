@@ -265,6 +265,14 @@
     "noDeposits": "Non hai ancora depositi.",
     "noWheelBonus": "Non hai ancora bonus ruota.",
     "wheelReward": "Premio ruota",
-    "cancelRequest": "Annulla richiesta"
+    "cancelRequest": "Annulla richiesta",
+    "installApp": "Installa come app",
+    "installAppDesc": "Aggiungi Corevest alla schermata Home del telefono e aprilo rapidamente come un’app.",
+    "installAppButton": "Installa come app",
+    "iosInstallTitle": "Per iPhone / Safari",
+    "iosInstallSteps": "In Safari tocca l’icona di condivisione, poi scegli “Aggiungi alla schermata Home”.",
+    "manualInstallTitle": "Aggiungi alla schermata Home",
+    "manualInstallSteps": "Apri il menu del browser e scegli “Installa app” o “Aggiungi alla schermata Home”.",
+    "appInstalled": "Corevest è stato aggiunto alla schermata Home."
   }
 }
