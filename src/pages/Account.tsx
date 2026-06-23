@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   User, Crown, Wallet, ArrowDownLeft, ArrowUpRight,
   Headphones, LogOut, ChevronRight, Clock, Check,
@@ -18,6 +19,7 @@ const MAX_WITHDRAWAL_AMOUNT = 20000;
 // Wallet addresses are fetched from API now
 
 export default function Account() {
+  const { t } = useTranslation();
   const [view, setView] = useState<ActionView>('main');
   const [historyTab, setHistoryTab] = useState<HistoryTab>('withdrawals');
   const [showLogout, setShowLogout] = useState(false);
@@ -434,7 +436,7 @@ export default function Account() {
                 <h1 className="text-base font-bold text-white truncate">{currentTicket.subject}</h1>
                 <div className="flex items-center gap-2">{statusLabel(currentTicket.status)}<span className="text-[10px]" style={{ color: '#5a6a7a' }}>#{currentTicket.id}</span></div>
               </div>
-              {currentTicket.status !== 'closed' && <button onClick={() => { handleCloseTicket(currentTicket.id); setActiveTicket(null); }} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}><X size={12} />Kapat</button>}
+              {currentTicket.status !== 'closed' && <button onClick={() => { handleCloseTicket(currentTicket.id); setActiveTicket(null); }} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}><X size={12} />{t('accountExtra.close')}</button>}
             </div>
             <div className="glass-card flex flex-col" style={{ minHeight: '300px', maxHeight: '400px' }}>
               <div className="flex-1 overflow-y-auto space-y-3 pr-1" style={{ maxHeight: '340px' }}>
@@ -451,10 +453,10 @@ export default function Account() {
             {isClosed ? (
               <div className="glass-card text-center py-4">
                 <Lock size={20} style={{ color: '#5a6a7a', margin: '0 auto' }} />
-                <p className="text-sm mt-2" style={{ color: '#5a6a7a' }}>Bu destek talebi kapatılmıştır.</p>
+                <p className="text-sm mt-2" style={{ color: '#5a6a7a' }}>{t('accountExtra.supportClosed')}</p>
               </div>
             ) : (
-              <div className="flex gap-2"><input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} placeholder="Mesajınızı yazın..." className="glass-input flex-1" style={{ minHeight: '46px' }} /><button onClick={handleSendMessage} className="btn-primary" style={{ width: '46px', minHeight: '46px', padding: 0 }}><Send size={16} /></button></div>
+              <div className="flex gap-2"><input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} placeholder={t('accountExtra.messagePlaceholder')} className="glass-input flex-1" style={{ minHeight: '46px' }} /><button onClick={handleSendMessage} className="btn-primary" style={{ width: '46px', minHeight: '46px', padding: 0 }}><Send size={16} /></button></div>
             )}
           </div>
         </Layout>
@@ -466,27 +468,27 @@ export default function Account() {
         <div className="grid gap-3 animate-fade-in">
           <div className="flex items-center gap-3 mb-2">
             <button onClick={() => setView('main')} className="btn-secondary" style={{ width: '36px', minHeight: '36px', padding: 0 }}><Headphones size={16} /></button>
-            <h1 className="text-xl font-bold text-white">Destek</h1>
+            <h1 className="text-xl font-bold text-white">{t('accountExtra.support')}</h1>
           </div>
           <div className="glass-card text-center py-6 cursor-pointer" style={{ background: 'rgba(0,136,204,0.08)', border: '1px solid rgba(0,136,204,0.2)' }} onClick={() => window.open('https://t.me/corevestsupport', '_blank')}>
             <div className="mx-auto mb-3 grid place-items-center rounded-full" style={{ width: '56px', height: '56px', background: 'rgba(0,136,204,0.15)' }}><ExternalLink size={24} style={{ color: '#0088CC' }} /></div>
-            <p className="text-base font-bold text-white mb-1">Telegram Destek</p>
+            <p className="text-base font-bold text-white mb-1">{t('accountExtra.telegramSupport')}</p>
             <p className="text-sm" style={{ color: '#8fa5b8' }}>@corevestsupport</p>
           </div>
-          <div className="flex items-center gap-3"><div className="flex-1 h-px" style={{ background: 'rgba(248,251,255,0.08)' }} /><span className="text-xs" style={{ color: '#5a6a7a' }}>veya</span><div className="flex-1 h-px" style={{ background: 'rgba(248,251,255,0.08)' }} /></div>
+          <div className="flex items-center gap-3"><div className="flex-1 h-px" style={{ background: 'rgba(248,251,255,0.08)' }} /><span className="text-xs" style={{ color: '#5a6a7a' }}>{t('accountExtra.or')}</span><div className="flex-1 h-px" style={{ background: 'rgba(248,251,255,0.08)' }} /></div>
           {showNewTicket ? (
             <div className="glass-card">
-              <div className="flex items-center justify-between mb-3"><h2 className="text-sm font-bold text-white">Yeni Destek Talebi</h2><button onClick={() => setShowNewTicket(false)} className="btn-secondary" style={{ minHeight: '32px', width: '32px', padding: 0 }}><X size={14} /></button></div>
-              <div className="flex gap-2"><input type="text" value={newSubject} onChange={(e) => setNewSubject(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreateTicket()} placeholder="Sorununuzu kısaca yazın..." className="glass-input flex-1" style={{ minHeight: '44px' }} autoFocus /><button onClick={handleCreateTicket} className="btn-primary" style={{ width: '44px', minHeight: '44px', padding: 0 }}><Send size={16} /></button></div>
+              <div className="flex items-center justify-between mb-3"><h2 className="text-sm font-bold text-white">{t('accountExtra.newSupportRequest')}</h2><button onClick={() => setShowNewTicket(false)} className="btn-secondary" style={{ minHeight: '32px', width: '32px', padding: 0 }}><X size={14} /></button></div>
+              <div className="flex gap-2"><input type="text" value={newSubject} onChange={(e) => setNewSubject(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreateTicket()} placeholder={t('accountExtra.supportPlaceholder')} className="glass-input flex-1" style={{ minHeight: '44px' }} autoFocus /><button onClick={handleCreateTicket} className="btn-primary" style={{ width: '44px', minHeight: '44px', padding: 0 }}><Send size={16} /></button></div>
             </div>
           ) : (
             <button onClick={() => setShowNewTicket(true)} className="glass-card flex items-center gap-3 text-left transition-all w-full" style={{ background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.15)' }}>
               <div className="grid place-items-center rounded-xl" style={{ width: '42px', height: '42px', background: 'rgba(255,215,0,0.1)', color: '#FFD700' }}><Plus size={20} /></div>
-              <div className="flex-1"><span className="text-sm font-bold text-white block">Yeni Destek Talebi Oluştur</span><span className="text-xs" style={{ color: '#8fa5b8' }}>Sorununuzu bizimle paylaşın</span></div>
+              <div className="flex-1"><span className="text-sm font-bold text-white block">{t('accountExtra.newSupportCreate')}</span><span className="text-xs" style={{ color: '#8fa5b8' }}>{t('accountExtra.supportShare')}</span></div>
               <ChevronRight size={16} style={{ color: '#5a6a7a' }} />
             </button>
           )}
-          {tickets.length > 0 && <h3 className="text-xs font-bold mt-2" style={{ color: '#8fa5b8' }}>TALEPLERİNİZ</h3>}
+          {tickets.length > 0 && <h3 className="text-xs font-bold mt-2" style={{ color: '#8fa5b8' }}>{t('accountExtra.requests')}</h3>}
           {tickets.map((ticket: any) => (
             <button key={ticket.id} onClick={() => setActiveTicket(ticket.id)} className="glass-card flex items-center gap-3 text-left w-full transition-all hover:bg-white/5" style={{ padding: '14px 16px' }}>
               <div className="grid place-items-center rounded-lg shrink-0" style={{ width: '42px', height: '42px', background: ticket.status === 'open' ? 'rgba(255,215,0,0.1)' : ticket.status === 'resolved' ? 'rgba(16,185,129,0.1)' : 'rgba(90,106,122,0.1)', color: ticket.status === 'open' ? '#FFD700' : ticket.status === 'resolved' ? '#10b981' : '#5a6a7a' }}>{ticket.status === 'closed' ? <Lock size={18} /> : <MessageCircle size={18} />}</div>
@@ -494,7 +496,7 @@ export default function Account() {
               <ChevronRight size={16} style={{ color: '#5a6a7a' }} />
             </button>
           ))}
-          {tickets.length === 0 && !showNewTicket && <p className="text-sm text-center py-4" style={{ color: '#5a6a7a' }}>Henüz destek talebiniz bulunmuyor.</p>}
+          {tickets.length === 0 && !showNewTicket && <p className="text-sm text-center py-4" style={{ color: '#5a6a7a' }}>{t('accountExtra.noSupport')}</p>}
         </div>
       </Layout>
     );
@@ -507,21 +509,21 @@ export default function Account() {
         <div className="grid gap-3 animate-fade-in">
           <div className="flex items-center gap-3 mb-2">
             <button onClick={() => setView('main')} className="btn-secondary" style={{ width: '36px', minHeight: '36px', padding: 0 }}><Receipt size={16} /></button>
-            <h1 className="text-xl font-bold text-white">Finansal Geçmiş</h1>
+            <h1 className="text-xl font-bold text-white">{t('accountExtra.financialHistory')}</h1>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setHistoryTab('withdrawals')} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all" style={{ background: historyTab === 'withdrawals' ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.04)', border: historyTab === 'withdrawals' ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(248,251,255,0.06)', color: historyTab === 'withdrawals' ? '#FFD700' : '#8fa5b8' }}>Çekim Taleplerim</button>
-            <button onClick={() => setHistoryTab('deposits')} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all" style={{ background: historyTab === 'deposits' ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.04)', border: historyTab === 'deposits' ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(248,251,255,0.06)', color: historyTab === 'deposits' ? '#FFD700' : '#8fa5b8' }}>Yatırım İşlemlerim</button>
-            <button onClick={() => setHistoryTab('bonuses')} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all" style={{ background: historyTab === 'bonuses' ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.04)', border: historyTab === 'bonuses' ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(248,251,255,0.06)', color: historyTab === 'bonuses' ? '#FFD700' : '#8fa5b8' }}>Bonuslar</button>
+            <button onClick={() => setHistoryTab('withdrawals')} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all" style={{ background: historyTab === 'withdrawals' ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.04)', border: historyTab === 'withdrawals' ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(248,251,255,0.06)', color: historyTab === 'withdrawals' ? '#FFD700' : '#8fa5b8' }}>{t('accountExtra.withdrawalRequests')}</button>
+            <button onClick={() => setHistoryTab('deposits')} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all" style={{ background: historyTab === 'deposits' ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.04)', border: historyTab === 'deposits' ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(248,251,255,0.06)', color: historyTab === 'deposits' ? '#FFD700' : '#8fa5b8' }}>{t('accountExtra.depositHistory')}</button>
+            <button onClick={() => setHistoryTab('bonuses')} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all" style={{ background: historyTab === 'bonuses' ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.04)', border: historyTab === 'bonuses' ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(248,251,255,0.06)', color: historyTab === 'bonuses' ? '#FFD700' : '#8fa5b8' }}>{t('accountExtra.bonuses')}</button>
           </div>
 
           {historyTab === 'withdrawals' && (
             <div className="grid gap-2">
-              {withdrawals.length === 0 ? <p className="text-sm text-center py-8" style={{ color: '#5a6a7a' }}>Henüz çekim talebiniz bulunmuyor.</p> : withdrawals.map((w: any) => (
+              {withdrawals.length === 0 ? <p className="text-sm text-center py-8" style={{ color: '#5a6a7a' }}>{t('accountExtra.noWithdrawals')}</p> : withdrawals.map((w: any) => (
                 <div key={w.id} className="glass-card" style={{ padding: '14px 16px' }}>
                   <div className="flex items-center justify-between mb-2"><div className="flex items-center gap-2"><span className="text-sm font-bold text-white">${Number(w.amount).toFixed(2)}</span>{statusLabel(w.status)}</div><span className="text-xs" style={{ color: '#5a6a7a' }}>{w.createdAt ? new Date(w.createdAt).toLocaleDateString() : ''}</span></div>
                   <p className="text-xs font-mono mb-2" style={{ color: '#8fa5b8' }}>{w.wallet}</p>
-                  {w.status === 'pending' && <button onClick={() => handleCancelWithdraw(w.id)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}><Ban size={12} />İptal Et</button>}
+                  {w.status === 'pending' && <button onClick={() => handleCancelWithdraw(w.id)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}><Ban size={12} />{t('accountExtra.cancelRequest')}</button>}
                 </div>
               ))}
             </div>
@@ -529,7 +531,7 @@ export default function Account() {
 
           {historyTab === 'deposits' && (
             <div className="grid gap-2">
-              {deposits.length === 0 ? <p className="text-sm text-center py-8" style={{ color: '#5a6a7a' }}>Henüz yatırım işleminiz bulunmuyor.</p> : deposits.map((d: any) => (
+              {deposits.length === 0 ? <p className="text-sm text-center py-8" style={{ color: '#5a6a7a' }}>{t('accountExtra.noDeposits')}</p> : deposits.map((d: any) => (
                 <div key={d.id} className="glass-card flex items-center gap-3" style={{ padding: '14px 16px' }}>
                   <div className="grid place-items-center rounded-lg shrink-0" style={{ width: '38px', height: '38px', background: 'rgba(16,185,129,0.1)', color: '#10b981' }}><ArrowDownLeft size={16} /></div>
                   <div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="text-sm font-bold text-white">${Number(d.amount).toFixed(2)}</span>{statusLabel(d.status)}</div><span className="text-xs font-mono" style={{ color: '#8fa5b8' }}>{d.txid}</span>{d.userNote && <p className="text-[10px] mt-0.5" style={{ color: '#5a6a7a' }}>Not: {d.userNote}</p>}</div>
@@ -541,11 +543,11 @@ export default function Account() {
 
           {historyTab === 'bonuses' && (
             <div className="grid gap-2">
-              {wheelHistory.length === 0 ? <p className="text-sm text-center py-8" style={{ color: '#5a6a7a' }}>Henüz çark bonusunuz bulunmuyor.</p> : wheelHistory.map((spin: any) => (
+              {wheelHistory.length === 0 ? <p className="text-sm text-center py-8" style={{ color: '#5a6a7a' }}>{t('accountExtra.noWheelBonus')}</p> : wheelHistory.map((spin: any) => (
                 <div key={spin.id} className="glass-card flex items-center gap-3" style={{ padding: '14px 16px' }}>
                   <div className="grid place-items-center rounded-lg shrink-0" style={{ width: '38px', height: '38px', background: 'rgba(255,215,0,0.1)', color: '#FFD700' }}><Gift size={16} /></div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm font-bold text-white block">Çark Ödülü</span>
+                    <span className="text-sm font-bold text-white block">{t('accountExtra.wheelReward')}</span>
                     <span className="text-xs" style={{ color: '#8fa5b8' }}>{spin.createdAt ? new Date(spin.createdAt).toLocaleDateString() : ''}</span>
                   </div>
                   <span className="text-sm font-extrabold" style={{ color: '#FFD700' }}>+${Number(spin.prize).toFixed(2)}</span>
@@ -567,39 +569,39 @@ export default function Account() {
           <div className="mx-auto mb-3 grid place-items-center rounded-full" style={{ width: '72px', height: '72px', background: 'linear-gradient(135deg, #FFD70020, #FFA50020)', border: '2px solid rgba(255,215,0,0.2)' }}>
             <User size={32} style={{ color: '#FFD700' }} />
           </div>
-          <h1 className="text-xl font-bold text-white mb-1">Hesabım</h1>
+          <h1 className="text-xl font-bold text-white mb-1">{t('accountExtra.myAccount')}</h1>
           {/* USER ID - matches admin panel */}
           <p className="text-sm font-mono font-bold" style={{ color: '#FFD700' }}>ID: {userId}</p>
-          <p className="text-xs mt-1" style={{ color: '#5a6a7a' }}>Üyelik: {profile.joinDate ? new Date(profile.joinDate).toLocaleDateString() : ''}</p>
+          <p className="text-xs mt-1" style={{ color: '#5a6a7a' }}>{t('accountExtra.membership')}: {profile.joinDate ? new Date(profile.joinDate).toLocaleDateString() : ''}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="glass-card">
             <div className="flex items-center gap-2 mb-2"><div className="grid place-items-center rounded-xl" style={{ width: '38px', height: '38px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }}><Crown size={18} /></div></div>
-            <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>VIP Seviyesi</span>
+            <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>{t('accountExtra.vipLevel')}</span>
             <strong className="block text-xl mt-1" style={{ color: '#FFD700' }}>VIP {vipLevel}</strong>
           </div>
           <div className="glass-card">
             <div className="flex items-center gap-2 mb-2"><div className="grid place-items-center rounded-xl" style={{ width: '38px', height: '38px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }}><Wallet size={18} /></div></div>
-            <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>Bakiye</span>
+            <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>{t('accountExtra.balance')}</span>
             <strong className="block text-xl text-white mt-1">${Number(profile.balance).toFixed(2)}</strong>
           </div>
         </div>
 
         <div className="glass-card flex items-center gap-3">
           <div className="grid place-items-center rounded-xl" style={{ width: '42px', height: '42px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }}><ArrowDownLeft size={20} /></div>
-          <div className="flex-1"><span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>Toplam Yatırım</span><strong className="block text-base text-white">${Number(profile.investment).toLocaleString()}</strong></div>
+          <div className="flex-1"><span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>{t('accountExtra.totalInvestment')}</span><strong className="block text-base text-white">${Number(profile.investment).toLocaleString()}</strong></div>
         </div>
 
         <div className="glass-card">
-          <h2 className="text-base font-bold text-white mb-4">İşlemler</h2>
+          <h2 className="text-base font-bold text-white mb-4">{t('accountExtra.transactions')}</h2>
           <div className="grid gap-2">
             {[
-              { key: 'deposit', label: 'Para Yatır', icon: ArrowDownLeft, color: '#10b981', onClick: () => setView('deposit') },
-              { key: 'withdraw', label: 'Para Çek', icon: ArrowUpRight, color: '#FFD700', onClick: () => setView('withdraw') },
-              { key: 'history', label: 'Finansal Geçmiş', icon: Receipt, color: '#8b5cf6', onClick: () => setView('history') },
-              { key: 'support', label: 'Destek', icon: Headphones, color: '#35d7ff', onClick: () => setView('support') },
-              { key: 'logout', label: 'Çıkış Yap', icon: LogOut, color: '#ef4444', onClick: () => setShowLogout(true) },
+              { key: 'deposit', label: t('accountExtra.depositMoney'), icon: ArrowDownLeft, color: '#10b981', onClick: () => setView('deposit') },
+              { key: 'withdraw', label: t('accountExtra.withdrawMoney'), icon: ArrowUpRight, color: '#FFD700', onClick: () => setView('withdraw') },
+              { key: 'history', label: t('accountExtra.financialHistory'), icon: Receipt, color: '#8b5cf6', onClick: () => setView('history') },
+              { key: 'support', label: t('accountExtra.support'), icon: Headphones, color: '#35d7ff', onClick: () => setView('support') },
+              { key: 'logout', label: t('accountExtra.logout'), icon: LogOut, color: '#ef4444', onClick: () => setShowLogout(true) },
             ].map((action) => {
               const Icon = action.icon;
               return (
@@ -617,8 +619,8 @@ export default function Account() {
       {showLogout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
           <div className="w-full max-w-sm animate-fade-in" style={{ background: 'rgba(5, 9, 20, 0.95)', border: '1px solid rgba(248,251,255,0.1)', borderRadius: '22px', padding: '24px', boxShadow: '0 24px 60px rgba(0,0,0,0.5)' }}>
-            <div className="text-center mb-5"><div className="mx-auto mb-3 grid place-items-center rounded-full" style={{ width: '56px', height: '56px', background: 'rgba(239,68,68,0.12)' }}><LogOut size={28} style={{ color: '#ef4444' }} /></div><h3 className="text-lg font-bold text-white mb-1">Çıkış Yap</h3><p className="text-sm" style={{ color: '#8fa5b8' }}>Çıkış yapmak istediğinize emin misiniz?</p></div>
-            <div className="flex gap-3"><button onClick={() => setShowLogout(false)} className="btn-secondary flex-1">İptal</button><button onClick={handleLogout} className="flex-1 inline-flex items-center justify-center gap-2 font-extrabold text-sm rounded-xl text-white" style={{ minHeight: '46px', background: 'rgba(239,68,68,0.85)' }}><LogOut size={16} />Çıkış Yap</button></div>
+            <div className="text-center mb-5"><div className="mx-auto mb-3 grid place-items-center rounded-full" style={{ width: '56px', height: '56px', background: 'rgba(239,68,68,0.12)' }}><LogOut size={28} style={{ color: '#ef4444' }} /></div><h3 className="text-lg font-bold text-white mb-1">{t('accountExtra.logout')}</h3><p className="text-sm" style={{ color: '#8fa5b8' }}>{t('accountExtra.logoutConfirm')}</p></div>
+            <div className="flex gap-3"><button onClick={() => setShowLogout(false)} className="btn-secondary flex-1">{t('accountExtra.cancel')}</button><button onClick={handleLogout} className="flex-1 inline-flex items-center justify-center gap-2 font-extrabold text-sm rounded-xl text-white" style={{ minHeight: '46px', background: 'rgba(239,68,68,0.85)' }}><LogOut size={16} />{t('accountExtra.logout')}</button></div>
           </div>
         </div>
       )}

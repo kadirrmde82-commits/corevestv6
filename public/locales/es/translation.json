@@ -32,7 +32,12 @@
     "refreshCode": "Actualizar código",
     "invalidSecurityCode": "¡Código de seguridad incorrecto!"
   },
-  "nav": { "home": "Inicio", "quantify": "Quantify", "referral": "Referidos", "account": "Cuenta" },
+  "nav": {
+    "home": "Inicio",
+    "quantify": "Quantify",
+    "referral": "Referidos",
+    "account": "Cuenta"
+  },
   "home": {
     "welcome": "Bienvenido",
     "welcomeText": "Bienvenido a Corevest. Sigue tus ganancias diarias y haz crecer tus inversiones.",
@@ -63,10 +68,22 @@
     "lastClick": "Último clic",
     "investmentAmount": "Monto de inversión",
     "clickArea": "Área de clic",
-    "vipTable": { "title": "Niveles VIP", "level": "Nivel", "investment": "Rango de inversión", "dailyRate": "Tasa diaria", "status": "Estado" },
+    "vipTable": {
+      "title": "Niveles VIP",
+      "level": "Nivel",
+      "investment": "Rango de inversión",
+      "dailyRate": "Tasa diaria",
+      "status": "Estado"
+    },
     "yourLevel": "Tu nivel",
     "upgrade": "Mejorar",
-    "earnings": { "title": "Resumen de ganancias", "today": "Ganancias de hoy", "thisWeek": "Esta semana", "thisMonth": "Este mes", "projected": "Proyección mensual" },
+    "earnings": {
+      "title": "Resumen de ganancias",
+      "today": "Ganancias de hoy",
+      "thisWeek": "Esta semana",
+      "thisMonth": "Este mes",
+      "projected": "Proyección mensual"
+    },
     "vip0notice": "Actualmente eres VIP 0. Realiza una inversión para comenzar a ganar recompensas diarias."
   },
   "referral": {
@@ -101,12 +118,153 @@
     "memberSince": "Miembro desde",
     "vipLevel": "Nivel VIP",
     "balance": "Tu saldo",
-    "actions": { "title": "Acciones", "deposit": "Depositar", "withdraw": "Retirar", "support": "Soporte", "logout": "Cerrar sesión" },
-    "deposit": { "title": "Depositar", "amount": "Monto de inversión", "amountPlaceholder": "Ej: 100", "selectMethod": "Método de pago", "crypto": "Criptomoneda", "bank": "Transferencia bancaria", "confirm": "Confirmar depósito", "note": "Tu nivel VIP se actualizará automáticamente cuando se apruebe tu depósito." },
-    "withdraw": { "title": "Retirar", "amount": "Monto de retiro", "amountPlaceholder": "Mínimo 50$", "address": "Dirección de billetera", "addressPlaceholder": "Dirección USDT (TRC20)", "confirm": "Enviar solicitud de retiro", "note": "El monto mínimo de retiro es 50$." },
-    "support": { "title": "Soporte", "message": "Tu mensaje", "messagePlaceholder": "Describe tu problema o solicitud...", "send": "Enviar", "history": "Historial de soporte", "noTickets": "Aún no tienes tickets de soporte." },
-    "logout": { "title": "Cerrar sesión", "confirm": "¿Seguro que quieres cerrar sesión?", "cancel": "Cancelar", "confirmButton": "Cerrar sesión" }
+    "actions": {
+      "title": "Acciones",
+      "deposit": "Depositar",
+      "withdraw": "Retirar",
+      "support": "Soporte",
+      "logout": "Cerrar sesión"
+    },
+    "deposit": {
+      "title": "Depositar",
+      "amount": "Monto de inversión",
+      "amountPlaceholder": "Ej: 100",
+      "selectMethod": "Método de pago",
+      "crypto": "Criptomoneda",
+      "bank": "Transferencia bancaria",
+      "confirm": "Confirmar depósito",
+      "note": "Tu nivel VIP se actualizará automáticamente cuando se apruebe tu depósito."
+    },
+    "withdraw": {
+      "title": "Retirar",
+      "amount": "Monto de retiro",
+      "amountPlaceholder": "Mínimo 50$",
+      "address": "Dirección de billetera",
+      "addressPlaceholder": "Dirección USDT (TRC20)",
+      "confirm": "Enviar solicitud de retiro",
+      "note": "El monto mínimo de retiro es 50$."
+    },
+    "support": {
+      "title": "Soporte",
+      "message": "Tu mensaje",
+      "messagePlaceholder": "Describe tu problema o solicitud...",
+      "send": "Enviar",
+      "history": "Historial de soporte",
+      "noTickets": "Aún no tienes tickets de soporte."
+    },
+    "logout": {
+      "title": "Cerrar sesión",
+      "confirm": "¿Seguro que quieres cerrar sesión?",
+      "cancel": "Cancelar",
+      "confirmButton": "Cerrar sesión"
+    }
   },
-  "vipLevels": { "vip0": "VIP 0", "vip1": "VIP 1", "vip2": "VIP 2", "vip3": "VIP 3", "vip4": "VIP 4", "vip5": "VIP 5", "vip6": "VIP 6" },
-  "language": { "tr": "Türkçe", "en": "English", "es": "Español", "fr": "Français", "ru": "Русский", "de": "Deutsch", "it": "Italiano", "select": "Seleccionar idioma" }
+  "vipLevels": {
+    "vip0": "VIP 0",
+    "vip1": "VIP 1",
+    "vip2": "VIP 2",
+    "vip3": "VIP 3",
+    "vip4": "VIP 4",
+    "vip5": "VIP 5",
+    "vip6": "VIP 6"
+  },
+  "language": {
+    "tr": "Türkçe",
+    "en": "English",
+    "es": "Español",
+    "fr": "Français",
+    "ru": "Русский",
+    "de": "Deutsch",
+    "it": "Italiano",
+    "select": "Seleccionar idioma"
+  },
+  "wheel": {
+    "title": "Rueda de la suerte",
+    "investmentRule": "Cada inversión de $100 = 1 giro",
+    "rights": "Giros",
+    "spinning": "La rueda gira...",
+    "spin": "Girar la rueda",
+    "noRights": "No quedan giros",
+    "referralBonus": "bono de referido",
+    "congrats": "¡Felicidades!",
+    "won": "¡Ganaste $10 en la rueda!",
+    "added": "$10.00 se agregó a tu saldo"
+  },
+  "quantifyExtra": {
+    "investment": "Inversión",
+    "dailyRate": "Tasa diaria",
+    "activeReferral": "Referidos activos",
+    "lastClick": "Último clic",
+    "upgradeVip": "Invierte para subir tu nivel VIP.",
+    "welcomeBonus": "¡Bienvenido! Se agregó un saldo de $5 a tu cuenta. Invierte para empezar a ganar.",
+    "dailyEarning": "Tu ganancia diaria:",
+    "compound": "compuesto",
+    "earned": "ganado!",
+    "nextClickRemaining": "Tiempo restante para el próximo clic:",
+    "refreshAt": "Se renueva a las 08:00 hora de Turquía",
+    "hour": "hora",
+    "minute": "minuto",
+    "second": "segundo",
+    "projectionTitle": "Proyección de ganancias compuestas",
+    "today": "Hoy",
+    "sevenDays": "7 días",
+    "thirtyDays": "30 días",
+    "projectionNote": "Calculado con interés compuesto. Las ganancias diarias se suman al capital.",
+    "nextVip": "Siguiente VIP",
+    "minInvestment": "Inversión mín.",
+    "vipLevels": "Niveles VIP",
+    "yourLevel": "Tu nivel",
+    "daily": "Diario"
+  },
+  "referralExtra": {
+    "qrInvite": "Invitar con QR",
+    "qrAlt": "Código QR de referido",
+    "qrPreparing": "Preparando QR...",
+    "qrTitle": "Comparte tu enlace de invitación con QR",
+    "qrDescription": "Cuando tu amigo escanee este QR, irá al registro con tu enlace de referido.",
+    "qrDownload": "Descargar QR",
+    "share": "Compartir",
+    "shareText": "Únete a CoreVest con mi enlace de invitación:",
+    "directRefs": "Tus referidos directos",
+    "tier2Refs": "Referidos de tus referidos",
+    "tier3Refs": "Referidos del segundo nivel",
+    "people": "personas",
+    "user": "Usuario",
+    "myNetwork": "Mi red de referidos",
+    "startSharing": "Empieza a compartir tu código de referido."
+  },
+  "accountExtra": {
+    "myAccount": "Mi cuenta",
+    "membership": "Miembro desde",
+    "vipLevel": "Nivel VIP",
+    "balance": "Saldo",
+    "totalInvestment": "Inversión total",
+    "transactions": "Transacciones",
+    "depositMoney": "Depositar dinero",
+    "withdrawMoney": "Retirar dinero",
+    "financialHistory": "Historial financiero",
+    "support": "Soporte",
+    "logout": "Cerrar sesión",
+    "cancel": "Cancelar",
+    "logoutConfirm": "¿Seguro que quieres cerrar sesión?",
+    "newSupportRequest": "Nueva solicitud de soporte",
+    "newSupportCreate": "Crear nueva solicitud de soporte",
+    "supportShare": "Comparte tu problema con nosotros",
+    "supportPlaceholder": "Describe brevemente tu problema...",
+    "messagePlaceholder": "Escribe tu mensaje...",
+    "requests": "TUS SOLICITUDES",
+    "noSupport": "Aún no tienes solicitudes de soporte.",
+    "supportClosed": "Esta solicitud de soporte está cerrada.",
+    "close": "Cerrar",
+    "telegramSupport": "Soporte Telegram",
+    "or": "o",
+    "withdrawalRequests": "Mis solicitudes de retiro",
+    "depositHistory": "Mis depósitos",
+    "bonuses": "Bonos",
+    "noWithdrawals": "Aún no tienes solicitudes de retiro.",
+    "noDeposits": "Aún no tienes depósitos.",
+    "noWheelBonus": "Aún no tienes bonos de rueda.",
+    "wheelReward": "Premio de rueda",
+    "cancelRequest": "Cancelar solicitud"
+  }
 }
