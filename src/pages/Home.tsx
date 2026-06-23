@@ -8,6 +8,7 @@ import Layout from '../components/Layout';
 import { trpc } from '@/providers/trpc';
 import { VIP_TABLE } from '../store';
 import Wheel from '../components/Wheel';
+import { ANNOUNCEMENT_CONTENT_KEYS, mergeSiteContent } from '@contracts/site-content';
 
 export default function Home() {
   const { t } = useTranslation();
@@ -21,6 +22,16 @@ export default function Home() {
     refetchInterval: 1000 * 30,
   });
   const hasLiveMarketData = marketCoins.some((coin: { live?: boolean }) => coin.live);
+  const { data: siteContentData } = trpc.siteContent.public.useQuery(undefined, {
+    staleTime: 1000 * 30,
+    retry: false,
+  });
+  const siteContent = mergeSiteContent(siteContentData);
+  const announcementRules = siteContent[ANNOUNCEMENT_CONTENT_KEYS.rules]
+    .split('\n')
+    .map((rule) => rule.trim())
+    .filter(Boolean);
+  const announcementEnabled = siteContent[ANNOUNCEMENT_CONTENT_KEYS.enabled] !== 'false';
 
   const dismissAnnouncement = () => {
     setShowAnnouncement(false);
@@ -71,7 +82,7 @@ export default function Home() {
   return (
     <Layout>
       {/* ─── Announcement Popup ─── */}
-      {showAnnouncement && (
+      {announcementEnabled && showAnnouncement && (
         <div
           className="relative mb-3 animate-fade-in"
           style={{
@@ -102,47 +113,45 @@ export default function Home() {
               style={{ color: '#FFD700' }}
             >
               <Gift size={18} className="inline mr-1" />
-              &#x1F389; &#x1F3A1; ÇARK AKTİF! &#x1F3A1; &#x1F389;
+              {siteContent[ANNOUNCEMENT_CONTENT_KEYS.title]}
             </h3>
 
             <p className="text-sm font-bold text-white mb-2">
-              1.000$&apos;a kadar hediye bonus kazanma fırsatı sizi bekliyor!
+              {siteContent[ANNOUNCEMENT_CONTENT_KEYS.subtitle]}
             </p>
 
             <p className="text-xs mb-3" style={{ color: '#a9bccf' }}>
-              Şans çarkını çevirin ve birbirinden değerli ödülleri kazanma şansını yakalayın. &#x1F680;
+              {siteContent[ANNOUNCEMENT_CONTENT_KEYS.body]}
             </p>
 
-            <div
-              className="rounded-xl p-3 mb-3"
-              style={{
-                background: 'rgba(255,215,0,0.06)',
-                border: '1px solid rgba(255,215,0,0.12)',
-              }}
-            >
-              <p className="text-xs font-bold mb-2" style={{ color: '#FFD700' }}>
-                &#x1F381; Kampanya Kuralları:
-              </p>
-              <ul className="space-y-1">
-                {[
-                  'Her 100$ yatırım için 1 SPIN hakkı kazanırsınız.',
-                  'Davet ettiğiniz bir üyenin 100$ veya üzeri yatırım yapması durumunda 1 ek SPIN hakkı elde edersiniz.',
-                  'Ne kadar çok yatırım ve davet, o kadar çok çevirme hakkı!',
-                ].map((rule, i) => (
-                  <li key={i} className="text-xs flex items-start gap-2" style={{ color: '#c8d6e5' }}>
-                    <span style={{ color: '#10b981' }}>&#x2705;</span>
-                    <span>{rule}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {announcementRules.length > 0 && (
+              <div
+                className="rounded-xl p-3 mb-3"
+                style={{
+                  background: 'rgba(255,215,0,0.06)',
+                  border: '1px solid rgba(255,215,0,0.12)',
+                }}
+              >
+                <p className="text-xs font-bold mb-2" style={{ color: '#FFD700' }}>
+                  🎁 Kampanya Kuralları:
+                </p>
+                <ul className="space-y-1">
+                  {announcementRules.map((rule, i) => (
+                    <li key={i} className="text-xs flex items-start gap-2" style={{ color: '#c8d6e5' }}>
+                      <span style={{ color: '#10b981' }}>✅</span>
+                      <span>{rule}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <p className="text-xs mb-3" style={{ color: '#8fa5b8' }}>
-              &#x1F340; Şansınızı deneyin, sürpriz bonusları kaçırmayın!
+              {siteContent[ANNOUNCEMENT_CONTENT_KEYS.note]}
             </p>
 
             <p className="text-xs font-bold mb-4" style={{ color: '#FFD700' }}>
-              &#x1F3A1; Çark sizi bekliyor! &#x1F680; CoreVest ile kazanmaya devam edin.
+              {siteContent[ANNOUNCEMENT_CONTENT_KEYS.footer]}
             </p>
 
             <button
@@ -150,7 +159,7 @@ export default function Home() {
               className="btn-primary"
               style={{ minHeight: '42px', fontSize: '14px' }}
             >
-              Tamam
+              {siteContent[ANNOUNCEMENT_CONTENT_KEYS.button]}
             </button>
           </div>
         </div>

@@ -1,17 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ArrowDownLeft, ArrowUpRight, Users,
   Check, X, Wallet, Shield, LogOut,
   Send, MessageCircle, Lock, ChevronRight, Headphones,
   Search, Edit3, Gift, Eye, RefreshCw,
-  TrendingUp, Plus, Pencil, Trash2, Bitcoin, Minus
+  TrendingUp, Plus, Pencil, Trash2, Bitcoin, Minus, FileText
 } from 'lucide-react';
 import LanguageSelector from '../components/LanguageSelector';
 import { trpc } from '@/providers/trpc';
 import { VIP_TABLE } from '../store';
+import { ANNOUNCEMENT_CONTENT_KEYS, DEFAULT_SITE_CONTENT, FAQ_CONTENT_KEYS } from '@contracts/site-content';
 
-type AdminTab = 'members' | 'deposits' | 'withdrawals' | 'tickets' | 'marketPrices' | 'walletAddresses';
+type AdminTab = 'members' | 'deposits' | 'withdrawals' | 'tickets' | 'content' | 'marketPrices' | 'walletAddresses';
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -44,6 +45,7 @@ export default function Admin() {
   const [marketEditOpen, setMarketEditOpen] = useState(false);
   const [marketEditId, setMarketEditId] = useState<number | null>(null);
   const [marketForm, setMarketForm] = useState({ symbol: '', name: '', basePrice: '', change: '', color: '#FFD700' });
+  const [contentForm, setContentForm] = useState<Record<string, string>>(DEFAULT_SITE_CONTENT);
 
   // Data queries
   const utils = trpc.useUtils();
@@ -57,6 +59,11 @@ export default function Admin() {
   const { data: allTickets = [] } = trpc.ticket.listAll.useQuery(undefined, { refetchInterval: 10000 });
   const { data: allMarketPrices = [] } = trpc.marketPrice.listAll.useQuery(undefined, { refetchInterval: 10000 });
   const { data: allWalletAddresses = [] } = trpc.walletAddress.listAll.useQuery(undefined, { refetchInterval: 10000 });
+  const { data: adminSiteContent } = trpc.siteContent.adminList.useQuery(undefined, { refetchInterval: 10000 });
+
+  useEffect(() => {
+    if (adminSiteContent) setContentForm(adminSiteContent);
+  }, [adminSiteContent]);
 
   // Wheel spins adjustment state
   const [adjustSpinsValue, setAdjustSpinsValue] = useState('');
@@ -87,12 +94,21 @@ export default function Admin() {
   const createMarketPrice = trpc.marketPrice.create.useMutation({ onSuccess: () => { utils.marketPrice.listAll.invalidate(); setMarketForm({ symbol: '', name: '', basePrice: '', change: '', color: '#FFD700' }); } });
   const updateMarketPrice = trpc.marketPrice.update.useMutation({ onSuccess: () => { utils.marketPrice.listAll.invalidate(); setMarketEditOpen(false); setMarketEditId(null); } });
   const deleteMarketPrice = trpc.marketPrice.delete.useMutation({ onSuccess: () => utils.marketPrice.listAll.invalidate() });
+  const updateSiteContent = trpc.siteContent.updateMany.useMutation({ onSuccess: () => { utils.siteContent.adminList.invalidate(); utils.siteContent.public.invalidate(); } });
 
   // Detail modals
   const [detailDeposit, setDetailDeposit] = useState<typeof allDeposits[0] | null>(null);
   const [detailWithdraw, setDetailWithdraw] = useState<typeof allWithdrawals[0] | null>(null);
   const [detailTicket, setDetailTicket] = useState<typeof allTickets[0] | null>(null);
   const [ticketReply, setTicketReply] = useState('');
+
+  const setContentValue = (key: string, value: string) => {
+    setContentForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const saveSiteContent = () => {
+    updateSiteContent.mutate({ values: contentForm });
+  };
 
   const handleLogout = () => {
     localStorage.clear();
@@ -151,6 +167,7 @@ export default function Admin() {
             { key: 'deposits' as AdminTab, label: 'Yatırım Talepleri', icon: ArrowDownLeft },
             { key: 'withdrawals' as AdminTab, label: 'Çekim Talepleri', icon: ArrowUpRight },
             { key: 'tickets' as AdminTab, label: 'Destek Ticketları', icon: Headphones },
+            { key: 'content' as AdminTab, label: 'İçerik Yönetimi', icon: FileText },
             { key: 'marketPrices' as AdminTab, label: 'Piyasa Fiyatları', icon: TrendingUp },
             { key: 'walletAddresses' as AdminTab, label: 'Cuzdan Adresleri', icon: Bitcoin },
           ].map((tab) => {
@@ -269,6 +286,153 @@ export default function Admin() {
                 <ChevronRight size={16} style={{ color: '#5a6a7a' }} />
               </button>
             ))}
+          </div>
+        )}
+
+        {/* ─── CONTENT TAB ─── */}
+        {activeTab === 'content' && (
+          <div className="grid gap-4">
+            <div className="glass-card">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="text-lg font-bold text-white">SSS İçerikleri</h2>
+                  <p className="text-xs" style={{ color: '#8fa5b8' }}>Kullanıcıların SSS sayfasında gördüğü 3 ana bölümü buradan düzenleyebilirsiniz.</p>
+                </div>
+                <button onClick={saveSiteContent} className="btn-primary" style={{ minHeight: '40px', minWidth: '110px' }} disabled={updateSiteContent.isPending}>
+                  {updateSiteContent.isPending ? 'Kaydediliyor...' : 'Kaydet'}
+                </button>
+              </div>
+
+              <div className="grid gap-4">
+                {[
+                  { title: 'Nasıl Yatırım Yapılır?', q: FAQ_CONTENT_KEYS.investmentQuestion, a: FAQ_CONTENT_KEYS.investmentAnswer },
+                  { title: 'Nasıl Çekim Yapılır?', q: FAQ_CONTENT_KEYS.withdrawalQuestion, a: FAQ_CONTENT_KEYS.withdrawalAnswer },
+                  { title: 'Referans Kodu Nasıl İşler?', q: FAQ_CONTENT_KEYS.referralQuestion, a: FAQ_CONTENT_KEYS.referralAnswer },
+                ].map((item) => (
+                  <div key={item.q} className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.06)' }}>
+                    <h3 className="text-sm font-bold text-white mb-3">{item.title}</h3>
+                    <label className="label-text block mb-1">Soru Başlığı</label>
+                    <input
+                      type="text"
+                      value={contentForm[item.q] ?? ''}
+                      onChange={(e) => setContentValue(item.q, e.target.value)}
+                      className="glass-input mb-3"
+                      style={{ minHeight: '42px' }}
+                    />
+                    <label className="label-text block mb-1">Cevap Metni</label>
+                    <textarea
+                      value={contentForm[item.a] ?? ''}
+                      onChange={(e) => setContentValue(item.a, e.target.value)}
+                      className="glass-input"
+                      rows={5}
+                      style={{ resize: 'vertical' }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="glass-card">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="text-lg font-bold text-white">Ana Sayfa Duyuru Popup</h2>
+                  <p className="text-xs" style={{ color: '#8fa5b8' }}>Ana sayfadaki açılır duyurunun yazılarını buradan anlık güncelleyebilirsiniz.</p>
+                </div>
+                <button onClick={saveSiteContent} className="btn-primary" style={{ minHeight: '40px', minWidth: '110px' }} disabled={updateSiteContent.isPending}>
+                  {updateSiteContent.isPending ? 'Kaydediliyor...' : 'Kaydet'}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="label-text block mb-1">Duyuru Aktif mi? (true / false)</label>
+                  <input
+                    type="text"
+                    value={contentForm[ANNOUNCEMENT_CONTENT_KEYS.enabled] ?? 'true'}
+                    onChange={(e) => setContentValue(ANNOUNCEMENT_CONTENT_KEYS.enabled, e.target.value.trim().toLowerCase())}
+                    className="glass-input"
+                    style={{ minHeight: '42px' }}
+                  />
+                </div>
+                <div>
+                  <label className="label-text block mb-1">Buton Yazısı</label>
+                  <input
+                    type="text"
+                    value={contentForm[ANNOUNCEMENT_CONTENT_KEYS.button] ?? ''}
+                    onChange={(e) => setContentValue(ANNOUNCEMENT_CONTENT_KEYS.button, e.target.value)}
+                    className="glass-input"
+                    style={{ minHeight: '42px' }}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3 mt-3">
+                <div>
+                  <label className="label-text block mb-1">Başlık</label>
+                  <input
+                    type="text"
+                    value={contentForm[ANNOUNCEMENT_CONTENT_KEYS.title] ?? ''}
+                    onChange={(e) => setContentValue(ANNOUNCEMENT_CONTENT_KEYS.title, e.target.value)}
+                    className="glass-input"
+                    style={{ minHeight: '42px' }}
+                  />
+                </div>
+                <div>
+                  <label className="label-text block mb-1">Alt Başlık</label>
+                  <input
+                    type="text"
+                    value={contentForm[ANNOUNCEMENT_CONTENT_KEYS.subtitle] ?? ''}
+                    onChange={(e) => setContentValue(ANNOUNCEMENT_CONTENT_KEYS.subtitle, e.target.value)}
+                    className="glass-input"
+                    style={{ minHeight: '42px' }}
+                  />
+                </div>
+                <div>
+                  <label className="label-text block mb-1">Açıklama</label>
+                  <textarea
+                    value={contentForm[ANNOUNCEMENT_CONTENT_KEYS.body] ?? ''}
+                    onChange={(e) => setContentValue(ANNOUNCEMENT_CONTENT_KEYS.body, e.target.value)}
+                    className="glass-input"
+                    rows={3}
+                    style={{ resize: 'vertical' }}
+                  />
+                </div>
+                <div>
+                  <label className="label-text block mb-1">Kampanya Kuralları (her satır ayrı madde olur)</label>
+                  <textarea
+                    value={contentForm[ANNOUNCEMENT_CONTENT_KEYS.rules] ?? ''}
+                    onChange={(e) => setContentValue(ANNOUNCEMENT_CONTENT_KEYS.rules, e.target.value)}
+                    className="glass-input"
+                    rows={4}
+                    style={{ resize: 'vertical' }}
+                  />
+                </div>
+                <div>
+                  <label className="label-text block mb-1">Not Yazısı</label>
+                  <input
+                    type="text"
+                    value={contentForm[ANNOUNCEMENT_CONTENT_KEYS.note] ?? ''}
+                    onChange={(e) => setContentValue(ANNOUNCEMENT_CONTENT_KEYS.note, e.target.value)}
+                    className="glass-input"
+                    style={{ minHeight: '42px' }}
+                  />
+                </div>
+                <div>
+                  <label className="label-text block mb-1">Alt Yazı</label>
+                  <input
+                    type="text"
+                    value={contentForm[ANNOUNCEMENT_CONTENT_KEYS.footer] ?? ''}
+                    onChange={(e) => setContentValue(ANNOUNCEMENT_CONTENT_KEYS.footer, e.target.value)}
+                    className="glass-input"
+                    style={{ minHeight: '42px' }}
+                  />
+                </div>
+              </div>
+
+              {updateSiteContent.isSuccess && (
+                <p className="text-xs font-bold mt-3" style={{ color: '#10b981' }}>İçerikler kaydedildi. Sayfayı yenileyince güncel hali görünür.</p>
+              )}
+            </div>
           </div>
         )}
 

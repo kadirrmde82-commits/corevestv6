@@ -193,6 +193,20 @@ export const walletAddresses = mysqlTable("wallet_addresses", {
 export type WalletAddress = typeof walletAddresses.$inferSelect;
 export type InsertWalletAddress = typeof walletAddresses.$inferInsert;
 
+// ─── Editable Site Content ───
+export const siteContent = mysqlTable("site_content", {
+  key: varchar("key", { length: 64 }).primaryKey(),
+  value: text("value").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt")
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
+export type SiteContent = typeof siteContent.$inferSelect;
+export type InsertSiteContent = typeof siteContent.$inferInsert;
+
 // ─── Referral Earnings ───
 // Tracks commission earnings from referral clicks (tier 1: 10%, tier 2: 6%, tier 3: 3%)
 export const referralEarnings = mysqlTable("referral_earnings", {

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { referrals, profiles } from "@db/schema";
+import { referrals, profiles, referralEarnings } from "@db/schema";
 
 export const referralRouter = createRouter({
   // Create referral relationships when a new user registers with a referral code.
@@ -152,6 +152,20 @@ export const referralRouter = createRouter({
       tier2: allReferrals.filter(r => r.tier === 2).length,
       tier3: allReferrals.filter(r => r.tier === 3).length,
       total: allReferrals.length,
+    };
+  }),
+
+  earningsSummary: authedQuery.query(async ({ ctx }) => {
+    const db = getDb();
+    const rows = await db.query.referralEarnings.findMany({
+      where: eq(referralEarnings.referrerUserId, ctx.user.id),
+    });
+
+    return {
+      total: rows.reduce((sum, row) => sum + Number(row.commissionAmount), 0),
+      tier1: rows.filter((row) => row.tier === 1).reduce((sum, row) => sum + Number(row.commissionAmount), 0),
+      tier2: rows.filter((row) => row.tier === 2).reduce((sum, row) => sum + Number(row.commissionAmount), 0),
+      tier3: rows.filter((row) => row.tier === 3).reduce((sum, row) => sum + Number(row.commissionAmount), 0),
     };
   }),
 });

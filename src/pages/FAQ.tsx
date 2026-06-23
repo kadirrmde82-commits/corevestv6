@@ -1,27 +1,8 @@
 import { useState } from 'react';
 import { ChevronDown, HelpCircle, Shield, Zap, Globe, Target, TrendingUp, Users, Award, Bot } from 'lucide-react';
 import Layout from '../components/Layout';
-
-const FAQ_ITEMS = [
-  {
-    question: 'Nasıl Yatırım Yapılır?',
-    icon: Zap,
-    answer:
-      'Hesabınız sayfasına giderek "Para Yatır" bölümünden yatırım yapabilirsiniz. Yatırım yapmak istediğiniz tutarı girin, ardından "Yatırımı Onayla" butonuna tıklayın. Yatırımınız admin onayından sonra hesabınıza yansır ve VIP seviyeniz otomatik olarak güncellenir. Her 100$ yatırım size 1 çark çevirme hakkı kazandırır. VIP seviyeniz arttıkça günlük tıklama başına kazancınız da artar. Yatırımlarınız AI algoritmalarımız tarafından yönetilerek en yüksek getiriyi elde etmeniz sağlanır.',
-  },
-  {
-    question: 'Nasıl Çekim Yapılır?',
-    icon: Target,
-    answer:
-      'Hesabınız sayfasına giderek "Çekim Yap" bölümünden bakiyenizi çekebilirsiniz. Çekim yapabilmek için en az 5 gün boyunca günlük tıklamanız gerekmektedir. Ayrıca her çekimden önce 72 saat bekleme süresi vardır. İlk çekiminiz 30 gün için ücretsizdir, sonraki çekimlerde ise %5 işlem ücreti kesilir. Minimum çekim tutarı 10$\'dır. Çekim talebiniz admin onayından geçer ve en kısa sürede hesabınıza aktarılır.',
-  },
-  {
-    question: 'Referans Kodu Nasıl İşler?',
-    icon: Users,
-    answer:
-      'Kendi referans kodunuzu arkadaşlarınızla paylaşarak ek kazançlar elde edebilirsiniz. Davet ettiğiniz her kullanıcının yaptığı yatırımdan %3, onların davet ettiklerinden %2 ve üçüncü kademeden %1 komisyon kazanırsınız. Ayrıca davet ettiğiniz bir üye 100$ veya üzeri yatırım yaparsa 1 ek çark çevirme hakkı elde edersiniz. Referans gelirleriniz otomatik olarak bakiyenize eklenir. Ne kadar çok kişi davet ederseniz, o kadar çok pasif gelir elde edersiniz.',
-  },
-];
+import { trpc } from '@/providers/trpc';
+import { FAQ_CONTENT_KEYS, mergeSiteContent } from '@contracts/site-content';
 
 const ABOUT_SECTIONS = [
   {
@@ -58,6 +39,29 @@ const ABOUT_SECTIONS = [
 
 export default function FAQ() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const { data: siteContentData } = trpc.siteContent.public.useQuery(undefined, {
+    staleTime: 1000 * 30,
+    retry: false,
+  });
+  const siteContent = mergeSiteContent(siteContentData);
+
+  const faqItems = [
+    {
+      question: siteContent[FAQ_CONTENT_KEYS.investmentQuestion],
+      icon: Zap,
+      answer: siteContent[FAQ_CONTENT_KEYS.investmentAnswer],
+    },
+    {
+      question: siteContent[FAQ_CONTENT_KEYS.withdrawalQuestion],
+      icon: Target,
+      answer: siteContent[FAQ_CONTENT_KEYS.withdrawalAnswer],
+    },
+    {
+      question: siteContent[FAQ_CONTENT_KEYS.referralQuestion],
+      icon: Users,
+      answer: siteContent[FAQ_CONTENT_KEYS.referralAnswer],
+    },
+  ];
 
   const toggleFaq = (index: number) => {
     setOpenFaq(prev => (prev === index ? null : index));
@@ -66,7 +70,6 @@ export default function FAQ() {
   return (
     <Layout>
       <div className="grid gap-4">
-        {/* Page Header */}
         <div
           className="animate-fade-in"
           style={{
@@ -88,9 +91,8 @@ export default function FAQ() {
           </div>
         </div>
 
-        {/* FAQ Accordion */}
         <div className="grid gap-2">
-          {FAQ_ITEMS.map((item, index) => {
+          {faqItems.map((item, index) => {
             const isOpen = openFaq === index;
             const Icon = item.icon;
             return (
@@ -148,7 +150,6 @@ export default function FAQ() {
           })}
         </div>
 
-        {/* CoreVest About Section */}
         <div
           className="animate-fade-in"
           style={{
@@ -159,7 +160,6 @@ export default function FAQ() {
             boxShadow: '0 22px 60px rgba(0,0,0,0.32)',
           }}
         >
-          {/* Header */}
           <div className="text-center mb-6">
             <div className="flex items-center justify-center gap-2 mb-3">
               <img src="/logo-icon.png" alt="Corevest" className="w-10 h-10 rounded-lg" />
@@ -169,16 +169,15 @@ export default function FAQ() {
               </span>
             </div>
             <p className="text-xs font-semibold mb-2" style={{ color: '#FFD700' }}>
-              2023\'ten Beri Geleceğin Finans Dünyasında Yerinizi Alın
+              2023'ten Beri Geleceğin Finans Dünyasında Yerinizi Alın
             </p>
             <p className="text-xs leading-relaxed max-w-lg mx-auto" style={{ color: '#a9bccf' }}>
-              CoreVest, 2023 yılından bu yana faaliyet gösteren yapay zeka destekli kripto yatırım platformudur. 
-              En son teknolojileri kullanarak kripto para piyasalarını analiz eder ve en kârlı ticaret stratejilerini 
+              CoreVest, 2023 yılından bu yana faaliyet gösteren yapay zeka destekli kripto yatırım platformudur.
+              En son teknolojileri kullanarak kripto para piyasalarını analiz eder ve en kârlı ticaret stratejilerini
               otomatik olarak uygularız.
             </p>
           </div>
 
-          {/* Info Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {ABOUT_SECTIONS.map((section, i) => {
               const SectionIcon = section.icon;
@@ -213,7 +212,6 @@ export default function FAQ() {
             })}
           </div>
 
-          {/* Stats Row */}
           <div
             className="grid grid-cols-3 gap-3 mt-4 rounded-xl p-4"
             style={{
@@ -233,7 +231,6 @@ export default function FAQ() {
             ))}
           </div>
 
-          {/* Bottom CTA */}
           <div className="text-center mt-5">
             <p className="text-xs font-semibold mb-1" style={{ color: '#FFD700' }}>
               CoreVest ile Geleceğe Yatırım Yapın

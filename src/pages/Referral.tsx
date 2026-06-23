@@ -23,6 +23,10 @@ export default function Referral() {
     staleTime: 1000 * 30,
     retry: false,
   });
+  const { data: earningsSummary } = trpc.referral.earningsSummary.useQuery(undefined, {
+    staleTime: 1000 * 30,
+    retry: false,
+  });
 
   const myCode = profile?.referralCode || 'CV-----';
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
@@ -32,11 +36,10 @@ export default function Referral() {
   const tier2 = network?.tier2 || [];
   const tier3 = network?.tier3 || [];
 
-  // Commission calculation: each person in the network earns commission
-  const tier1Commission = tier1.length * REFERRAL_COMMISSIONS.tier1;
-  const tier2Commission = tier2.length * REFERRAL_COMMISSIONS.tier2;
-  const tier3Commission = tier3.length * REFERRAL_COMMISSIONS.tier3;
-  const totalCommission = tier1Commission + tier2Commission + tier3Commission;
+  const tier1Commission = earningsSummary?.tier1 ?? 0;
+  const tier2Commission = earningsSummary?.tier2 ?? 0;
+  const tier3Commission = earningsSummary?.tier3 ?? 0;
+  const totalCommission = earningsSummary?.total ?? 0;
   const totalRefs = tier1.length + tier2.length + tier3.length;
 
   const handleCopyCode = () => {
@@ -108,7 +111,7 @@ export default function Referral() {
           <div className="glass-card">
             <div className="flex items-center gap-2 mb-2"><div className="grid place-items-center rounded-xl" style={{ width: '38px', height: '38px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }}><DollarSign size={18} /></div></div>
             <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>{t('referral.totalCommission')}</span>
-            <strong className="block text-xl mt-1" style={{ color: '#FFD700' }}>${totalCommission}</strong>
+            <strong className="block text-xl mt-1" style={{ color: '#FFD700' }}>${totalCommission.toFixed(2)}</strong>
           </div>
         </div>
 
@@ -129,7 +132,7 @@ export default function Referral() {
                     <span className="text-xs" style={{ color: tItem.color }}>{tItem.rate} - {tItem.count} kişi</span>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-sm font-extrabold" style={{ color: tItem.color }}>${tItem.commission}</span>
+                    <span className="text-sm font-extrabold" style={{ color: tItem.color }}>${tItem.commission.toFixed(2)}</span>
                   </div>
                 </div>
                 <p className="text-xs" style={{ color: '#5a6a7a' }}>{tItem.desc}</p>
