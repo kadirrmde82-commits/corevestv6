@@ -8,6 +8,7 @@ import {
   int,
   decimal,
   bigint,
+  longtext,
 } from "drizzle-orm/mysql-core";
 
 // ─── Users (OAuth + Local Auth unified) ───
@@ -196,7 +197,7 @@ export type InsertWalletAddress = typeof walletAddresses.$inferInsert;
 // ─── Editable Site Content ───
 export const siteContent = mysqlTable("site_content", {
   key: varchar("key", { length: 64 }).primaryKey(),
-  value: text("value").notNull(),
+  value: longtext("value").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt")
     .defaultNow()

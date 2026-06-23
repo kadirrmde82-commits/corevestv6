@@ -95,6 +95,12 @@ export default function Admin() {
   const updateMarketPrice = trpc.marketPrice.update.useMutation({ onSuccess: () => { utils.marketPrice.listAll.invalidate(); setMarketEditOpen(false); setMarketEditId(null); } });
   const deleteMarketPrice = trpc.marketPrice.delete.useMutation({ onSuccess: () => utils.marketPrice.listAll.invalidate() });
   const updateSiteContent = trpc.siteContent.updateMany.useMutation({ onSuccess: () => { utils.siteContent.adminList.invalidate(); utils.siteContent.public.invalidate(); } });
+  const uploadAnnouncementImage = trpc.siteContent.uploadAnnouncementImage.useMutation({
+    onSuccess: () => {
+      utils.siteContent.adminList.invalidate();
+      utils.siteContent.public.invalidate();
+    },
+  });
 
   // Detail modals
   const [detailDeposit, setDetailDeposit] = useState<typeof allDeposits[0] | null>(null);
@@ -104,6 +110,26 @@ export default function Admin() {
 
   const setContentValue = (key: string, value: string) => {
     setContentForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const handleAnnouncementImageUpload = (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Lütfen JPG, PNG veya WEBP formatında bir görsel seçin.');
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      alert('Görsel en fazla 4MB olabilir. Lütfen daha küçük bir görsel seçin.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || '');
+      setContentValue(ANNOUNCEMENT_CONTENT_KEYS.imageUrl, dataUrl);
+      uploadAnnouncementImage.mutate({ dataUrl });
+    };
+    reader.readAsDataURL(file);
   };
 
   const saveSiteContent = () => {
@@ -380,16 +406,30 @@ export default function Admin() {
 
               <div className="grid gap-3 mt-3">
                 <div>
-                  <label className="label-text block mb-1">Popup Görsel URL</label>
+                  <label className="label-text block mb-1">Popup Görseli Yükle</label>
                   <input
-                    type="text"
-                    value={contentForm[ANNOUNCEMENT_CONTENT_KEYS.imageUrl] ?? ''}
-                    onChange={(e) => setContentValue(ANNOUNCEMENT_CONTENT_KEYS.imageUrl, e.target.value)}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    onChange={(e) => handleAnnouncementImageUpload(e.target.files?.[0])}
                     className="glass-input"
-                    placeholder="https://.../gorsel.jpg veya .png"
-                    style={{ minHeight: '42px' }}
+                    style={{ minHeight: '42px', paddingTop: '9px' }}
                   />
-                  <p className="text-[10px] mt-1" style={{ color: '#5a6a7a' }}>Kare görsel önerilir: 500x500 veya 1000x1000.</p>
+                  <p className="text-[10px] mt-1" style={{ color: '#5a6a7a' }}>Kare görsel önerilir: 500x500 veya 1000x1000. Maksimum 4MB.</p>
+                  {uploadAnnouncementImage.isPending && <p className="text-[10px] mt-1" style={{ color: '#FFD700' }}>Görsel yükleniyor...</p>}
+                  {contentForm[ANNOUNCEMENT_CONTENT_KEYS.imageUrl] && (
+                    <div className="mt-3 overflow-hidden rounded-xl" style={{ width: '160px', aspectRatio: '1 / 1', border: '1px solid rgba(255,215,0,0.18)', background: 'rgba(255,255,255,0.04)' }}>
+                      <img src={contentForm[ANNOUNCEMENT_CONTENT_KEYS.imageUrl]} alt="Popup önizleme" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  {contentForm[ANNOUNCEMENT_CONTENT_KEYS.imageUrl] && (
+                    <button
+                      onClick={() => setContentValue(ANNOUNCEMENT_CONTENT_KEYS.imageUrl, '')}
+                      className="btn-secondary mt-2"
+                      style={{ minHeight: '34px', fontSize: '12px' }}
+                    >
+                      Görseli Kaldır
+                    </button>
+                  )}
                 </div>
                 <div>
                   <label className="label-text block mb-1">Başlık</label>

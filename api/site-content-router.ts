@@ -6,6 +6,7 @@ import { siteContent } from "@db/schema";
 import { DEFAULT_SITE_CONTENT, mergeSiteContent } from "@contracts/site-content";
 
 const editableKeys = Object.keys(DEFAULT_SITE_CONTENT);
+const MAX_CONTENT_VALUE_LENGTH = 8_000_000;
 
 async function loadSiteContent() {
   const db = getDb();
@@ -29,7 +30,10 @@ export const siteContentRouter = createRouter({
   updateMany: adminQuery
     .input(
       z.object({
-        values: z.record(z.enum(editableKeys as [string, ...string[]]), z.string().max(5000)),
+        values: z.record(
+          z.enum(editableKeys as [string, ...string[]]),
+          z.string().max(MAX_CONTENT_VALUE_LENGTH)
+        ),
       })
     )
     .mutation(async ({ input }) => {
@@ -45,6 +49,31 @@ export const siteContentRouter = createRouter({
         } else {
           await db.insert(siteContent).values({ key, value });
         }
+      }
+
+      return { success: true };
+    }),
+
+  uploadAnnouncementImage: adminQuery
+    .input(
+      z.object({
+        dataUrl: z
+          .string()
+          .startsWith("data:image/")
+          .max(MAX_CONTENT_VALUE_LENGTH),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      const key = "announcement.imageUrl";
+      const existing = await db.query.siteContent.findFirst({
+        where: (fields, { eq }) => eq(fields.key, key),
+      });
+
+      if (existing) {
+        await db.update(siteContent).set({ value: input.dataUrl }).where(eq(siteContent.key, key));
+      } else {
+        await db.insert(siteContent).values({ key, value: input.dataUrl });
       }
 
       return { success: true };
