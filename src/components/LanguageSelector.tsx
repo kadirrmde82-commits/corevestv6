@@ -6,10 +6,16 @@ export default function LanguageSelector() {
   const { i18n, t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const activeLanguage = i18n.language?.split('-')[0] || 'tr';
 
   const languages = [
     { code: 'tr', label: t('language.tr'), flag: '🇹🇷' },
     { code: 'en', label: t('language.en'), flag: '🇺🇸' },
+    { code: 'es', label: t('language.es'), flag: '🇪🇸' },
+    { code: 'fr', label: t('language.fr'), flag: '🇫🇷' },
+    { code: 'ru', label: t('language.ru'), flag: '🇷🇺' },
+    { code: 'de', label: t('language.de'), flag: '🇩🇪' },
+    { code: 'it', label: t('language.it'), flag: '🇮🇹' },
   ];
 
   useEffect(() => {
@@ -34,13 +40,17 @@ export default function LanguageSelector() {
         }}
       >
         <Globe size={16} color="#FFD700" />
-        <span className="hidden sm:inline">{languages.find(l => l.code === i18n.language)?.label || 'Türkçe'}</span>
-        <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+        <span className="hidden sm:inline">
+          {languages.find(l => l.code === activeLanguage)?.label || 'Türkçe'}
+        </span>
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
+          <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
       </button>
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 rounded-xl overflow-hidden z-50 min-w-[160px]"
+          className="absolute right-0 top-full mt-2 rounded-xl overflow-hidden z-50 min-w-[190px]"
           style={{
             background: 'rgba(5, 9, 20, 0.95)',
             border: '1px solid rgba(248,251,255,0.1)',
@@ -56,11 +66,11 @@ export default function LanguageSelector() {
                 setOpen(false);
               }}
               className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:bg-white/5"
-              style={{ color: i18n.language === lang.code ? '#FFD700' : '#c8d6e5' }}
+              style={{ color: activeLanguage === lang.code ? '#FFD700' : '#c8d6e5' }}
             >
               <span>{lang.flag}</span>
               <span>{lang.label}</span>
-              {i18n.language === lang.code && <Check size={14} className="ml-auto" />}
+              {activeLanguage === lang.code && <Check size={14} className="ml-auto" />}
             </button>
           ))}
         </div>

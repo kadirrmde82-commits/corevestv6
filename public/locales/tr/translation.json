@@ -29,7 +29,8 @@
     "registerButton": "Kayıt Ol",
     "hasAccount": "Zaten hesabınız var mı?",
     "loginLink": "Giriş Yap",
-    "refreshCode": "Kodu Yenile"
+    "refreshCode": "Kodu Yenile",
+    "invalidSecurityCode": "Güvenlik kodu hatalı!"
   },
   "nav": {
     "home": "Ana Sayfa",
@@ -56,7 +57,7 @@
   "quantify": {
     "title": "Günlük Quantify",
     "subtitle": "24 saatte bir tıklayarak günlük ödülünüzü kazanın",
-    "clickButton": "Günlük Ödülü Al",
+    "clickButton": "Ödülü Almak İçin Tıkla",
     "nextClick": "Sonraki tıklama için kalan süre:",
     "hours": "saat",
     "minutes": "dakika",
@@ -87,7 +88,7 @@
   },
   "referral": {
     "title": "Referans Sistemi",
-    "subtitle": "Arkadaşlarınızı davet edin, onların kazançlarından komisyon alın",
+    "subtitle": "Arkadaşlarınızı davet edin, onların tıklama kazançlarından komisyon alın",
     "yourCode": "Referans Kodunuz",
     "copyCode": "Kodu Kopyala",
     "copied": "Kopyalandı!",
@@ -96,18 +97,18 @@
     "tier1": "1. Kademe (Doğrudan)",
     "tier2": "2. Kademe",
     "tier3": "3. Kademe",
-    "tier1rate": "%7 Komisyon",
-    "tier2rate": "%5 Komisyon",
-    "tier3rate": "%2 Komisyon",
+    "tier1rate": "%10 Komisyon",
+    "tier2rate": "%6 Komisyon",
+    "tier3rate": "%3 Komisyon",
     "totalReferrals": "Toplam Referans",
     "totalCommission": "Toplam Komisyon",
     "referralList": "Referans Listesi",
     "noReferrals": "Henüz referansınız bulunmuyor.",
     "howItWorks": "Nasıl Çalışır?",
     "step1": "Referans kodunuzu arkadaşlarınızla paylaşın",
-    "step2": "Arkadaşlarınız kayıt olduğunda 1. kademeye eklenir (%7)",
-    "step3": "Onların referansları 2. kademe olur (%5)",
-    "step4": "2. kademenin referansları 3. kademe olur (%2)",
+    "step2": "Arkadaşlarınız kayıt olduğunda 1. kademeye eklenir (%10)",
+    "step3": "Onların referansları 2. kademe olur (%6)",
+    "step4": "2. kademenin referansları 3. kademe olur (%3)",
     "commissionEarned": "Kazanılan Komisyon",
     "fromClicks": "tıklamalardan"
   },
@@ -137,11 +138,11 @@
     "withdraw": {
       "title": "Para Çek",
       "amount": "Çekim Miktarı",
-      "amountPlaceholder": "Çekilecek miktar",
+      "amountPlaceholder": "Minimum 50$",
       "address": "Cüzdan Adresi",
       "addressPlaceholder": "USDT (TRC20) adresi",
       "confirm": "Çekim Talebi Gönder",
-      "note": "Çekim işlemleri 24 saat içinde onaylanır."
+      "note": "Minimum çekim tutarı 50$'dır."
     },
     "support": {
       "title": "Destek",
@@ -170,6 +171,11 @@
   "language": {
     "tr": "Türkçe",
     "en": "English",
+    "es": "Español",
+    "fr": "Français",
+    "ru": "Русский",
+    "de": "Deutsch",
+    "it": "Italiano",
     "select": "Dil Seçin"
   }
 }
