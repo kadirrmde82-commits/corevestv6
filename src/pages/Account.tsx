@@ -248,13 +248,13 @@ export default function Account() {
 
   const statusLabel = (status: string) => {
     const map: Record<string, { text: string; color: string; bg: string }> = {
-      pending: { text: 'Beklemede', color: '#FFD700', bg: 'rgba(255,215,0,0.12)' },
-      approved: { text: 'Onaylandı', color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
-      rejected: { text: 'Reddedildi', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-      cancelled: { text: 'İptal Edildi', color: '#5a6a7a', bg: 'rgba(90,106,122,0.15)' },
-      open: { text: 'Beklemede', color: '#FFD700', bg: 'rgba(255,215,0,0.12)' },
-      resolved: { text: 'Çözüldü', color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
-      closed: { text: 'Kapatıldı', color: '#5a6a7a', bg: 'rgba(90,106,122,0.15)' },
+      pending: { text: t('accountExtra.status.pending'), color: '#FFD700', bg: 'rgba(255,215,0,0.12)' },
+      approved: { text: t('accountExtra.status.approved'), color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+      rejected: { text: t('accountExtra.status.rejected'), color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+      cancelled: { text: t('accountExtra.status.cancelled'), color: '#5a6a7a', bg: 'rgba(90,106,122,0.15)' },
+      open: { text: t('accountExtra.status.pending'), color: '#FFD700', bg: 'rgba(255,215,0,0.12)' },
+      resolved: { text: t('accountExtra.status.resolved'), color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+      closed: { text: t('accountExtra.status.closed'), color: '#5a6a7a', bg: 'rgba(90,106,122,0.15)' },
     };
     const s = map[status] || map.pending;
     return <span className="text-[10px] font-extrabold px-2 py-1 rounded-full" style={{ background: s.bg, color: s.color }}>{s.text}</span>;
@@ -276,28 +276,28 @@ export default function Account() {
         <div className="grid gap-3 animate-fade-in">
           <div className="flex items-center gap-3 mb-2">
             <button onClick={() => { setView('main'); setDepositStatus('idle'); setDepositAmount(''); }} className="btn-secondary" style={{ width: '36px', minHeight: '36px', padding: 0 }}><ArrowDownLeft size={16} style={{ transform: 'rotate(90deg)' }} /></button>
-            <h1 className="text-xl font-bold text-white">Para Yatır</h1>
+            <h1 className="text-xl font-bold text-white">{t('accountExtra.deposit.title')}</h1>
           </div>
           {depositStatus === 'checking' ? (
             <div className="glass-card text-center py-10">
               <div className="mx-auto mb-4 grid place-items-center rounded-full animate-pulse" style={{ width: '64px', height: '64px', background: 'rgba(255,215,0,0.1)' }}><Clock size={32} style={{ color: '#FFD700' }} /></div>
-              <p className="text-base font-bold text-white mb-2">İşleminiz Kontrol Ediliyor</p>
-              <p className="text-sm" style={{ color: '#8fa5b8' }}>Bu işlem yaklaşık 15-20 dakika sürmektedir.</p>
-              <button onClick={() => setView('main')} className="btn-secondary mt-4">Tamam</button>
+              <p className="text-base font-bold text-white mb-2">{t('accountExtra.deposit.checkingTitle')}</p>
+              <p className="text-sm" style={{ color: '#8fa5b8' }}>{t('accountExtra.deposit.checkingText')}</p>
+              <button onClick={() => setView('main')} className="btn-secondary mt-4">{t('accountExtra.ok')}</button>
             </div>
           ) : (
             <div className="grid gap-3">
               {/* Email (required) */}
               <div className="glass-card">
-                <label className="label-text block mb-2">E-posta Adresiniz <span style={{ color: '#ef4444' }}>*</span></label>
-                <input type="email" value={depositEmail} onChange={(e) => setDepositEmail(e.target.value)} placeholder="E-posta adresinizi girin" className="glass-input" style={{ minHeight: '46px' }} required />
+                <label className="label-text block mb-2">{t('accountExtra.emailAddress')} <span style={{ color: '#ef4444' }}>*</span></label>
+                <input type="email" value={depositEmail} onChange={(e) => setDepositEmail(e.target.value)} placeholder={t('accountExtra.emailPlaceholder')} className="glass-input" style={{ minHeight: '46px' }} required />
               </div>
 
               {/* Crypto Selector */}
               <div className="glass-card">
-                <label className="label-text block mb-2">Kripto Para Seçimi</label>
+                <label className="label-text block mb-2">{t('accountExtra.deposit.cryptoSelect')}</label>
                 {walletAddresses.length === 0 ? (
-                  <p className="text-xs" style={{ color: '#5a6a7a' }}>Cuzdan adresleri yukleniyor...</p>
+                  <p className="text-xs" style={{ color: '#5a6a7a' }}>{t('accountExtra.deposit.walletsLoading')}</p>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
                     {walletAddresses.map((c: any) => (
@@ -312,8 +312,8 @@ export default function Account() {
 
               {/* Deposit Amount */}
               <div className="glass-card">
-                <label className="label-text block mb-2">Yatırım Miktarı ($)</label>
-                <input type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} placeholder="Örn: 100" className="glass-input" style={{ minHeight: '46px' }} />
+                <label className="label-text block mb-2">{t('accountExtra.deposit.amount')} ($)</label>
+                <input type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} placeholder={t('accountExtra.deposit.amountExample')} className="glass-input" style={{ minHeight: '46px' }} />
               </div>
 
               {/* Wallet Address */}
@@ -322,23 +322,23 @@ export default function Account() {
                   <div className="rounded-full" style={{ width: '10px', height: '10px', background: selectedCrypto.color }} />
                   <span className="text-sm font-bold" style={{ color: selectedCrypto.color }}>{selectedCrypto.label}</span>
                 </div>
-                <p className="text-xs mb-3" style={{ color: '#8fa5b8' }}>Aşağıdaki adrese gönderim yapın:</p>
+                <p className="text-xs mb-3" style={{ color: '#8fa5b8' }}>{t('accountExtra.deposit.sendToAddress')}</p>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 text-xs font-mono truncate rounded-xl px-3 py-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(248,251,255,0.1)', color: '#c8d6e5' }}>{selectedCrypto.address}</div>
                   <button onClick={handleCopyAddress} className="btn-secondary" style={{ minHeight: '42px', width: '42px', padding: 0 }}>{copied ? <Check size={16} /> : <Copy size={16} />}</button>
                 </div>
-                {copied && <p className="text-xs mt-2 text-center" style={{ color: '#10b981' }}>Kopyalandı!</p>}
+                {copied && <p className="text-xs mt-2 text-center" style={{ color: '#10b981' }}>{t('accountExtra.copied')}</p>}
               </div>
 
               {/* Warning Message */}
               <div className="rounded-xl p-3" style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)' }}>
                 <p className="text-xs font-bold text-center" style={{ color: '#FFD700' }}>
-                  Yukarıdaki adreslerden birine gönderim yaptıktan sonra "Yatırımı Onayla" butonuna tıklayınız.
+                  {t('accountExtra.deposit.warning')}
                 </p>
               </div>
 
               <button onClick={handleDeposit} className="btn-primary" disabled={!depositAmount || Number(depositAmount) <= 0 || !depositEmail.trim()} style={{ opacity: (!depositAmount || Number(depositAmount) <= 0 || !depositEmail.trim()) ? 0.4 : 1 }}>
-                Yatırımı Onayla
+                {t('accountExtra.deposit.confirm')}
               </button>
             </div>
           )}
@@ -369,7 +369,7 @@ export default function Account() {
         <div className="grid gap-3 animate-fade-in">
           <div className="flex items-center gap-3 mb-2">
             <button onClick={() => setView('main')} className="btn-secondary" style={{ width: '36px', minHeight: '36px', padding: 0 }}><ArrowUpRight size={16} style={{ transform: 'rotate(-90deg)' }} /></button>
-            <h1 className="text-xl font-bold text-white">Para Çek</h1>
+            <h1 className="text-xl font-bold text-white">{t('accountExtra.withdraw.title')}</h1>
           </div>
 
           {/* Restriction Cards */}
@@ -378,7 +378,7 @@ export default function Account() {
             <div className="glass-card" style={{ background: is30DaysPassed ? 'rgba(16,185,129,0.06)' : 'rgba(255,215,0,0.04)', border: is30DaysPassed ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(255,215,0,0.15)' }}>
               <div className="flex items-center gap-2 mb-2">
                 <Calendar size={14} style={{ color: is30DaysPassed ? '#10b981' : '#FFD700' }} />
-                <span className="text-xs font-bold" style={{ color: is30DaysPassed ? '#10b981' : '#FFD700' }}>Ücretsiz Çekim Durumu</span>
+                <span className="text-xs font-bold" style={{ color: is30DaysPassed ? '#10b981' : '#FFD700' }}>{t('accountExtra.withdraw.freeStatus')}</span>
                 {is30DaysPassed && <Check size={14} style={{ color: '#10b981' }} />}
               </div>
               <div className="flex items-center gap-2 mb-1">
@@ -388,7 +388,7 @@ export default function Account() {
                 <span className="text-xs font-bold" style={{ color: is30DaysPassed ? '#10b981' : '#FFD700' }}>{daysSinceJoin}/30</span>
               </div>
               <p className="text-[10px]" style={{ color: '#8fa5b8' }}>
-                {is30DaysPassed ? 'Aylık ilk çekiminiz ÜCRETSİZ! Sonrakilerde %5 kesinti.' : `İlk ücretsiz çekim için ${daysUntil30} gün kaldı. Şu anki çekimlerde %5 kesinti.`}
+                {is30DaysPassed ? t('accountExtra.withdraw.freeReady') : t('accountExtra.withdraw.freeWait', { days: daysUntil30 })}
               </p>
             </div>
 
@@ -396,7 +396,7 @@ export default function Account() {
             <div className="glass-card" style={{ background: consecutiveClicks >= 5 ? 'rgba(16,185,129,0.06)' : 'rgba(255,215,0,0.04)', border: consecutiveClicks >= 5 ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(255,215,0,0.15)' }}>
               <div className="flex items-center gap-2 mb-2">
                 <MousePointerClick size={14} style={{ color: consecutiveClicks >= 5 ? '#10b981' : '#FFD700' }} />
-                <span className="text-xs font-bold" style={{ color: consecutiveClicks >= 5 ? '#10b981' : '#FFD700' }}>5 Gün Tıklama Şartı</span>
+                <span className="text-xs font-bold" style={{ color: consecutiveClicks >= 5 ? '#10b981' : '#FFD700' }}>{t('accountExtra.withdraw.clickRequirement')}</span>
                 {consecutiveClicks >= 5 && <Check size={14} style={{ color: '#10b981' }} />}
               </div>
               <div className="flex items-center gap-2 mb-1">
@@ -412,9 +412,9 @@ export default function Account() {
               <div className="glass-card" style={{ background: 'rgba(255,215,0,0.04)', border: '1px solid rgba(255,215,0,0.15)' }}>
                 <div className="flex items-center gap-2 mb-2">
                   <Clock size={14} style={{ color: '#FFD700' }} />
-                  <span className="text-xs font-bold" style={{ color: '#FFD700' }}>72 Saat (3 Gün) Bekleme</span>
+                  <span className="text-xs font-bold" style={{ color: '#FFD700' }}>{t('accountExtra.withdraw.cooldownTitle')}</span>
                 </div>
-                <p className="text-xs" style={{ color: '#8fa5b8' }}>Son çekimden sonra <strong style={{ color: '#FFD700' }}>{Math.ceil(hoursRemaining)} saat</strong> daha beklemelisiniz.</p>
+                <p className="text-xs" style={{ color: '#8fa5b8' }}>{t('accountExtra.withdraw.cooldownText', { hours: Math.ceil(hoursRemaining) })}</p>
               </div>
             )}
 
@@ -422,10 +422,10 @@ export default function Account() {
             <div className="glass-card" style={{ background: isFirstFree ? 'rgba(16,185,129,0.06)' : 'rgba(255,215,0,0.04)', border: isFirstFree ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(255,215,0,0.15)' }}>
               <div className="flex items-center gap-2 mb-1">
                 <DollarSign size={14} style={{ color: isFirstFree ? '#10b981' : '#FFD700' }} />
-                <span className="text-xs font-bold" style={{ color: isFirstFree ? '#10b981' : '#FFD700' }}>Aylık Çekim</span>
+                <span className="text-xs font-bold" style={{ color: isFirstFree ? '#10b981' : '#FFD700' }}>{t('accountExtra.withdraw.monthlyWithdrawal')}</span>
               </div>
-              <p className="text-[10px]" style={{ color: '#8fa5b8' }}>Bu ay <strong style={{ color: '#FFD700' }}>{monthlyCount}</strong> çekim yapıldı.</p>
-              <p className="text-[10px]" style={{ color: isFirstFree ? '#10b981' : '#ef4444' }}>{isFirstFree ? 'Bu ayki ilk çekiminiz ÜCRETSİZ!' : `Sonraki çekimlerde %${feePercent} kesinti.`}</p>
+              <p className="text-[10px]" style={{ color: '#8fa5b8' }}>{t('accountExtra.withdraw.monthlyCount', { count: monthlyCount })}</p>
+              <p className="text-[10px]" style={{ color: isFirstFree ? '#10b981' : '#ef4444' }}>{isFirstFree ? t('accountExtra.withdraw.firstFree') : t('accountExtra.withdraw.nextFee', { percent: feePercent })}</p>
             </div>
           </div>
 
@@ -433,46 +433,46 @@ export default function Account() {
             {withdrawSuccess ? (
               <div className="text-center py-6">
                 <div className="mx-auto mb-3 grid place-items-center rounded-full" style={{ width: '56px', height: '56px', background: 'rgba(16,185,129,0.15)' }}><Check size={28} style={{ color: '#10b981' }} /></div>
-                <p className="text-base font-bold text-white">Çekim talebiniz alındı!</p>
+                <p className="text-base font-bold text-white">{t('accountExtra.withdraw.success')}</p>
               </div>
             ) : (
               <>
                 <div className="mb-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.08)' }}>
-                  <span className="text-xs" style={{ color: '#8fa5b8' }}>Mevcut Bakiye</span>
+                  <span className="text-xs" style={{ color: '#8fa5b8' }}>{t('accountExtra.currentBalance')}</span>
                   <span className="text-lg font-extrabold text-white block">${Number(profile.balance).toFixed(2)}</span>
                 </div>
                 <div className="mb-3">
-                  <label className="label-text block mb-2">E-posta Adresiniz</label>
-                  <input type="email" value={withdrawEmail} onChange={(e) => setWithdrawEmail(e.target.value)} placeholder="E-posta adresinizi girin" className="glass-input" style={{ minHeight: '46px' }} required />
+                  <label className="label-text block mb-2">{t('accountExtra.emailAddress')}</label>
+                  <input type="email" value={withdrawEmail} onChange={(e) => setWithdrawEmail(e.target.value)} placeholder={t('accountExtra.emailPlaceholder')} className="glass-input" style={{ minHeight: '46px' }} required />
                 </div>
                 <div className="mb-3">
-                  <label className="label-text block mb-2">Çekim Miktarı ($) <span className="text-[10px] font-normal" style={{ color: '#5a6a7a' }}>(Min: 50$ / Max: 20.000$)</span></label>
-                  <input type="number" value={withdrawAmount} onChange={(e) => { const val = e.target.value; const n = Number(val); if (n > MAX_WITHDRAWAL_AMOUNT) { setWithdrawAmount(String(MAX_WITHDRAWAL_AMOUNT)); const f = (canWithdrawData as any)?.feePercent ?? 5; const ff = (canWithdrawData as any)?.isFirstFree ?? false; setFeePreview(calculateFeePreview(MAX_WITHDRAWAL_AMOUNT, ff, f)); return; } setWithdrawAmount(val); const f = (canWithdrawData as any)?.feePercent ?? 5; const ff = (canWithdrawData as any)?.isFirstFree ?? false; if (n >= MIN_WITHDRAWAL_AMOUNT) setFeePreview(calculateFeePreview(n, ff, f)); else setFeePreview(null); }} placeholder="Minimum 50$" min={MIN_WITHDRAWAL_AMOUNT} max={MAX_WITHDRAWAL_AMOUNT} className="glass-input" style={{ minHeight: '46px' }} required />
+                  <label className="label-text block mb-2">{t('accountExtra.withdraw.amount')} ($) <span className="text-[10px] font-normal" style={{ color: '#5a6a7a' }}>{t('accountExtra.withdraw.minMax')}</span></label>
+                  <input type="number" value={withdrawAmount} onChange={(e) => { const val = e.target.value; const n = Number(val); if (n > MAX_WITHDRAWAL_AMOUNT) { setWithdrawAmount(String(MAX_WITHDRAWAL_AMOUNT)); const f = (canWithdrawData as any)?.feePercent ?? 5; const ff = (canWithdrawData as any)?.isFirstFree ?? false; setFeePreview(calculateFeePreview(MAX_WITHDRAWAL_AMOUNT, ff, f)); return; } setWithdrawAmount(val); const f = (canWithdrawData as any)?.feePercent ?? 5; const ff = (canWithdrawData as any)?.isFirstFree ?? false; if (n >= MIN_WITHDRAWAL_AMOUNT) setFeePreview(calculateFeePreview(n, ff, f)); else setFeePreview(null); }} placeholder={t('accountExtra.withdraw.amountPlaceholder')} min={MIN_WITHDRAWAL_AMOUNT} max={MAX_WITHDRAWAL_AMOUNT} className="glass-input" style={{ minHeight: '46px' }} required />
                   {withdrawAmount && Number(withdrawAmount) < MIN_WITHDRAWAL_AMOUNT && (
-                    <p className="text-xs mt-2" style={{ color: '#ef4444' }}>Minimum çekim tutarı 50$ olmalıdır.</p>
+                    <p className="text-xs mt-2" style={{ color: '#ef4444' }}>{t('accountExtra.withdraw.minError')}</p>
                   )}
                 </div>
                 {feePreview && feePreview.fee > 0 && (
                   <div className="mb-3 p-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                    <div className="flex justify-between text-xs mb-1"><span style={{ color: '#8fa5b8' }}>Çekim Tutarı</span><span className="font-bold text-white">${feePreview.gross.toFixed(2)}</span></div>
-                    <div className="flex justify-between text-xs mb-1"><span style={{ color: '#ef4444' }}>Kesinti (%{feePreview.feePercent})</span><span className="font-bold" style={{ color: '#ef4444' }}>-${feePreview.fee.toFixed(2)}</span></div>
+                    <div className="flex justify-between text-xs mb-1"><span style={{ color: '#8fa5b8' }}>{t('accountExtra.withdraw.grossAmount')}</span><span className="font-bold text-white">${feePreview.gross.toFixed(2)}</span></div>
+                    <div className="flex justify-between text-xs mb-1"><span style={{ color: '#ef4444' }}>{t('accountExtra.withdraw.fee', { percent: feePreview.feePercent })}</span><span className="font-bold" style={{ color: '#ef4444' }}>-${feePreview.fee.toFixed(2)}</span></div>
                     <div className="h-px my-1" style={{ background: 'rgba(255,255,255,0.1)' }} />
-                    <div className="flex justify-between text-xs"><span style={{ color: '#10b981' }}>Net Ödeme</span><span className="font-bold" style={{ color: '#10b981' }}>${feePreview.net.toFixed(2)}</span></div>
+                    <div className="flex justify-between text-xs"><span style={{ color: '#10b981' }}>{t('accountExtra.withdraw.netPayment')}</span><span className="font-bold" style={{ color: '#10b981' }}>${feePreview.net.toFixed(2)}</span></div>
                   </div>
                 )}
                 {feePreview && feePreview.isFirstFree && (
                   <div className="mb-3 p-3 rounded-xl" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}>
-                    <p className="text-xs font-bold" style={{ color: '#10b981' }}>Bu ayki ilk çekiminiz ÜCRETSİZ! Toplam: ${feePreview.gross.toFixed(2)}</p>
+                    <p className="text-xs font-bold" style={{ color: '#10b981' }}>{t('accountExtra.withdraw.firstFreeTotal', { amount: feePreview.gross.toFixed(2) })}</p>
                   </div>
                 )}
                 <div className="mb-5">
-                  <label className="label-text block mb-2">TRC20 Cüzdan Adresi</label>
-                  <input type="text" value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} placeholder="USDT (TRC20) adresi" className="glass-input" style={{ minHeight: '46px' }} required />
+                  <label className="label-text block mb-2">{t('accountExtra.withdraw.address')}</label>
+                  <input type="text" value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} placeholder={t('accountExtra.withdraw.addressPlaceholder')} className="glass-input" style={{ minHeight: '46px' }} required />
                 </div>
                 <button onClick={handleWithdraw} className="btn-primary" style={{ opacity: isAllowed && Number(withdrawAmount || 0) >= MIN_WITHDRAWAL_AMOUNT ? 1 : 0.4 }} disabled={!isAllowed || Number(withdrawAmount || 0) < MIN_WITHDRAWAL_AMOUNT}>
-                  {isAllowed ? 'Çekim Talebi Gönder' : 'Çekim Kısıtlı'}
+                  {isAllowed ? t('accountExtra.withdraw.confirm') : t('accountExtra.withdraw.restricted')}
                 </button>
-                {!isAllowed && <p className="text-xs mt-2 text-center" style={{ color: '#ef4444' }}>{(canWithdrawData as any)?.reason || 'Çekim şartlarını tamamlayın.'}</p>}
+                {!isAllowed && <p className="text-xs mt-2 text-center" style={{ color: '#ef4444' }}>{(canWithdrawData as any)?.reason || t('accountExtra.withdraw.completeConditions')}</p>}
               </>
             )}
           </div>
