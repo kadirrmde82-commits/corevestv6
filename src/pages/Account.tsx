@@ -200,7 +200,7 @@ export default function Account() {
 
   if (!profile) return null;
 
-  const userId = (profile as any).userId ?? 0;
+  const userId = (profile as any).publicId ?? (profile as any).userId ?? 0;
   const investment = Number(profile.investment);
   let vipLevel = 0;
   for (let i = VIP_TABLE.length - 1; i >= 0; i--) {

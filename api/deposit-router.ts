@@ -48,6 +48,7 @@ export const depositRouter = createRouter({
       .select({
         id: deposits.id,
         userId: deposits.userId,
+        userPublicId: users.publicId,
         amount: deposits.amount,
         txid: deposits.txid,
         email: deposits.email,

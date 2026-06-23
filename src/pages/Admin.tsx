@@ -196,7 +196,7 @@ export default function Admin() {
                   <tbody>
                     {(membersData?.members ?? []).map((m) => (
                       <tr key={m.id} className="transition-all hover:bg-white/5" style={{ borderBottom: '1px solid rgba(248,251,255,0.04)' }}>
-                        <td className="px-4 py-3 text-xs text-white font-mono">{m.id}</td>
+                        <td className="px-4 py-3 text-xs text-white font-mono">{m.publicId ?? m.id}</td>
                         <td className="px-4 py-3 text-xs text-white">{m.email}</td>
                         <td className="px-4 py-3 text-xs" style={{ color: '#8fa5b8' }}>{m.name}</td>
                         <td className="px-4 py-3 text-xs font-bold" style={{ color: '#FFD700' }}>${m.balance.toFixed(2)}</td>
@@ -232,7 +232,7 @@ export default function Admin() {
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(100,100,255,0.12)', color: '#a78bfa' }}>{d.cryptoType?.toUpperCase() || 'TRC20'}</span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap mt-1">
-                    <span className="text-xs font-mono" style={{ color: '#8fa5b8' }}>#{d.userId}</span>
+                    <span className="text-xs font-mono" style={{ color: '#8fa5b8' }}>#{d.userPublicId ?? d.userId}</span>
                     <span className="text-xs" style={{ color: '#5a6a7a' }}>|</span>
                     <span className="text-xs" style={{ color: '#8fa5b8' }}>{d.email && d.email.trim() ? d.email : (d.userEmail || '-')}</span>
                   </div>
@@ -449,7 +449,7 @@ export default function Admin() {
             <div className="space-y-3 mb-5">
               <div className="flex justify-between items-center">
                 <span className="text-xs" style={{ color: '#8fa5b8' }}>ID</span>
-                <span className="text-sm font-bold text-white">{memberDetail.id}</span>
+                <span className="text-sm font-bold text-white">{memberDetail.publicId ?? memberDetail.id}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-xs" style={{ color: '#8fa5b8' }}>E-posta</span>
@@ -568,7 +568,7 @@ export default function Admin() {
                   <button onClick={() => { updateInvestment.mutate({ userId: selectedMemberId, newInvestment: memberDetail.profile!.investment }); }} className="btn-secondary" style={{ fontSize: '12px', minHeight: '38px' }}><RefreshCw size={14} />Yatirimi Guncelle</button>
                 </div>
                 <div className="mt-2">
-                  <button onClick={() => { if (confirm(`Üye #${selectedMemberId} - ${memberDetail.email} kalıcı olarak silinecek. Emin misiniz?`)) deleteMember.mutate({ userId: selectedMemberId }); }} className="w-full flex items-center justify-center gap-2 font-bold text-sm rounded-xl text-white" style={{ minHeight: '38px', fontSize: '12px', background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.3)' }}><X size={14} />Üyeliği Sil</button>
+                  <button onClick={() => { if (confirm(`Üye #${memberDetail.publicId ?? selectedMemberId} - ${memberDetail.email} kalıcı olarak silinecek. Emin misiniz?`)) deleteMember.mutate({ userId: selectedMemberId }); }} className="w-full flex items-center justify-center gap-2 font-bold text-sm rounded-xl text-white" style={{ minHeight: '38px', fontSize: '12px', background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.3)' }}><X size={14} />Üyeliği Sil</button>
                 </div>
               </>
             )}
@@ -649,7 +649,7 @@ export default function Admin() {
             <div className="space-y-3 mb-5">
               <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Miktar</span><span className="text-sm font-bold text-white">${Number(detailDeposit.amount).toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Kripto</span><span className="text-sm font-bold text-white">{(detailDeposit as any).cryptoType?.toUpperCase() || 'TRC20'}</span></div>
-              <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Kullanici ID</span><span className="text-sm font-bold text-white">#{detailDeposit.userId}</span></div>
+              <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Kullanici ID</span><span className="text-sm font-bold text-white">#{detailDeposit.userPublicId ?? detailDeposit.userId}</span></div>
               <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>E-posta</span><span className="text-sm font-bold text-white">{(detailDeposit as any).email || (detailDeposit as any).userEmail || '-'}</span></div>
               {(detailDeposit as any).userNote && <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Not</span><span className="text-sm text-white">{(detailDeposit as any).userNote}</span></div>}
               <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>TX ID</span><span className="text-xs font-mono text-white">{detailDeposit.txid}</span></div>

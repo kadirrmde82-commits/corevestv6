@@ -27,10 +27,10 @@ export const profileRouter = createRouter({
       const newProfile = await db.query.profiles.findFirst({
         where: eq(profiles.userId, ctx.user.id),
       });
-      return { ...newProfile!, userId: ctx.user.id };
+      return { ...newProfile!, userId: ctx.user.id, publicId: ctx.user.publicId };
     }
 
-    return { ...profile, userId: ctx.user.id };
+    return { ...profile, userId: ctx.user.id, publicId: ctx.user.publicId };
   }),
 
   // Update profile (balance, investment, etc.)

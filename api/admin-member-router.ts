@@ -43,7 +43,8 @@ export const adminMemberRouter = createRouter({
             or(
               like(users.email, searchPattern),
               like(users.name, searchPattern),
-              like(profiles.referralCode, searchPattern)
+              like(profiles.referralCode, searchPattern),
+              ...(Number.isInteger(Number(search)) ? [eq(users.publicId, Number(search))] : [])
             )
           )
           .orderBy(desc(users.createdAt))
@@ -73,7 +74,8 @@ export const adminMemberRouter = createRouter({
             or(
               like(users.email, searchPattern),
               like(users.name, searchPattern),
-              like(profiles.referralCode, searchPattern)
+              like(profiles.referralCode, searchPattern),
+              ...(Number.isInteger(Number(search)) ? [eq(users.publicId, Number(search))] : [])
             )
           );
       } else {
@@ -84,6 +86,7 @@ export const adminMemberRouter = createRouter({
 
       const members = results.map((r: any) => ({
         id: r.users.id,
+        publicId: r.users.publicId,
         email: r.users.email,
         name: r.users.name,
         role: r.users.role,
@@ -160,6 +163,7 @@ export const adminMemberRouter = createRouter({
 
       return {
         id: user.id,
+        publicId: user.publicId,
         email: user.email,
         name: user.name,
         role: user.role,

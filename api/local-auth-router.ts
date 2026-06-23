@@ -10,6 +10,7 @@ import {
   signLocalToken,
   authenticateLocalRequest,
 } from "./local-auth";
+import { createUniqueMemberId } from "./member-id";
 
 function generateReferralCode(): string {
   return "CV" + Math.random().toString(36).substring(2, 7).toUpperCase();
@@ -42,6 +43,7 @@ export const localAuthRouter = createRouter({
       // Create user
       const passwordHash = hashPassword(input.password);
       const result = await db.insert(users).values({
+        publicId: await createUniqueMemberId(),
         email: input.email.toLowerCase(),
         passwordHash,
         name: input.name || input.email.split("@")[0],
@@ -65,6 +67,7 @@ export const localAuthRouter = createRouter({
         token,
         user: {
           id: userId,
+          publicId: (await db.query.users.findFirst({ where: eq(users.id, userId) }))?.publicId,
           email: input.email.toLowerCase(),
           name: input.name || input.email.split("@")[0],
         },
@@ -112,6 +115,7 @@ export const localAuthRouter = createRouter({
         token,
         user: {
           id: user.id,
+          publicId: user.publicId,
           email: user.email,
           name: user.name,
           role: user.role,
@@ -125,6 +129,7 @@ export const localAuthRouter = createRouter({
     if (!user) return null;
     return {
       id: user.id,
+      publicId: user.publicId,
       email: user.email,
       name: user.name,
       role: user.role,
