@@ -9,6 +9,8 @@ export const FAQ_CONTENT_KEYS = {
 
 export const ANNOUNCEMENT_CONTENT_KEYS = {
   enabled: "announcement.enabled",
+  version: "announcement.version",
+  imageUrl: "announcement.imageUrl",
   title: "announcement.title",
   subtitle: "announcement.subtitle",
   body: "announcement.body",
@@ -24,11 +26,13 @@ export const DEFAULT_SITE_CONTENT: Record<string, string> = {
     'Hesabınız sayfasına giderek "Para Yatır" bölümünden yatırım yapabilirsiniz. Yatırım yapmak istediğiniz tutarı girin, ardından "Yatırımı Onayla" butonuna tıklayın. Yatırımınız admin onayından sonra hesabınıza yansır ve VIP seviyeniz otomatik olarak güncellenir. VIP seviyeniz arttıkça günlük tıklama başına kazancınız da artar. Yatırımlarınız AI algoritmalarımız tarafından yönetilerek en yüksek getiriyi elde etmeniz sağlanır.',
   [FAQ_CONTENT_KEYS.withdrawalQuestion]: "Nasıl Çekim Yapılır?",
   [FAQ_CONTENT_KEYS.withdrawalAnswer]:
-    'Hesabınız sayfasına giderek "Çekim Yap" bölümünden bakiyenizi çekebilirsiniz. Çekim yapabilmek için en az 5 gün boyunca günlük tıklamanız gerekmektedir. Ayrıca her çekimden önce 72 saat bekleme süresi vardır. İlk çekiminiz 30 gün için ücretsizdir, sonraki çekimlerde ise %5 işlem ücreti kesilir. Minimum çekim tutarı 10$\'dır. Çekim talebiniz admin onayından geçer ve en kısa sürede hesabınıza aktarılır.',
+    'Hesabınız sayfasına giderek "Çekim Yap" bölümünden bakiyenizi çekebilirsiniz. Çekim yapabilmek için en az 5 gün boyunca günlük tıklamanız gerekmektedir. Ayrıca her çekimden önce 72 saat bekleme süresi vardır. İlk çekiminiz 30 gün için ücretsizdir, sonraki çekimlerde ise %5 işlem ücreti kesilir. Minimum çekim tutarı 50$\'dır. Çekim talebiniz admin onayından geçer ve en kısa sürede hesabınıza aktarılır.',
   [FAQ_CONTENT_KEYS.referralQuestion]: "Referans Kodu Nasıl İşler?",
   [FAQ_CONTENT_KEYS.referralAnswer]:
     "Kendi referans kodunuzu arkadaşlarınızla paylaşarak ek kazançlar elde edebilirsiniz. Davet ettiğiniz her kullanıcının tıklamalarından %10, onların davet ettiklerinden %6 ve üçüncü kademeden %3 komisyon kazanırsınız. Referans gelirleriniz otomatik olarak bakiyenize eklenir. Ne kadar çok kişi davet ederseniz, o kadar çok pasif gelir elde edersiniz.",
   [ANNOUNCEMENT_CONTENT_KEYS.enabled]: "true",
+  [ANNOUNCEMENT_CONTENT_KEYS.version]: "v1",
+  [ANNOUNCEMENT_CONTENT_KEYS.imageUrl]: "",
   [ANNOUNCEMENT_CONTENT_KEYS.title]: "🎉 🎡 ÇARK AKTİF! 🎡 🎉",
   [ANNOUNCEMENT_CONTENT_KEYS.subtitle]: "1.000$'a kadar hediye bonus kazanma fırsatı sizi bekliyor!",
   [ANNOUNCEMENT_CONTENT_KEYS.body]:

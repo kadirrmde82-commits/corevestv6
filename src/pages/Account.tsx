@@ -12,6 +12,8 @@ import { VIP_TABLE } from '../store';
 
 type ActionView = 'main' | 'deposit' | 'withdraw' | 'support' | 'history';
 type HistoryTab = 'deposits' | 'withdrawals' | 'bonuses';
+const MIN_WITHDRAWAL_AMOUNT = 50;
+const MAX_WITHDRAWAL_AMOUNT = 20000;
 
 // Wallet addresses are fetched from API now
 
@@ -148,7 +150,7 @@ export default function Account() {
   };
 
   const handleWithdraw = () => {
-    if (!withdrawAmount || Number(withdrawAmount) <= 0 || !walletAddress || !withdrawEmail) return;
+    if (!withdrawAmount || Number(withdrawAmount) < MIN_WITHDRAWAL_AMOUNT || !walletAddress || !withdrawEmail) return;
     if (!profile) return;
     withdrawMutation.mutate({
       amount: Number(withdrawAmount),
@@ -384,8 +386,11 @@ export default function Account() {
                   <input type="email" value={withdrawEmail} onChange={(e) => setWithdrawEmail(e.target.value)} placeholder="E-posta adresinizi girin" className="glass-input" style={{ minHeight: '46px' }} required />
                 </div>
                 <div className="mb-3">
-                  <label className="label-text block mb-2">Çekim Miktarı ($) <span className="text-[10px] font-normal" style={{ color: '#5a6a7a' }}>(Max: 20.000$)</span></label>
-                  <input type="number" value={withdrawAmount} onChange={(e) => { const val = e.target.value; const n = Number(val); if (n > 20000) { setWithdrawAmount('20000'); const f = (canWithdrawData as any)?.feePercent ?? 5; const ff = (canWithdrawData as any)?.isFirstFree ?? false; setFeePreview(calculateFeePreview(20000, ff, f)); return; } setWithdrawAmount(val); const f = (canWithdrawData as any)?.feePercent ?? 5; const ff = (canWithdrawData as any)?.isFirstFree ?? false; if (n > 0) setFeePreview(calculateFeePreview(n, ff, f)); else setFeePreview(null); }} placeholder="Çekilecek miktar" max={20000} className="glass-input" style={{ minHeight: '46px' }} required />
+                  <label className="label-text block mb-2">Çekim Miktarı ($) <span className="text-[10px] font-normal" style={{ color: '#5a6a7a' }}>(Min: 50$ / Max: 20.000$)</span></label>
+                  <input type="number" value={withdrawAmount} onChange={(e) => { const val = e.target.value; const n = Number(val); if (n > MAX_WITHDRAWAL_AMOUNT) { setWithdrawAmount(String(MAX_WITHDRAWAL_AMOUNT)); const f = (canWithdrawData as any)?.feePercent ?? 5; const ff = (canWithdrawData as any)?.isFirstFree ?? false; setFeePreview(calculateFeePreview(MAX_WITHDRAWAL_AMOUNT, ff, f)); return; } setWithdrawAmount(val); const f = (canWithdrawData as any)?.feePercent ?? 5; const ff = (canWithdrawData as any)?.isFirstFree ?? false; if (n >= MIN_WITHDRAWAL_AMOUNT) setFeePreview(calculateFeePreview(n, ff, f)); else setFeePreview(null); }} placeholder="Minimum 50$" min={MIN_WITHDRAWAL_AMOUNT} max={MAX_WITHDRAWAL_AMOUNT} className="glass-input" style={{ minHeight: '46px' }} required />
+                  {withdrawAmount && Number(withdrawAmount) < MIN_WITHDRAWAL_AMOUNT && (
+                    <p className="text-xs mt-2" style={{ color: '#ef4444' }}>Minimum çekim tutarı 50$ olmalıdır.</p>
+                  )}
                 </div>
                 {feePreview && feePreview.fee > 0 && (
                   <div className="mb-3 p-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
@@ -404,7 +409,7 @@ export default function Account() {
                   <label className="label-text block mb-2">TRC20 Cüzdan Adresi</label>
                   <input type="text" value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} placeholder="USDT (TRC20) adresi" className="glass-input" style={{ minHeight: '46px' }} required />
                 </div>
-                <button onClick={handleWithdraw} className="btn-primary" style={{ opacity: isAllowed ? 1 : 0.4 }} disabled={!isAllowed}>
+                <button onClick={handleWithdraw} className="btn-primary" style={{ opacity: isAllowed && Number(withdrawAmount || 0) >= MIN_WITHDRAWAL_AMOUNT ? 1 : 0.4 }} disabled={!isAllowed || Number(withdrawAmount || 0) < MIN_WITHDRAWAL_AMOUNT}>
                   {isAllowed ? 'Çekim Talebi Gönder' : 'Çekim Kısıtlı'}
                 </button>
                 {!isAllowed && <p className="text-xs mt-2 text-center" style={{ color: '#ef4444' }}>{(canWithdrawData as any)?.reason || 'Çekim şartlarını tamamlayın.'}</p>}

@@ -355,6 +355,18 @@ export default function Admin() {
                   />
                 </div>
                 <div>
+                  <label className="label-text block mb-1">Gösterim Kodu</label>
+                  <input
+                    type="text"
+                    value={contentForm[ANNOUNCEMENT_CONTENT_KEYS.version] ?? 'v1'}
+                    onChange={(e) => setContentValue(ANNOUNCEMENT_CONTENT_KEYS.version, e.target.value.trim() || 'v1')}
+                    className="glass-input"
+                    placeholder="Örn: kampanya-1"
+                    style={{ minHeight: '42px' }}
+                  />
+                  <p className="text-[10px] mt-1" style={{ color: '#5a6a7a' }}>Bu kod değişirse popup kullanıcılara tekrar 1 kez gösterilir.</p>
+                </div>
+                <div>
                   <label className="label-text block mb-1">Buton Yazısı</label>
                   <input
                     type="text"
@@ -367,6 +379,18 @@ export default function Admin() {
               </div>
 
               <div className="grid gap-3 mt-3">
+                <div>
+                  <label className="label-text block mb-1">Popup Görsel URL</label>
+                  <input
+                    type="text"
+                    value={contentForm[ANNOUNCEMENT_CONTENT_KEYS.imageUrl] ?? ''}
+                    onChange={(e) => setContentValue(ANNOUNCEMENT_CONTENT_KEYS.imageUrl, e.target.value)}
+                    className="glass-input"
+                    placeholder="https://.../gorsel.jpg veya .png"
+                    style={{ minHeight: '42px' }}
+                  />
+                  <p className="text-[10px] mt-1" style={{ color: '#5a6a7a' }}>Kare görsel önerilir: 500x500 veya 1000x1000.</p>
+                </div>
                 <div>
                   <label className="label-text block mb-1">Başlık</label>
                   <input

@@ -5,6 +5,7 @@ import { getDb } from "./queries/connection";
 import { withdrawals, profiles } from "@db/schema";
 
 const WITHDRAWAL_FEE_PERCENT = 5; // %5 kesinti
+const MIN_WITHDRAWAL_AMOUNT = 50; // Minimum çekim 50$
 const MAX_WITHDRAWAL_AMOUNT = 20000; // Tek seferde max 20.000$
 
 // Helpers for withdrawal restrictions
@@ -128,7 +129,7 @@ export const withdrawalRouter = createRouter({
 
   // Calculate net amount after fee
   calculateNet: authedQuery
-    .input(z.object({ amount: z.number().positive().max(MAX_WITHDRAWAL_AMOUNT) }))
+    .input(z.object({ amount: z.number().min(MIN_WITHDRAWAL_AMOUNT).max(MAX_WITHDRAWAL_AMOUNT) }))
     .query(async ({ ctx, input }) => {
       const db = getDb();
       const profile = await db.query.profiles.findFirst({
@@ -182,6 +183,11 @@ export const withdrawalRouter = createRouter({
         where: eq(profiles.userId, ctx.user.id),
       });
       if (!profile) throw new Error("Profile not found");
+
+      // Check minimum withdrawal limit
+      if (input.amount < MIN_WITHDRAWAL_AMOUNT) {
+        throw new Error(`Minimum çekim tutarı $${MIN_WITHDRAWAL_AMOUNT} olmalıdır.`);
+      }
 
       // Check max withdrawal limit
       if (input.amount > MAX_WITHDRAWAL_AMOUNT) {

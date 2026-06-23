@@ -12,9 +12,7 @@ import { ANNOUNCEMENT_CONTENT_KEYS, mergeSiteContent } from '@contracts/site-con
 
 export default function Home() {
   const { t } = useTranslation();
-  const [showAnnouncement, setShowAnnouncement] = useState(() => {
-    return localStorage.getItem('corevest_announcement_seen') !== 'true';
-  });
+  const [showAnnouncement, setShowAnnouncement] = useState(true);
 
   // Fetch market prices from API
   const { data: marketCoins = [] } = trpc.marketPrice.list.useQuery(undefined, {
@@ -32,10 +30,17 @@ export default function Home() {
     .map((rule) => rule.trim())
     .filter(Boolean);
   const announcementEnabled = siteContent[ANNOUNCEMENT_CONTENT_KEYS.enabled] !== 'false';
+  const announcementVersion = siteContent[ANNOUNCEMENT_CONTENT_KEYS.version] || 'v1';
+  const announcementSeenKey = `corevest_announcement_seen_${announcementVersion}`;
+  const announcementImageUrl = siteContent[ANNOUNCEMENT_CONTENT_KEYS.imageUrl]?.trim();
+
+  useEffect(() => {
+    setShowAnnouncement(localStorage.getItem(announcementSeenKey) !== 'true');
+  }, [announcementSeenKey]);
 
   const dismissAnnouncement = () => {
     setShowAnnouncement(false);
-    localStorage.setItem('corevest_announcement_seen', 'true');
+    localStorage.setItem(announcementSeenKey, 'true');
   };
 
   // Fetch profile from tRPC
@@ -81,86 +86,118 @@ export default function Home() {
 
   return (
     <Layout>
-      {/* ─── Announcement Popup ─── */}
+      {/* Announcement Popup */}
       {announcementEnabled && showAnnouncement && (
         <div
-          className="relative mb-3 animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 animate-fade-in"
           style={{
-            border: '1px solid rgba(255,215,0,0.25)',
-            borderRadius: '18px',
-            padding: '20px',
-            background: 'radial-gradient(circle at 30% 20%, rgba(255,215,0,0.12), transparent 50%), radial-gradient(circle at 80% 80%, rgba(255,165,0,0.08), transparent 40%), linear-gradient(135deg, rgba(5,9,20,0.95), rgba(15,10,5,0.95))',
-            boxShadow: '0 8px 32px rgba(255,215,0,0.1)',
+            background: 'rgba(0,0,0,0.68)',
+            backdropFilter: 'blur(7px)',
           }}
         >
-          {/* Close button */}
-          <button
-            onClick={dismissAnnouncement}
-            className="absolute top-3 right-3 grid place-items-center rounded-full transition-all hover:scale-110"
+          <div
+            className="relative w-full overflow-hidden"
             style={{
-              width: '28px',
-              height: '28px',
-              background: 'rgba(255,255,255,0.08)',
-              color: '#8fa5b8',
+              maxWidth: '560px',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              border: '1px solid rgba(255,215,0,0.25)',
+              borderRadius: '24px',
+              padding: '16px',
+              background: 'radial-gradient(circle at 30% 20%, rgba(255,215,0,0.14), transparent 50%), radial-gradient(circle at 80% 80%, rgba(255,165,0,0.10), transparent 40%), linear-gradient(135deg, rgba(5,9,20,0.98), rgba(15,10,5,0.98))',
+              boxShadow: '0 24px 70px rgba(0,0,0,0.55)',
             }}
           >
-            <X size={14} />
-          </button>
-
-          <div className="pr-6">
-            <h3
-              className="text-base font-extrabold mb-3"
-              style={{ color: '#FFD700' }}
+            <button
+              onClick={dismissAnnouncement}
+              className="absolute top-3 right-3 z-10 grid place-items-center rounded-full transition-all hover:scale-110"
+              style={{
+                width: '38px',
+                height: '38px',
+                background: 'rgba(0,0,0,0.55)',
+                color: '#fff',
+                border: '1px solid rgba(255,255,255,0.15)',
+              }}
+              aria-label="Duyuruyu kapat"
             >
-              <Gift size={18} className="inline mr-1" />
-              {siteContent[ANNOUNCEMENT_CONTENT_KEYS.title]}
-            </h3>
+              <X size={20} />
+            </button>
 
-            <p className="text-sm font-bold text-white mb-2">
-              {siteContent[ANNOUNCEMENT_CONTENT_KEYS.subtitle]}
-            </p>
-
-            <p className="text-xs mb-3" style={{ color: '#a9bccf' }}>
-              {siteContent[ANNOUNCEMENT_CONTENT_KEYS.body]}
-            </p>
-
-            {announcementRules.length > 0 && (
+            {announcementImageUrl && (
               <div
-                className="rounded-xl p-3 mb-3"
+                className="mb-4 overflow-hidden"
                 style={{
-                  background: 'rgba(255,215,0,0.06)',
-                  border: '1px solid rgba(255,215,0,0.12)',
+                  width: '100%',
+                  aspectRatio: '1 / 1',
+                  borderRadius: '18px',
+                  border: '1px solid rgba(255,215,0,0.16)',
+                  background: 'rgba(255,255,255,0.04)',
                 }}
               >
-                <p className="text-xs font-bold mb-2" style={{ color: '#FFD700' }}>
-                  🎁 Kampanya Kuralları:
-                </p>
-                <ul className="space-y-1">
-                  {announcementRules.map((rule, i) => (
-                    <li key={i} className="text-xs flex items-start gap-2" style={{ color: '#c8d6e5' }}>
-                      <span style={{ color: '#10b981' }}>✅</span>
-                      <span>{rule}</span>
-                    </li>
-                  ))}
-                </ul>
+                <img
+                  src={announcementImageUrl}
+                  alt="Duyuru görseli"
+                  className="w-full h-full object-cover"
+                  loading="eager"
+                />
               </div>
             )}
 
-            <p className="text-xs mb-3" style={{ color: '#8fa5b8' }}>
-              {siteContent[ANNOUNCEMENT_CONTENT_KEYS.note]}
-            </p>
+            <div>
+              <h3
+                className="text-lg sm:text-xl font-extrabold mb-3 pr-8"
+                style={{ color: '#FFD700' }}
+              >
+                <Gift size={20} className="inline mr-1" />
+                {siteContent[ANNOUNCEMENT_CONTENT_KEYS.title]}
+              </h3>
 
-            <p className="text-xs font-bold mb-4" style={{ color: '#FFD700' }}>
-              {siteContent[ANNOUNCEMENT_CONTENT_KEYS.footer]}
-            </p>
+              <p className="text-sm sm:text-base font-bold text-white mb-2">
+                {siteContent[ANNOUNCEMENT_CONTENT_KEYS.subtitle]}
+              </p>
 
-            <button
-              onClick={dismissAnnouncement}
-              className="btn-primary"
-              style={{ minHeight: '42px', fontSize: '14px' }}
-            >
-              {siteContent[ANNOUNCEMENT_CONTENT_KEYS.button]}
-            </button>
+              <p className="text-sm mb-3" style={{ color: '#a9bccf' }}>
+                {siteContent[ANNOUNCEMENT_CONTENT_KEYS.body]}
+              </p>
+
+              {announcementRules.length > 0 && (
+                <div
+                  className="rounded-xl p-3 mb-3"
+                  style={{
+                    background: 'rgba(255,215,0,0.06)',
+                    border: '1px solid rgba(255,215,0,0.12)',
+                  }}
+                >
+                  <p className="text-xs font-bold mb-2" style={{ color: '#FFD700' }}>
+                    🎁 Kampanya Kuralları:
+                  </p>
+                  <ul className="space-y-1">
+                    {announcementRules.map((rule, i) => (
+                      <li key={i} className="text-xs sm:text-sm flex items-start gap-2" style={{ color: '#c8d6e5' }}>
+                        <span style={{ color: '#10b981' }}>✅</span>
+                        <span>{rule}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <p className="text-xs sm:text-sm mb-3" style={{ color: '#8fa5b8' }}>
+                {siteContent[ANNOUNCEMENT_CONTENT_KEYS.note]}
+              </p>
+
+              <p className="text-xs sm:text-sm font-bold mb-4" style={{ color: '#FFD700' }}>
+                {siteContent[ANNOUNCEMENT_CONTENT_KEYS.footer]}
+              </p>
+
+              <button
+                onClick={dismissAnnouncement}
+                className="btn-primary w-full"
+                style={{ minHeight: '46px', fontSize: '14px' }}
+              >
+                {siteContent[ANNOUNCEMENT_CONTENT_KEYS.button]}
+              </button>
+            </div>
           </div>
         </div>
       )}
