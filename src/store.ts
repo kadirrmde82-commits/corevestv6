@@ -48,13 +48,13 @@ export interface ReferralEntry {
 // VIP levels: investment amount + active referral requirements
 // Compound daily returns
 export const VIP_TABLE = [
-  { level: 0, min: 0, max: 99, rate: 0, refsRequired: 0 },
-  { level: 1, min: 50, max: 299, rate: 2.20, refsRequired: 0 },
-  { level: 2, min: 300, max: 1499, rate: 2.90, refsRequired: 5 },
-  { level: 3, min: 1500, max: 3999, rate: 3.60, refsRequired: 10 },
-  { level: 4, min: 4000, max: 9999, rate: 4.00, refsRequired: 16 },
-  { level: 5, min: 10000, max: 19999, rate: 4.60, refsRequired: 25 },
-  { level: 6, min: 20000, max: Infinity, rate: 5.20, refsRequired: 40 },
+  { level: 0, min: 0, max: 49, rate: 0, rateMin: 0, rateMax: 0, refsRequired: 0, balanceCap: 0, bonus: 0 },
+  { level: 1, min: 50, max: 499, rate: 2.30, rateMin: 2.00, rateMax: 2.60, refsRequired: 0, balanceCap: 3000, bonus: 0 },
+  { level: 2, min: 500, max: 1999, rate: 2.95, rateMin: 2.60, rateMax: 3.30, refsRequired: 5, balanceCap: 10000, bonus: 30 },
+  { level: 3, min: 2000, max: 5999, rate: 3.55, rateMin: 3.30, rateMax: 3.80, refsRequired: 10, balanceCap: 20000, bonus: 60 },
+  { level: 4, min: 6000, max: 19999, rate: 4.05, rateMin: 3.80, rateMax: 4.30, refsRequired: 16, balanceCap: 100000, bonus: 120 },
+  { level: 5, min: 20000, max: 49999, rate: 4.55, rateMin: 4.30, rateMax: 4.80, refsRequired: 25, balanceCap: 500000, bonus: 240 },
+  { level: 6, min: 50000, max: Infinity, rate: 5.40, rateMin: 4.80, rateMax: 6.00, refsRequired: 40, balanceCap: 1000000, bonus: 500 },
 ];
 
 // NEW Referral Commission Rates

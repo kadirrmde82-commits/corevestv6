@@ -1,7 +1,8 @@
 import { eq, count, and, desc } from "drizzle-orm";
 import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { profiles, wheelSpins, referrals, wheelReferralBonuses } from "@db/schema";
+import { profiles, wheelSpins, referrals, wheelReferralBonuses, vipBonuses } from "@db/schema";
+import { capAmount, getVipLevel } from "./vip-config";
 
 // Wheel prizes displayed on the wheel (user sees these)
 export const WHEEL_PRIZES = [
@@ -22,10 +23,32 @@ export const wheelRouter = createRouter({
   // List user's wheel spin history
   list: authedQuery.query(async ({ ctx }) => {
     const db = getDb();
-    return db.query.wheelSpins.findMany({
+    const spins = await db.query.wheelSpins.findMany({
       where: eq(wheelSpins.userId, ctx.user.id),
       orderBy: [desc(wheelSpins.createdAt)],
     });
+    const bonuses = await db.query.vipBonuses.findMany({
+      where: eq(vipBonuses.userId, ctx.user.id),
+      orderBy: [desc(vipBonuses.createdAt)],
+    });
+
+    return [
+      ...spins.map((spin) => ({
+        id: `wheel-${spin.id}`,
+        type: "wheel" as const,
+        prize: spin.prize,
+        amount: spin.prize,
+        createdAt: spin.createdAt,
+      })),
+      ...bonuses.map((bonus) => ({
+        id: `vip-${bonus.id}`,
+        type: "vip" as const,
+        vipLevel: bonus.vipLevel,
+        prize: bonus.amount,
+        amount: bonus.amount,
+        createdAt: bonus.createdAt,
+      })),
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }),
 
   // Get wheel status: available spins from own investment + referral bonuses
@@ -124,8 +147,17 @@ export const wheelRouter = createRouter({
     // 3. Visual prize is ALWAYS $10 (wheel always lands on $10)
     const visualPrize = WHEEL_PRIZES[0]; // $10 segment
 
-    // 4. ALWAYS award $10
-    const actualPrize = ACTUAL_PRIZE;
+    const activeRefsResult = await db
+      .select({ count: count() })
+      .from(referrals)
+      .where(and(eq(referrals.referrerUserId, ctx.user.id), eq(referrals.tier, 1)));
+    const vipLevel = getVipLevel(Number(profile.investment), activeRefsResult[0]?.count ?? 0);
+
+    // 4. ALWAYS award $10, capped by the member's VIP balance limit
+    const actualPrize = capAmount(Number(profile.balance), ACTUAL_PRIZE, vipLevel);
+    if (actualPrize <= 0) {
+      throw new Error("VIP bakiye limitine ulaştınız.");
+    }
     const newBalance = Number(profile.balance) + actualPrize;
 
     // 5. Record the spin

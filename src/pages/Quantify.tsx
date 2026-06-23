@@ -55,9 +55,15 @@ export default function Quantify() {
 
   const currentVipLevel = clickStatus?.vipLevel || 0;
   const dailyRate = clickStatus?.dailyRate || 0;
+  const dailyRateMin = clickStatus?.dailyRateMin ?? dailyRate;
+  const dailyRateMax = clickStatus?.dailyRateMax ?? dailyRate;
   const dailyEarning = clickStatus?.dailyEarning || 0;
+  const dailyEarningMin = clickStatus?.dailyEarningMin ?? dailyEarning;
+  const dailyEarningMax = clickStatus?.dailyEarningMax ?? dailyEarning;
   const activeRefs = referralCount?.tier1 || 0;
   const canClick = clickStatus?.canClick || false;
+  const balanceCapReached = clickStatus?.balanceCapReached || false;
+  const balanceCap = clickStatus?.balanceCap || 0;
   const investment = Number(profile?.investment || 0);
 
   const nextVip = (() => {
@@ -77,8 +83,8 @@ export default function Quantify() {
 
   const handleClick = useCallback(() => {
     if (!canClick) return;
-    clickMutation.mutate({ earning: dailyEarning });
-  }, [canClick, dailyEarning, clickMutation]);
+    clickMutation.mutate({});
+  }, [canClick, clickMutation]);
 
   if (!profile) return null;
 
@@ -105,7 +111,7 @@ export default function Quantify() {
           <div className="glass-card">
             <div className="flex items-center gap-2 mb-2"><div className="grid place-items-center rounded-xl" style={{ width: '38px', height: '38px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }}><TrendingUp size={18} /></div></div>
             <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>{t('quantifyExtra.dailyRate')}</span>
-            <strong className="block text-xl mt-1" style={{ color: dailyRate > 0 ? '#FFD700' : '#5a6a7a' }}>{dailyRate > 0 ? `%${dailyRate}` : '-'}</strong>
+            <strong className="block text-xl mt-1" style={{ color: dailyRate > 0 ? '#FFD700' : '#5a6a7a' }}>{dailyRate > 0 ? `%${dailyRateMin.toFixed(2)} - %${dailyRateMax.toFixed(2)}` : '-'}</strong>
           </div>
           <div className="glass-card">
             <div className="flex items-center gap-2 mb-2"><div className="grid place-items-center rounded-xl" style={{ width: '38px', height: '38px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }}><Users size={18} /></div></div>
@@ -128,10 +134,16 @@ export default function Quantify() {
                 <p className="text-xs" style={{ color: '#10b981' }}>{t('quantifyExtra.welcomeBonus')}</p>
               </div>
             </>
+          ) : balanceCapReached ? (
+            <>
+              <div className="mx-auto mb-4 grid place-items-center rounded-full" style={{ width: '72px', height: '72px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(248,251,255,0.1)' }}><Clock size={32} style={{ color: '#FFD700' }} /></div>
+              <p className="text-sm font-bold mb-2 text-white">{t('quantifyExtra.balanceCapReached')}</p>
+              <p className="text-xs" style={{ color: '#8fa5b8' }}>{t('quantifyExtra.balanceCapReachedDesc', { amount: Number(balanceCap).toLocaleString() })}</p>
+            </>
           ) : canClick ? (
             <>
               <div className="mx-auto mb-4 grid place-items-center rounded-full animate-glow" style={{ width: '72px', height: '72px', background: 'linear-gradient(135deg, #FFD700, #FFA500)' }}><MousePointerClick size={32} color="#04070d" /></div>
-              <p className="text-sm mb-3" style={{ color: '#8fa5b8' }}>{t('quantifyExtra.dailyEarning')} <strong style={{ color: '#FFD700' }}>${dailyEarning.toFixed(2)}</strong> (%{dailyRate} {t('quantifyExtra.compound')})</p>
+              <p className="text-sm mb-3" style={{ color: '#8fa5b8' }}>{t('quantifyExtra.dailyEarning')} <strong style={{ color: '#FFD700' }}>${dailyEarningMin.toFixed(2)} - ${dailyEarningMax.toFixed(2)}</strong> (%{dailyRateMin.toFixed(2)} - %{dailyRateMax.toFixed(2)})</p>
               <button onClick={handleClick} className="btn-primary" style={{ maxWidth: '300px', margin: '0 auto', fontSize: '1rem', minHeight: '52px' }}>{t('quantify.clickButton')}</button>
               {showSuccess && <p className="mt-3 text-sm font-semibold" style={{ color: '#10b981' }}>+${dailyEarning.toFixed(2)} {t('quantifyExtra.earned')}</p>}
             </>
@@ -176,7 +188,7 @@ export default function Quantify() {
             <div className="space-y-2">
               <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>{t('quantifyExtra.minInvestment')}</span><span className="text-xs font-bold" style={{ color: '#FFD700' }}>${nextVip.minInvestment.toLocaleString()}</span></div>
               {nextVip.refsRequired > 0 && <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>{t('quantifyExtra.activeReferral')}</span><span className="text-xs font-bold" style={{ color: activeRefs >= nextVip.refsRequired ? '#10b981' : '#FFD700' }}>{activeRefs} / {nextVip.refsRequired}</span></div>}
-              <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>{t('quantifyExtra.dailyRate')}</span><span className="text-xs font-bold" style={{ color: '#FFD700' }}>%{VIP_TABLE.find(v => v.level === nextVip.nextLevel)?.rate || 0}</span></div>
+              <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>{t('quantifyExtra.dailyRate')}</span><span className="text-xs font-bold" style={{ color: '#FFD700' }}>{(() => { const vip = VIP_TABLE.find(v => v.level === nextVip.nextLevel); return vip ? `%${vip.rateMin.toFixed(2)} - %${vip.rateMax.toFixed(2)}` : '%0'; })()}</span></div>
             </div>
           </div>
         )}
@@ -200,7 +212,7 @@ export default function Quantify() {
                     <span className="text-xs" style={{ color: '#8fa5b8' }}>${vip.min.toLocaleString()}+ {vip.refsRequired > 0 ? `| ${vip.refsRequired} Ref` : ''}</span>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-sm font-extrabold" style={{ color: '#FFD700' }}>%{vip.rate}</span>
+                    <span className="text-sm font-extrabold" style={{ color: '#FFD700' }}>%{vip.rateMin.toFixed(2)} - %{vip.rateMax.toFixed(2)}</span>
                     <span className="text-xs block" style={{ color: '#5a6a7a' }}>{t('quantifyExtra.daily')}</span>
                   </div>
                 </div>

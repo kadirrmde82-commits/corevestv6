@@ -214,7 +214,9 @@
     "minInvestment": "Мин. инвестиция",
     "vipLevels": "VIP-уровни",
     "yourLevel": "Ваш уровень",
-    "daily": "Ежедневно"
+    "daily": "Ежедневно",
+    "balanceCapReached": "Вы достигли лимита баланса VIP.",
+    "balanceCapReachedDesc": "Максимальный баланс для этого VIP-уровня — ${{amount}}, поэтому клики отключены."
   },
   "referralExtra": {
     "qrInvite": "Пригласить через QR",
@@ -263,7 +265,7 @@
     "bonuses": "Бонусы",
     "noWithdrawals": "У вас пока нет заявок на вывод.",
     "noDeposits": "У вас пока нет депозитов.",
-    "noWheelBonus": "У вас пока нет бонусов колеса.",
+    "noWheelBonus": "У вас пока нет бонусов.",
     "wheelReward": "Награда колеса",
     "cancelRequest": "Отменить заявку",
     "installApp": "Установить как приложение",
@@ -273,6 +275,7 @@
     "iosInstallSteps": "В Safari нажмите значок “Поделиться”, затем выберите “На экран Домой”.",
     "manualInstallTitle": "Добавить на главный экран",
     "manualInstallSteps": "Откройте меню браузера и выберите “Установить приложение” или “Добавить на главный экран”.",
-    "appInstalled": "Corevest добавлен на главный экран."
+    "appInstalled": "Corevest добавлен на главный экран.",
+    "vipBonusReward": "Бонус уровня VIP {{level}}"
   }
 }

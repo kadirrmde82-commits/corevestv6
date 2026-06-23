@@ -157,6 +157,17 @@ export type WheelReferralBonus = typeof wheelReferralBonuses.$inferSelect;
 export type InsertWheelReferralBonus = typeof wheelReferralBonuses.$inferInsert;
 
 // ─── Market Prices (Admin-managed) ───
+export const vipBonuses = mysqlTable("vip_bonuses", {
+  id: serial("id").primaryKey(),
+  userId: bigint("userId", { mode: "number", unsigned: true }).notNull(),
+  vipLevel: int("vipLevel").notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type VipBonus = typeof vipBonuses.$inferSelect;
+export type InsertVipBonus = typeof vipBonuses.$inferInsert;
+
 export const marketPrices = mysqlTable("market_prices", {
   id: serial("id").primaryKey(),
   symbol: varchar("symbol", { length: 16 }).notNull().unique(),

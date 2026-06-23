@@ -214,7 +214,9 @@
     "minInvestment": "Min. Investition",
     "vipLevels": "VIP-Level",
     "yourLevel": "Dein Level",
-    "daily": "Täglich"
+    "daily": "Täglich",
+    "balanceCapReached": "Du hast dein VIP-Guthabenlimit erreicht.",
+    "balanceCapReachedDesc": "Das maximale Guthaben für dieses VIP-Level beträgt ${{amount}}, daher sind Klicks deaktiviert."
   },
   "referralExtra": {
     "qrInvite": "Mit QR einladen",
@@ -263,7 +265,7 @@
     "bonuses": "Boni",
     "noWithdrawals": "Du hast noch keine Auszahlungsanfragen.",
     "noDeposits": "Du hast noch keine Einzahlungen.",
-    "noWheelBonus": "Du hast noch keine Rad-Boni.",
+    "noWheelBonus": "Du hast noch keine Boni.",
     "wheelReward": "Rad-Belohnung",
     "cancelRequest": "Anfrage abbrechen",
     "installApp": "Als App installieren",
@@ -273,6 +275,7 @@
     "iosInstallSteps": "Tippe in Safari auf das Teilen-Symbol und wähle dann “Zum Home-Bildschirm”.",
     "manualInstallTitle": "Zum Startbildschirm hinzufügen",
     "manualInstallSteps": "Öffne das Browser-Menü und wähle “App installieren” oder “Zum Startbildschirm hinzufügen”.",
-    "appInstalled": "Corevest wurde deinem Startbildschirm hinzugefügt."
+    "appInstalled": "Corevest wurde deinem Startbildschirm hinzugefügt.",
+    "vipBonusReward": "VIP {{level}} Level-Bonus"
   }
 }

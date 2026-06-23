@@ -27,6 +27,20 @@ async function ensureSiteAssetsTable() {
   `);
 }
 
+async function ensureVipBonusesTable() {
+  const db = getDb();
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS vip_bonuses (
+      \`id\` bigint unsigned NOT NULL AUTO_INCREMENT,
+      \`userId\` bigint unsigned NOT NULL,
+      \`vipLevel\` int NOT NULL,
+      \`amount\` decimal(12,2) NOT NULL,
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`id\`)
+    )
+  `);
+}
+
 function errorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
   return String(error);
@@ -132,6 +146,7 @@ export default app;
 
 if (env.isProduction) {
   await ensureAdminAccount();
+  await ensureVipBonusesTable();
   const { serve } = await import("@hono/node-server");
   const { serveStaticFiles } = await import("./lib/vite");
   serveStaticFiles(app);

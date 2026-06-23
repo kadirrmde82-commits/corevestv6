@@ -601,10 +601,10 @@ export default function Account() {
                 <div key={spin.id} className="glass-card flex items-center gap-3" style={{ padding: '14px 16px' }}>
                   <div className="grid place-items-center rounded-lg shrink-0" style={{ width: '38px', height: '38px', background: 'rgba(255,215,0,0.1)', color: '#FFD700' }}><Gift size={16} /></div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm font-bold text-white block">{t('accountExtra.wheelReward')}</span>
+                    <span className="text-sm font-bold text-white block">{spin.type === 'vip' ? t('accountExtra.vipBonusReward', { level: spin.vipLevel }) : t('accountExtra.wheelReward')}</span>
                     <span className="text-xs" style={{ color: '#8fa5b8' }}>{spin.createdAt ? new Date(spin.createdAt).toLocaleDateString() : ''}</span>
                   </div>
-                  <span className="text-sm font-extrabold" style={{ color: '#FFD700' }}>+${Number(spin.prize).toFixed(2)}</span>
+                  <span className="text-sm font-extrabold" style={{ color: '#FFD700' }}>+${Number(spin.amount ?? spin.prize).toFixed(2)}</span>
                 </div>
               ))}
             </div>

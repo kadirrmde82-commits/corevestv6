@@ -1,9 +1,19 @@
 import { z } from "zod";
-import { eq, desc } from "drizzle-orm";
+import { and, count, eq, desc } from "drizzle-orm";
 import { createRouter, authedQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { deposits, profiles, users } from "@db/schema";
+import { deposits, profiles, users, referrals, vipBonuses } from "@db/schema";
 import { awardReferralWheelBonus } from "./wheel-router";
+import { capAmount, getVipInfo, getVipLevel } from "./vip-config";
+
+async function getTier1ReferralCount(userId: number) {
+  const db = getDb();
+  const rows = await db
+    .select({ count: count() })
+    .from(referrals)
+    .where(and(eq(referrals.referrerUserId, userId), eq(referrals.tier, 1)));
+  return rows[0]?.count ?? 0;
+}
 
 export const depositRouter = createRouter({
   // Create a new deposit request
@@ -74,6 +84,7 @@ export const depositRouter = createRouter({
         where: eq(deposits.id, input.id),
       });
       if (!deposit) throw new Error("Deposit not found");
+      if (deposit.status === "approved") return { success: true };
 
       // Update deposit status
       await db
@@ -89,9 +100,39 @@ export const depositRouter = createRouter({
         const currentInvestment = Number(userProfile.investment);
         const depositAmount = Number(deposit.amount);
         const newInvestment = currentInvestment + depositAmount;
+        const activeRefs = await getTier1ReferralCount(deposit.userId);
+        const previousVipLevel = getVipLevel(currentInvestment, activeRefs);
+        const newVipLevel = getVipLevel(newInvestment, activeRefs);
+        let balanceAfterBonuses = Number(userProfile.balance);
+
+        for (let level = previousVipLevel + 1; level <= newVipLevel; level++) {
+          const vipInfo = getVipInfo(level);
+          if (vipInfo.bonus <= 0) continue;
+
+          const alreadyAwarded = await db.query.vipBonuses.findFirst({
+            where: and(eq(vipBonuses.userId, deposit.userId), eq(vipBonuses.vipLevel, level)),
+          });
+          if (alreadyAwarded) continue;
+
+          const actualBonus = capAmount(balanceAfterBonuses, vipInfo.bonus, newVipLevel);
+          if (actualBonus <= 0) continue;
+
+          balanceAfterBonuses += actualBonus;
+          await db.insert(vipBonuses).values({
+            userId: deposit.userId,
+            vipLevel: level,
+            amount: String(actualBonus),
+          });
+        }
+
         await db
           .update(profiles)
-          .set({ investment: String(newInvestment) })
+          .set({
+            investment: String(newInvestment),
+            vipLevel: newVipLevel,
+            balance: String(balanceAfterBonuses),
+            totalEarned: String(Number(userProfile.totalEarned) + (balanceAfterBonuses - Number(userProfile.balance))),
+          })
           .where(eq(profiles.userId, deposit.userId));
 
         // Award wheel bonus spins to tier-1 referrer if $100+ deposit

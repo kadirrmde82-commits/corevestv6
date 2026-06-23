@@ -214,7 +214,9 @@
     "minInvestment": "Min. Yatırım",
     "vipLevels": "VIP Seviyeleri",
     "yourLevel": "Sizin Seviyeniz",
-    "daily": "Günlük"
+    "daily": "Günlük",
+    "balanceCapReached": "VIP bakiye limitine ulaştınız.",
+    "balanceCapReachedDesc": "Bu VIP seviyesinde maksimum bakiye {{amount}}$ olduğu için artık tıklama yapılamaz."
   },
   "referralExtra": {
     "qrInvite": "QR ile Davet Et",
@@ -263,7 +265,7 @@
     "bonuses": "Bonuslar",
     "noWithdrawals": "Henüz çekim talebiniz bulunmuyor.",
     "noDeposits": "Henüz yatırım işleminiz bulunmuyor.",
-    "noWheelBonus": "Henüz çark bonusunuz bulunmuyor.",
+    "noWheelBonus": "Henüz bonusunuz bulunmuyor.",
     "wheelReward": "Çark Ödülü",
     "cancelRequest": "İptal Et",
     "installApp": "Uygulama Olarak İndir",
@@ -273,6 +275,7 @@
     "iosInstallSteps": "Safari’de paylaş simgesine dokunun, ardından “Ana Ekrana Ekle” seçeneğini seçin.",
     "manualInstallTitle": "Ana ekrana ekle",
     "manualInstallSteps": "Tarayıcı menüsünü açın ve “Uygulamayı yükle” veya “Ana ekrana ekle” seçeneğini seçin.",
-    "appInstalled": "Corevest ana ekranınıza eklendi."
+    "appInstalled": "Corevest ana ekranınıza eklendi.",
+    "vipBonusReward": "VIP {{level}} Seviye Bonusu"
   }
 }
