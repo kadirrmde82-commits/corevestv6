@@ -14,9 +14,22 @@ import {
   ticketMessages,
   referrals,
   referralEarnings,
+  clickEarnings,
+  vipBonuses,
   userLoginEvents,
 } from "@db/schema";
 import { logAdminActivity } from "./admin-system-router";
+import { awardReferralWheelBonus } from "./wheel-router";
+import { capAmount, getVipInfo, getVipLevel } from "./vip-config";
+
+async function getTier1ReferralCountForUser(userId: number) {
+  const db = getDb();
+  const rows = await db
+    .select({ count: count() })
+    .from(referrals)
+    .where(and(eq(referrals.referrerUserId, userId), eq(referrals.tier, 1)));
+  return rows[0]?.count ?? 0;
+}
 
 export const adminMemberRouter = createRouter({
   // List all members with profiles
@@ -252,6 +265,10 @@ export const adminMemberRouter = createRouter({
       const approvedDeposits = await db.query.deposits.findMany({
         where: and(eq(deposits.userId, input.userId), eq(deposits.status, "approved")),
       });
+      const memberDeposits = await db.query.deposits.findMany({
+        where: eq(deposits.userId, input.userId),
+        orderBy: [desc(deposits.createdAt)],
+      });
       const latestLogin = await db.query.userLoginEvents.findFirst({
         where: eq(userLoginEvents.userId, input.userId),
         orderBy: [desc(userLoginEvents.createdAt)],
@@ -298,6 +315,15 @@ export const adminMemberRouter = createRouter({
         referralBonusSpins,
         totalEarnedSpins,
         referralBonuses: bonuses,
+        deposits: memberDeposits.map((deposit) => ({
+          id: deposit.id,
+          amount: Number(deposit.amount),
+          txid: deposit.txid,
+          email: deposit.email,
+          cryptoType: deposit.cryptoType,
+          status: deposit.status,
+          createdAt: deposit.createdAt,
+        })),
         latestLogin: latestLogin ? {
           ipAddress: latestLogin.ipAddress,
           country: latestLogin.country,
@@ -352,6 +378,124 @@ export const adminMemberRouter = createRouter({
         .where(eq(profiles.userId, input.userId));
       await logAdminActivity({ adminUserId: ctx.user.id, action: "member.updateInvestment", targetType: "user", targetId: input.userId, details: { newInvestment: input.newInvestment }, req: ctx.req });
       return { success: true, newInvestment: input.newInvestment };
+    }),
+
+  addDeposit: adminQuery
+    .input(
+      z.object({
+        userId: z.number(),
+        amount: z.number().positive(),
+        email: z.string().email().optional(),
+        cryptoType: z.enum(["trc20", "sol", "trx", "eth"]).default("trc20"),
+        status: z.enum(["pending", "approved"]).default("approved"),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = getDb();
+      const user = await db.query.users.findFirst({ where: eq(users.id, input.userId) });
+      if (!user) throw new Error("User not found");
+      const txid = `ADMIN-${Math.floor(Math.random() * 900000 + 100000)}`;
+      const result = await db.insert(deposits).values({
+        userId: input.userId,
+        amount: String(input.amount),
+        txid,
+        email: input.email || user.email || "admin@corevest.local",
+        cryptoType: input.cryptoType,
+        status: input.status,
+        userNote: "Admin tarafından eklendi",
+      });
+
+      if (input.status === "approved") {
+        const profile = await db.query.profiles.findFirst({ where: eq(profiles.userId, input.userId) });
+        if (profile) {
+          const currentInvestment = Number(profile.investment);
+          const newInvestment = currentInvestment + input.amount;
+          const activeRefs = await getTier1ReferralCountForUser(input.userId);
+          const previousVipLevel = getVipLevel(currentInvestment, activeRefs);
+          const newVipLevel = getVipLevel(newInvestment, activeRefs);
+          let newBalance = Number(profile.balance) + input.amount;
+          let bonusTotal = 0;
+
+          for (let level = previousVipLevel + 1; level <= newVipLevel; level++) {
+            const vipInfo = getVipInfo(level);
+            if (vipInfo.bonus <= 0) continue;
+            const alreadyAwarded = await db.query.vipBonuses.findFirst({
+              where: and(eq(vipBonuses.userId, input.userId), eq(vipBonuses.vipLevel, level)),
+            });
+            if (alreadyAwarded) continue;
+            const actualBonus = capAmount(newBalance, vipInfo.bonus, newVipLevel);
+            if (actualBonus <= 0) continue;
+            newBalance += actualBonus;
+            bonusTotal += actualBonus;
+            await db.insert(vipBonuses).values({
+              userId: input.userId,
+              vipLevel: level,
+              amount: String(actualBonus),
+            });
+          }
+
+          await db
+            .update(profiles)
+            .set({
+              investment: String(newInvestment),
+              balance: String(newBalance),
+              totalEarned: String(Number(profile.totalEarned) + bonusTotal),
+              vipLevel: newVipLevel,
+            })
+            .where(eq(profiles.userId, input.userId));
+
+          await awardReferralWheelBonus(db, input.userId, input.amount);
+        }
+      }
+
+      await logAdminActivity({
+        adminUserId: ctx.user.id,
+        action: "member.addDeposit",
+        targetType: "user",
+        targetId: input.userId,
+        details: { amount: input.amount, status: input.status, depositId: Number(result[0].insertId) },
+        req: ctx.req,
+      });
+
+      return { success: true, id: Number(result[0].insertId) };
+    }),
+
+  deleteDeposit: adminQuery
+    .input(z.object({ depositId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = getDb();
+      const deposit = await db.query.deposits.findFirst({ where: eq(deposits.id, input.depositId) });
+      if (!deposit) throw new Error("Deposit not found");
+
+      if (deposit.status === "approved") {
+        const profile = await db.query.profiles.findFirst({ where: eq(profiles.userId, deposit.userId) });
+        if (profile) {
+          const amount = Number(deposit.amount);
+          const newInvestment = Math.max(0, Number(profile.investment) - amount);
+          const newBalance = Math.max(0, Number(profile.balance) - amount);
+          const activeRefs = await getTier1ReferralCountForUser(deposit.userId);
+          const newVipLevel = getVipLevel(newInvestment, activeRefs);
+          await db
+            .update(profiles)
+            .set({
+              investment: String(newInvestment),
+              balance: String(newBalance),
+              vipLevel: newVipLevel,
+            })
+            .where(eq(profiles.userId, deposit.userId));
+        }
+      }
+
+      await db.delete(deposits).where(eq(deposits.id, input.depositId));
+      await logAdminActivity({
+        adminUserId: ctx.user.id,
+        action: "member.deleteDeposit",
+        targetType: "deposit",
+        targetId: input.depositId,
+        details: { userId: deposit.userId, amount: deposit.amount, status: deposit.status },
+        req: ctx.req,
+      });
+      return { success: true };
     }),
 
   // Update VIP level
@@ -453,6 +597,8 @@ export const adminMemberRouter = createRouter({
 
       // 5. Wheel spins
       await db.delete(wheelSpins).where(eq(wheelSpins.userId, uid));
+
+      await db.delete(clickEarnings).where(eq(clickEarnings.userId, uid));
 
       // 6. Wheel referral bonuses (as userId)
       await db

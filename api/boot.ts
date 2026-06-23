@@ -94,6 +94,17 @@ async function ensureSystemTables() {
     )
   `);
   await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS click_earnings (
+      \`id\` bigint unsigned NOT NULL AUTO_INCREMENT,
+      \`userId\` bigint unsigned NOT NULL,
+      \`vipLevel\` int NOT NULL,
+      \`dailyRate\` decimal(5,2) NOT NULL,
+      \`amount\` decimal(12,2) NOT NULL,
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`id\`)
+    )
+  `);
+  await db.execute(sql`
     CREATE TABLE IF NOT EXISTS user_presence (
       \`userId\` bigint unsigned NOT NULL,
       \`lastSeenAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,

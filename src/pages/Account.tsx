@@ -12,7 +12,7 @@ import { trpc } from '@/providers/trpc';
 import { VIP_TABLE } from '../store';
 
 type ActionView = 'main' | 'deposit' | 'withdraw' | 'support' | 'history';
-type HistoryTab = 'deposits' | 'withdrawals' | 'bonuses' | 'referrals';
+type HistoryTab = 'deposits' | 'withdrawals' | 'clicks' | 'bonuses' | 'referrals';
 const MIN_WITHDRAWAL_AMOUNT = 50;
 const MAX_WITHDRAWAL_AMOUNT = 20000;
 
@@ -56,6 +56,10 @@ export default function Account() {
     retry: false,
   });
   const { data: referralEarnings = [] } = trpc.referral.earningsList.useQuery(undefined, {
+    staleTime: 1000 * 30,
+    retry: false,
+  });
+  const { data: clickEarnings = [] } = trpc.click.history.useQuery(undefined, {
     staleTime: 1000 * 30,
     retry: false,
   });
@@ -577,6 +581,7 @@ export default function Account() {
           <div className="flex gap-2">
             <button onClick={() => setHistoryTab('withdrawals')} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all" style={{ background: historyTab === 'withdrawals' ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.04)', border: historyTab === 'withdrawals' ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(248,251,255,0.06)', color: historyTab === 'withdrawals' ? '#FFD700' : '#8fa5b8' }}>{t('accountExtra.withdrawalRequests')}</button>
             <button onClick={() => setHistoryTab('deposits')} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all" style={{ background: historyTab === 'deposits' ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.04)', border: historyTab === 'deposits' ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(248,251,255,0.06)', color: historyTab === 'deposits' ? '#FFD700' : '#8fa5b8' }}>{t('accountExtra.depositHistory')}</button>
+            <button onClick={() => setHistoryTab('clicks')} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all" style={{ background: historyTab === 'clicks' ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.04)', border: historyTab === 'clicks' ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(248,251,255,0.06)', color: historyTab === 'clicks' ? '#FFD700' : '#8fa5b8' }}>Tıklama</button>
             <button onClick={() => setHistoryTab('bonuses')} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all" style={{ background: historyTab === 'bonuses' ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.04)', border: historyTab === 'bonuses' ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(248,251,255,0.06)', color: historyTab === 'bonuses' ? '#FFD700' : '#8fa5b8' }}>{t('accountExtra.bonuses')}</button>
             <button onClick={() => setHistoryTab('referrals')} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all" style={{ background: historyTab === 'referrals' ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.04)', border: historyTab === 'referrals' ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(248,251,255,0.06)', color: historyTab === 'referrals' ? '#FFD700' : '#8fa5b8' }}>Referans</button>
           </div>
@@ -615,6 +620,21 @@ export default function Account() {
                     <span className="text-xs" style={{ color: '#8fa5b8' }}>{spin.createdAt ? new Date(spin.createdAt).toLocaleDateString() : ''}</span>
                   </div>
                   <span className="text-sm font-extrabold" style={{ color: '#FFD700' }}>+${Number(spin.amount ?? spin.prize).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {historyTab === 'clicks' && (
+            <div className="grid gap-2">
+              {clickEarnings.length === 0 ? <p className="text-sm text-center py-8" style={{ color: '#5a6a7a' }}>Henüz tıklama kazancınız bulunmuyor.</p> : clickEarnings.map((earning: any) => (
+                <div key={earning.id} className="glass-card flex items-center gap-3" style={{ padding: '14px 16px' }}>
+                  <div className="grid place-items-center rounded-lg shrink-0" style={{ width: '38px', height: '38px', background: 'rgba(16,185,129,0.1)', color: '#10b981' }}><MousePointerClick size={16} /></div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-bold text-white block">Tıklama Kazancı</span>
+                    <span className="text-xs" style={{ color: '#8fa5b8' }}>{earning.createdAt ? new Date(earning.createdAt).toLocaleDateString() : ''} · VIP {earning.vipLevel} · %{Number(earning.dailyRate).toFixed(2)}</span>
+                  </div>
+                  <span className="text-sm font-extrabold" style={{ color: '#10b981' }}>+${Number(earning.amount).toFixed(2)}</span>
                 </div>
               ))}
             </div>

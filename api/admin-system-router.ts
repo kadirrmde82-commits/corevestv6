@@ -4,6 +4,7 @@ import { createRouter, adminQuery, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import {
   adminActivityLogs,
+  clickEarnings,
   deposits,
   profiles,
   referralEarnings,
@@ -375,6 +376,7 @@ export const adminSystemRouter = createRouter({
       users: await db.select().from(users),
       profiles: await db.select().from(profiles),
       deposits: await db.select().from(deposits),
+      clickEarnings: await db.select().from(clickEarnings),
       withdrawals: await db.select().from(withdrawals),
       referrals: await db.select().from(referrals),
       referralEarnings: await db.select().from(referralEarnings),

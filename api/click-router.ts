@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { and, count, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { profiles, referrals, referralEarnings } from "@db/schema";
+import { clickEarnings, profiles, referrals, referralEarnings } from "@db/schema";
 import { capAmount, getRandomDailyRate, getVipInfo, getVipLevel } from "./vip-config";
 
 export const REFERRAL_COMMISSIONS = {
@@ -70,6 +70,22 @@ async function getTier1ReferralCount(userId: number) {
 }
 
 export const clickRouter = createRouter({
+  history: authedQuery.query(async ({ ctx }) => {
+    const db = getDb();
+    const rows = await db.query.clickEarnings.findMany({
+      where: eq(clickEarnings.userId, ctx.user.id),
+      orderBy: [desc(clickEarnings.createdAt)],
+      limit: 100,
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      vipLevel: row.vipLevel,
+      dailyRate: Number(row.dailyRate),
+      amount: Number(row.amount),
+      createdAt: row.createdAt,
+    }));
+  }),
+
   status: authedQuery.query(async ({ ctx }) => {
     const db = getDb();
     const profile = await db.query.profiles.findFirst({
@@ -158,6 +174,13 @@ export const clickRouter = createRouter({
           vipLevel,
         })
         .where(eq(profiles.userId, ctx.user.id));
+
+      await db.insert(clickEarnings).values({
+        userId: ctx.user.id,
+        vipLevel,
+        dailyRate: String(dailyRate),
+        amount: String(actualEarning),
+      });
 
       const commissionsGiven: { tier: number; amount: number; toUserId: number }[] = [];
       const userReferrers = await db

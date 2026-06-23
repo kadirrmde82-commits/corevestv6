@@ -104,7 +104,7 @@ export const depositRouter = createRouter({
         const activeRefs = await getTier1ReferralCount(deposit.userId);
         const previousVipLevel = getVipLevel(currentInvestment, activeRefs);
         const newVipLevel = getVipLevel(newInvestment, activeRefs);
-        let balanceAfterBonuses = Number(userProfile.balance);
+        let balanceAfterBonuses = Number(userProfile.balance) + depositAmount;
 
         for (let level = previousVipLevel + 1; level <= newVipLevel; level++) {
           const vipInfo = getVipInfo(level);
@@ -132,7 +132,7 @@ export const depositRouter = createRouter({
             investment: String(newInvestment),
             vipLevel: newVipLevel,
             balance: String(balanceAfterBonuses),
-            totalEarned: String(Number(userProfile.totalEarned) + (balanceAfterBonuses - Number(userProfile.balance))),
+            totalEarned: String(Number(userProfile.totalEarned) + (balanceAfterBonuses - Number(userProfile.balance) - depositAmount)),
           })
           .where(eq(profiles.userId, deposit.userId));
 

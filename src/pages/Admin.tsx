@@ -30,6 +30,8 @@ export default function Admin() {
   const [editVipOpen, setEditVipOpen] = useState(false);
   const [editVipValue, setEditVipValue] = useState(0);
   const [grantWheelOpen, setGrantWheelOpen] = useState(false);
+  const [manualDepositAmount, setManualDepositAmount] = useState('');
+  const [manualDepositEmail, setManualDepositEmail] = useState('');
 
   // Member user edit state
   const [resetPwOpen, setResetPwOpen] = useState(false);
@@ -95,6 +97,8 @@ export default function Admin() {
   // Mutations
   const updateBalance = trpc.adminMember.updateBalance.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); setEditBalanceOpen(false); } });
   const updateInvestment = trpc.adminMember.updateInvestment.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); } });
+  const addMemberDeposit = trpc.adminMember.addDeposit.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); utils.deposit.listAll.invalidate(); setManualDepositAmount(''); setManualDepositEmail(''); } });
+  const deleteMemberDeposit = trpc.adminMember.deleteDeposit.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); utils.deposit.listAll.invalidate(); } });
   const updateVip = trpc.adminMember.updateVip.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); setEditVipOpen(false); } });
   const approveDeposit = trpc.deposit.approve.useMutation({ onSuccess: () => utils.deposit.listAll.invalidate() });
   const rejectDeposit = trpc.deposit.reject.useMutation({ onSuccess: () => utils.deposit.listAll.invalidate() });
@@ -1385,6 +1389,46 @@ export default function Admin() {
                 </div>
                 <div className="mt-2">
                   <button onClick={() => { if (confirm(`Üye #${memberDetail.publicId ?? selectedMemberId} - ${memberDetail.email} kalıcı olarak silinecek. Emin misiniz?`)) deleteMember.mutate({ userId: selectedMemberId }); }} className="w-full flex items-center justify-center gap-2 font-bold text-sm rounded-xl text-white" style={{ minHeight: '38px', fontSize: '12px', background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.3)' }}><X size={14} />Üyeliği Sil</button>
+                </div>
+
+                <div className="mt-4 p-4 rounded-xl" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.16)' }}>
+                  <h4 className="text-sm font-bold text-white mb-3">Üye Yatırımları</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 mb-3">
+                    <input type="number" value={manualDepositAmount} onChange={(e) => setManualDepositAmount(e.target.value)} placeholder="Tutar $" className="glass-input" style={{ minHeight: '38px', fontSize: '12px' }} />
+                    <input type="email" value={manualDepositEmail} onChange={(e) => setManualDepositEmail(e.target.value)} placeholder="E-posta boşsa üye e-postası" className="glass-input" style={{ minHeight: '38px', fontSize: '12px' }} />
+                    <button
+                      onClick={() => {
+                        if (!manualDepositAmount || Number(manualDepositAmount) <= 0) return;
+                        addMemberDeposit.mutate({ userId: selectedMemberId, amount: Number(manualDepositAmount), email: manualDepositEmail || undefined, status: 'approved', cryptoType: 'trc20' });
+                      }}
+                      className="btn-primary"
+                      style={{ minHeight: '38px', fontSize: '12px' }}
+                    >
+                      <Plus size={14} /> Ekle
+                    </button>
+                  </div>
+                  <div className="grid gap-2 max-h-[180px] overflow-y-auto">
+                    {((memberDetail as any).deposits ?? []).map((deposit: any) => (
+                      <div key={deposit.id} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.06)' }}>
+                        <div>
+                          <span className="text-xs font-bold text-white">${Number(deposit.amount).toFixed(2)} · {deposit.status}</span>
+                          <p className="text-[10px]" style={{ color: '#8fa5b8' }}>{deposit.txid} · {deposit.createdAt ? new Date(deposit.createdAt).toLocaleDateString('tr-TR') : '-'}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (confirm('Bu yatırım kaydı silinsin mi? Onaylıysa üyenin yatırım ve bakiyesinden düşülür.')) {
+                              deleteMemberDeposit.mutate({ depositId: deposit.id });
+                            }
+                          }}
+                          className="grid place-items-center rounded-lg"
+                          style={{ width: '30px', height: '30px', color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    ))}
+                    {((memberDetail as any).deposits ?? []).length === 0 && <p className="text-xs text-center py-4" style={{ color: '#5a6a7a' }}>Yatırım kaydı yok.</p>}
+                  </div>
                 </div>
               </>
             )}

@@ -144,6 +144,18 @@ export type InsertWheelSpin = typeof wheelSpins.$inferInsert;
 
 // ─── Wheel Referral Bonuses ───
 // Tracks bonus spins earned when tier-1 referrals deposit $100+
+export const clickEarnings = mysqlTable("click_earnings", {
+  id: serial("id").primaryKey(),
+  userId: bigint("userId", { mode: "number", unsigned: true }).notNull(),
+  vipLevel: int("vipLevel").notNull(),
+  dailyRate: decimal("dailyRate", { precision: 5, scale: 2 }).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ClickEarning = typeof clickEarnings.$inferSelect;
+export type InsertClickEarning = typeof clickEarnings.$inferInsert;
+
 export const wheelReferralBonuses = mysqlTable("wheel_referral_bonuses", {
   id: serial("id").primaryKey(),
   userId: bigint("userId", { mode: "number", unsigned: true }).notNull(),
