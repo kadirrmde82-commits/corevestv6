@@ -123,7 +123,7 @@ export default function Home() {
               style={{ color: '#FFD700' }}
             >
               <Gift size={18} className="inline mr-1" />
-              &#x1F389; &#x1F3A1; CARK AKTIF! &#x1F3A1; &#x1F389;
+              &#x1F389; &#x1F3A1; ÇARK AKTİF! &#x1F3A1; &#x1F389;
             </h3>
 
             <p className="text-sm font-bold text-white mb-2">
@@ -131,7 +131,7 @@ export default function Home() {
             </p>
 
             <p className="text-xs mb-3" style={{ color: '#a9bccf' }}>
-              Sans carkini cevirin ve birbirinden degerli ödülleri kazanma şansını yakalayın. &#x1F680;
+              Şans çarkını çevirin ve birbirinden değerli ödülleri kazanma şansını yakalayın. &#x1F680;
             </p>
 
             <div
@@ -146,9 +146,9 @@ export default function Home() {
               </p>
               <ul className="space-y-1">
                 {[
-                  'Her 100$ yatırım için 1 SPIN hakki kazanırsınız.',
-                  'Davet ettiğiniz bir üyenin 100$ veya üzeri yatırım yapması durumunda 1 ek SPIN hakki elde edersiniz.',
-                  'Ne kadar çok yatırım ve davet, o kadar çok çevirme hakki!',
+                  'Her 100$ yatırım için 1 SPIN hakkı kazanırsınız.',
+                  'Davet ettiğiniz bir üyenin 100$ veya üzeri yatırım yapması durumunda 1 ek SPIN hakkı elde edersiniz.',
+                  'Ne kadar çok yatırım ve davet, o kadar çok çevirme hakkı!',
                 ].map((rule, i) => (
                   <li key={i} className="text-xs flex items-start gap-2" style={{ color: '#c8d6e5' }}>
                     <span style={{ color: '#10b981' }}>&#x2705;</span>
@@ -159,7 +159,7 @@ export default function Home() {
             </div>
 
             <p className="text-xs mb-3" style={{ color: '#8fa5b8' }}>
-              &#x1F340; Şansınızı deneyin, sürpriz bonusları kaçirmayin!
+              &#x1F340; Şansınızı deneyin, sürpriz bonusları kaçırmayın!
             </p>
 
             <p className="text-xs font-bold mb-4" style={{ color: '#FFD700' }}>

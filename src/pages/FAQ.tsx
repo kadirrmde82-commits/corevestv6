@@ -4,22 +4,22 @@ import Layout from '../components/Layout';
 
 const FAQ_ITEMS = [
   {
-    question: 'Nasil Yatirim Yapilir?',
+    question: 'Nasıl Yatırım Yapılır?',
     icon: Zap,
     answer:
-      'Hesabiniz sayfasina giderek "Para Yatir" bolumunden yatirim yapabilirsiniz. Yatirim yapmak istediginiz tutari girin, ardindan "Yatirim Yap" butonuna tiklayin. Yatiriminiz aninda hesabiniza yansiyacak ve VIP seviyeniz otomatik olarak guncellenecektir. Her 100$ yatirim size 1 cark cevirme hakki kazandirir. VIP seviyeniz arttikca gunluk tiklama basina kazanciniz da artar. Yatirimlariniz AI algoritmalarimiz tarafindan yonetilerek en yuksek getiriyi elde etmeniz saglanir.',
+      'Hesabınız sayfasına giderek "Para Yatır" bölümünden yatırım yapabilirsiniz. Yatırım yapmak istediğiniz tutarı girin, ardından "Yatırımı Onayla" butonuna tıklayın. Yatırımınız admin onayından sonra hesabınıza yansır ve VIP seviyeniz otomatik olarak güncellenir. Her 100$ yatırım size 1 çark çevirme hakkı kazandırır. VIP seviyeniz arttıkça günlük tıklama başına kazancınız da artar. Yatırımlarınız AI algoritmalarımız tarafından yönetilerek en yüksek getiriyi elde etmeniz sağlanır.',
   },
   {
-    question: 'Nasil Cekim Yapilir?',
+    question: 'Nasıl Çekim Yapılır?',
     icon: Target,
     answer:
-      'Hesabiniz sayfasina giderek "Cekim Yap" bolumunden bakiyenizi cekebilirsiniz. Cekim yapabilmek icin en az 5 gun boyunca gunluk tiklamaniz gerekmektedir. Ayrica her cekimden once 72 saat bekleme suresi vardir. Ilk cekiminiz 30 gun icin ucretsizdir, sonraki cekimlerde ise %5 islem ucreti kesilir. Minimum cekim tutari 10$\'dir. Cekim talebiniz admin onayindan gecer ve en kisa surede hesabiniza aktarilir.',
+      'Hesabınız sayfasına giderek "Çekim Yap" bölümünden bakiyenizi çekebilirsiniz. Çekim yapabilmek için en az 5 gün boyunca günlük tıklamanız gerekmektedir. Ayrıca her çekimden önce 72 saat bekleme süresi vardır. İlk çekiminiz 30 gün için ücretsizdir, sonraki çekimlerde ise %5 işlem ücreti kesilir. Minimum çekim tutarı 10$\'dır. Çekim talebiniz admin onayından geçer ve en kısa sürede hesabınıza aktarılır.',
   },
   {
-    question: 'Referans Kodu Nasil Isler?',
+    question: 'Referans Kodu Nasıl İşler?',
     icon: Users,
     answer:
-      'Kendi referans kodunuzu arkadaslarinizla paylasarak ek kazanclar elde edebilirsiniz. Davet ettiginiz her kullanicinin yaptigi yatirimdan %3, onlarin davet ettiklerinden %2 ve ucuncu kademeden %1 komisyon kazanirsiniz. Ayrica davet ettiginiz bir uye 100$ veya uzeri yatirim yaparsa 1 ek cark cevirme hakki elde edersiniz. Referans gelirleriniz otomatik olarak bakiyenize eklenir. Ne kadar cok kisi davet ederseniz, o kadar cok pasif gelir elde edersiniz.',
+      'Kendi referans kodunuzu arkadaşlarınızla paylaşarak ek kazançlar elde edebilirsiniz. Davet ettiğiniz her kullanıcının yaptığı yatırımdan %3, onların davet ettiklerinden %2 ve üçüncü kademeden %1 komisyon kazanırsınız. Ayrıca davet ettiğiniz bir üye 100$ veya üzeri yatırım yaparsa 1 ek çark çevirme hakkı elde edersiniz. Referans gelirleriniz otomatik olarak bakiyenize eklenir. Ne kadar çok kişi davet ederseniz, o kadar çok pasif gelir elde edersiniz.',
   },
 ];
 
@@ -27,32 +27,32 @@ const ABOUT_SECTIONS = [
   {
     title: 'Misyonumuz',
     icon: Target,
-    text: 'CoreVest olarak misyonumuz, herkesin erisebilecegi, seffaf ve guvenilir bir yatirim ortami sunmaktir. Finansal ozgurlugu herkes icin mumkun kilmak icin calisiyoruz.',
+    text: 'CoreVest olarak misyonumuz, herkesin erişebileceği, şeffaf ve güvenilir bir yatırım ortamı sunmaktır. Finansal özgürlüğü herkes için mümkün kılmak için çalışıyoruz.',
   },
   {
     title: 'Vizyonumuz',
     icon: Globe,
-    text: 'AI teknolojisini kullanarak butun yatirimcilara profesyonel duzeyde kripto ticareti yapma imkani saglamak. Dunyanin en guvenilir AI destekli yatirim platformu olmak.',
+    text: 'AI teknolojisini kullanarak bütün yatırımcılara profesyonel düzeyde kripto ticareti yapma imkânı sağlamak. Dünyanın en güvenilir AI destekli yatırım platformu olmak.',
   },
   {
-    title: 'Guvenlik',
+    title: 'Güvenlik',
     icon: Shield,
-    text: 'En son guvenlik teknolojileri ile kullanici verilerinizi ve yatirimlarinizi koruyoruz. SSL sifreleme, iki faktorlu dogrulama ve anlik dolandiricilik korumasi aktif.',
+    text: 'En son güvenlik teknolojileri ile kullanıcı verilerinizi ve yatırımlarınızı koruyoruz. SSL şifreleme, iki faktörlü doğrulama ve anlık dolandırıcılık koruması aktif.',
   },
   {
     title: 'AI Teknolojisi',
     icon: Bot,
-    text: 'Gelismis yapay zeka algoritmalarimiz 7/24 piyasalari analiz ederek en karli ticaret stratejilerini otomatik olarak uygular. Makine ogrenmesi sayesinde her gecen gun daha da iyilesiyoruz.',
+    text: 'Gelişmiş yapay zeka algoritmalarımız 7/24 piyasaları analiz ederek en kârlı ticaret stratejilerini otomatik olarak uygular. Makine öğrenmesi sayesinde her geçen gün daha da iyileşiyoruz.',
   },
   {
-    title: 'Kazanc Modeli',
+    title: 'Kazanç Modeli',
     icon: TrendingUp,
-    text: 'Gunluk tiklamalar, VIP seviyeleri, referans sistemi ve sans carki ile birden fazla kazancl kaynagi sunuyoruz. Yatiriminiz ne kadar yuksek olursa, kazanc potansiyeliniz de o kadar artar.',
+    text: 'Günlük tıklamalar, VIP seviyeleri, referans sistemi ve şans çarkı ile birden fazla kazanç kaynağı sunuyoruz. Yatırımınız ne kadar yüksek olursa, kazanç potansiyeliniz de o kadar artar.',
   },
   {
     title: 'Topluluk',
     icon: Award,
-    text: 'Dunya capinda 100.000+ aktif kullanicimiz ile buyuyen bir toplulugun parcasi olun. Birlikte daha guclu, birlikte daha basariliyiz.',
+    text: 'Dünya çapında 100.000+ aktif kullanıcımız ile büyüyen bir topluluğun parçası olun. Birlikte daha güçlü, birlikte daha başarılıyız.',
   },
 ];
 
@@ -82,8 +82,8 @@ export default function FAQ() {
               <HelpCircle size={22} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Sikca Sorulan Sorular</h1>
-              <p className="text-xs" style={{ color: '#8fa5b8' }}>Merak ettiklerinizin yanitlari burada</p>
+              <h1 className="text-xl font-bold text-white">Sıkça Sorulan Sorular</h1>
+              <p className="text-xs" style={{ color: '#8fa5b8' }}>Merak ettiklerinizin yanıtları burada</p>
             </div>
           </div>
         </div>
@@ -169,12 +169,12 @@ export default function FAQ() {
               </span>
             </div>
             <p className="text-xs font-semibold mb-2" style={{ color: '#FFD700' }}>
-              2023\'ten Beri Gelecegin Finans Dunyasinda Yerinizi Alin
+              2023\'ten Beri Geleceğin Finans Dünyasında Yerinizi Alın
             </p>
             <p className="text-xs leading-relaxed max-w-lg mx-auto" style={{ color: '#a9bccf' }}>
-              CoreVest, 2023 yilindan bu yana faaliyet gosteren yapay zeka destekli kripto yatirim platformudur. 
-              En son teknolojileri kullanarak kripto para piyasalarini analiz eder ve en karli ticaret stratejilerini 
-              otomatik olarak uygulariz.
+              CoreVest, 2023 yılından bu yana faaliyet gösteren yapay zeka destekli kripto yatırım platformudur. 
+              En son teknolojileri kullanarak kripto para piyasalarını analiz eder ve en kârlı ticaret stratejilerini 
+              otomatik olarak uygularız.
             </p>
           </div>
 
@@ -222,9 +222,9 @@ export default function FAQ() {
             }}
           >
             {[
-              { label: 'Aktif Kullanici', value: '10.000+' },
-              { label: 'Yillik Kazanc', value: '$5M+' },
-              { label: 'Ulke', value: '23+' },
+              { label: 'Aktif Kullanıcı', value: '10.000+' },
+              { label: 'Yıllık Kazanç', value: '$5M+' },
+              { label: 'Ülke', value: '23+' },
             ].map((stat, i) => (
               <div key={i} className="text-center">
                 <p className="text-lg font-extrabold" style={{ color: '#FFD700' }}>{stat.value}</p>
@@ -236,10 +236,10 @@ export default function FAQ() {
           {/* Bottom CTA */}
           <div className="text-center mt-5">
             <p className="text-xs font-semibold mb-1" style={{ color: '#FFD700' }}>
-              CoreVest ile Gelecege Yatirim Yapin
+              CoreVest ile Geleceğe Yatırım Yapın
             </p>
             <p className="text-xs" style={{ color: '#8fa5b8' }}>
-              AI destekli platformumuzla kripto dunyasinda one cikin.
+              AI destekli platformumuzla kripto dünyasında öne çıkın.
             </p>
           </div>
         </div>

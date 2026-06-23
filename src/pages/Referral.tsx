@@ -139,7 +139,7 @@ export default function Referral() {
                     {(tItem.tier === 1 ? tier1 : tItem.tier === 2 ? tier2 : tier3).slice(0, 3).map(p => (
                       <div key={p.id} className="flex items-center gap-2 text-xs" style={{ color: '#8fa5b8' }}>
                         <UserPlus size={10} style={{ color: tItem.color }} />
-                        <span>{p.name || 'Kullanici'}</span>
+                        <span>{p.name || 'Kullanıcı'}</span>
                         <span className="text-[10px]" style={{ color: '#5a6a7a' }}>{p.email}</span>
                       </div>
                     ))}
@@ -173,7 +173,7 @@ export default function Referral() {
                   <div key={`${person.id}-${person.tier}`} className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.05)' }}>
                     <div className="grid place-items-center rounded-full shrink-0" style={{ width: '38px', height: '38px', background: `${tierColors[person.tier]}18`, color: tierColors[person.tier] }}><UserPlus size={16} /></div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm font-bold text-white block">{person.name || 'Kullanici'}</span>
+                      <span className="text-sm font-bold text-white block">{person.name || 'Kullanıcı'}</span>
                       <span className="text-xs" style={{ color: '#8fa5b8' }}>{person.date}</span>
                     </div>
                     <div className="text-[10px] font-extrabold px-2 py-1 rounded-full shrink-0" style={{ background: `${tierColors[person.tier]}15`, color: tierColors[person.tier] }}>{tierLabels[person.tier]}</div>

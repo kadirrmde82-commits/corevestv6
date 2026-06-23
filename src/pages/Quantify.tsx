@@ -103,7 +103,7 @@ export default function Quantify() {
         <div className="grid grid-cols-2 gap-3">
           <div className="glass-card">
             <div className="flex items-center gap-2 mb-2"><div className="grid place-items-center rounded-xl" style={{ width: '38px', height: '38px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }}><DollarSign size={18} /></div></div>
-            <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>Yatirim</span>
+            <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>Yatırım</span>
             <strong className="block text-xl text-white mt-1">${investment.toLocaleString()}</strong>
           </div>
           <div className="glass-card">
@@ -118,7 +118,7 @@ export default function Quantify() {
           </div>
           <div className="glass-card">
             <div className="flex items-center gap-2 mb-2"><div className="grid place-items-center rounded-xl" style={{ width: '38px', height: '38px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }}><Calendar size={18} /></div></div>
-            <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>Son Tiklama</span>
+            <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>Son Tıklama</span>
             <strong className="block text-sm text-white mt-1">{clickStatus?.lastClickAt ? new Date(clickStatus.lastClickAt).toLocaleDateString() : '-'}</strong>
           </div>
         </div>
@@ -128,23 +128,23 @@ export default function Quantify() {
           {currentVipLevel === 0 ? (
             <>
               <div className="mx-auto mb-4 grid place-items-center rounded-full" style={{ width: '72px', height: '72px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(248,251,255,0.06)' }}><MousePointerClick size={32} style={{ color: '#3a4a5a' }} /></div>
-              <p className="text-sm font-medium mb-3" style={{ color: '#5a6a7a' }}>Yatirim yaparak VIP seviyenizi yukseltin.</p>
+              <p className="text-sm font-medium mb-3" style={{ color: '#5a6a7a' }}>Yatırım yaparak VIP seviyenizi yükseltin.</p>
               <div className="p-3 rounded-xl" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}>
-                <p className="text-xs" style={{ color: '#10b981' }}>Hosgeldiniz! Size 5$ bakiye tanimlandi. Yatirim yaparak kazanmaya baslayin.</p>
+                <p className="text-xs" style={{ color: '#10b981' }}>Hoş geldiniz! Size 5$ bakiye tanımlandı. Yatırım yaparak kazanmaya başlayın.</p>
               </div>
             </>
           ) : canClick ? (
             <>
               <div className="mx-auto mb-4 grid place-items-center rounded-full animate-glow" style={{ width: '72px', height: '72px', background: 'linear-gradient(135deg, #FFD700, #FFA500)' }}><MousePointerClick size={32} color="#04070d" /></div>
-              <p className="text-sm mb-3" style={{ color: '#8fa5b8' }}>Günlük kazanciniz: <strong style={{ color: '#FFD700' }}>${dailyEarning.toFixed(2)}</strong> (%{dailyRate} bilesik)</p>
-              <button onClick={handleClick} className="btn-primary" style={{ maxWidth: '300px', margin: '0 auto', fontSize: '1rem', minHeight: '52px' }}>Günlük Oduku Al</button>
+              <p className="text-sm mb-3" style={{ color: '#8fa5b8' }}>Günlük kazancınız: <strong style={{ color: '#FFD700' }}>${dailyEarning.toFixed(2)}</strong> (%{dailyRate} bileşik)</p>
+              <button onClick={handleClick} className="btn-primary" style={{ maxWidth: '300px', margin: '0 auto', fontSize: '1rem', minHeight: '52px' }}>Ödülü Almak İçin Tıkla</button>
               {showSuccess && <p className="mt-3 text-sm font-semibold" style={{ color: '#10b981' }}>+${dailyEarning.toFixed(2)} kazandınız!</p>}
             </>
           ) : (
             <>
               <div className="mx-auto mb-4 grid place-items-center rounded-full" style={{ width: '72px', height: '72px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(248,251,255,0.1)' }}><Clock size={32} style={{ color: '#5a6a7a' }} /></div>
-              <p className="text-sm font-medium mb-2" style={{ color: '#8fa5b8' }}>Sonraki tiklama için kalan sure:</p>
-              <p className="text-xs mb-4" style={{ color: '#5a6a7a' }}>Turkiye saati ile 08:00&apos;da yenilenebilir</p>
+              <p className="text-sm font-medium mb-2" style={{ color: '#8fa5b8' }}>Sonraki tıklama için kalan süre:</p>
+              <p className="text-xs mb-4" style={{ color: '#5a6a7a' }}>Türkiye saati ile 08:00&apos;da yenilenebilir</p>
               <div className="flex items-center justify-center gap-3 animate-countdown">
                 {[{ value: countdown.hours, label: 'saat' }, { value: countdown.minutes, label: 'dakika' }, { value: countdown.seconds, label: 'saniye' }].map((item, i) => (
                   <div key={i} className="text-center"><div className="font-extrabold text-2xl rounded-xl px-3 py-2" style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.15)', color: '#FFD700', minWidth: '60px' }}>{String(item.value).padStart(2, '0')}</div><span className="text-xs mt-1 block" style={{ color: '#5a6a7a' }}>{item.label}</span></div>
@@ -157,22 +157,22 @@ export default function Quantify() {
         {/* Compound Earnings Preview */}
         {currentVipLevel > 0 && (
           <div className="glass-card">
-            <h2 className="text-base font-bold text-white mb-3">Bilesik Kazanc Projeksiyonu</h2>
+            <h2 className="text-base font-bold text-white mb-3">Bileşik Kazanç Projeksiyonu</h2>
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.12)' }}>
-                <span className="text-xs block mb-1" style={{ color: '#8fa5b8' }}>Bugun</span>
+                <span className="text-xs block mb-1" style={{ color: '#8fa5b8' }}>Bugün</span>
                 <span className="text-sm font-extrabold" style={{ color: '#FFD700' }}>${dailyEarning.toFixed(2)}</span>
               </div>
               <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.05)' }}>
-                <span className="text-xs block mb-1" style={{ color: '#8fa5b8' }}>7 Gun</span>
+                <span className="text-xs block mb-1" style={{ color: '#8fa5b8' }}>7 Gün</span>
                 <span className="text-sm font-extrabold text-white">${weekEarning.toFixed(2)}</span>
               </div>
               <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.05)' }}>
-                <span className="text-xs block mb-1" style={{ color: '#8fa5b8' }}>30 Gun</span>
+                <span className="text-xs block mb-1" style={{ color: '#8fa5b8' }}>30 Gün</span>
                 <span className="text-sm font-extrabold text-white">${monthEarning.toFixed(2)}</span>
               </div>
             </div>
-            <p className="text-xs mt-2" style={{ color: '#5a6a7a' }}>Bilesik faiz ile hesaplanmistir. Günlük kazanclar anaparaya eklenir.</p>
+            <p className="text-xs mt-2" style={{ color: '#5a6a7a' }}>Bileşik faiz ile hesaplanmıştır. Günlük kazançlar anaparaya eklenir.</p>
           </div>
         )}
 
@@ -181,7 +181,7 @@ export default function Quantify() {
           <div className="glass-card" style={{ background: 'rgba(255,215,0,0.04)', border: '1px solid rgba(255,215,0,0.15)' }}>
             <h2 className="text-sm font-bold text-white mb-2">Sonraki VIP: VIP {nextVip.nextLevel}</h2>
             <div className="space-y-2">
-              <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Min. Yatirim</span><span className="text-xs font-bold" style={{ color: '#FFD700' }}>${nextVip.minInvestment.toLocaleString()}</span></div>
+              <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Min. Yatırım</span><span className="text-xs font-bold" style={{ color: '#FFD700' }}>${nextVip.minInvestment.toLocaleString()}</span></div>
               {nextVip.refsRequired > 0 && <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Aktif Referans</span><span className="text-xs font-bold" style={{ color: activeRefs >= nextVip.refsRequired ? '#10b981' : '#FFD700' }}>{activeRefs} / {nextVip.refsRequired}</span></div>}
               <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Günlük Oran</span><span className="text-xs font-bold" style={{ color: '#FFD700' }}>%{VIP_TABLE.find(v => v.level === nextVip.nextLevel)?.rate || 0}</span></div>
             </div>

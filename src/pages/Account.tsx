@@ -271,12 +271,12 @@ export default function Account() {
               {/* Warning Message */}
               <div className="rounded-xl p-3" style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)' }}>
                 <p className="text-xs font-bold text-center" style={{ color: '#FFD700' }}>
-                  Yukaridaki adreslerden birine gonderim yaptiktan sonra "Yatirimi Onayla" butonuna tiklayiniz.
+                  Yukarıdaki adreslerden birine gönderim yaptıktan sonra "Yatırımı Onayla" butonuna tıklayınız.
                 </p>
               </div>
 
               <button onClick={handleDeposit} className="btn-primary" disabled={!depositAmount || Number(depositAmount) <= 0 || !depositEmail.trim()} style={{ opacity: (!depositAmount || Number(depositAmount) <= 0 || !depositEmail.trim()) ? 0.4 : 1 }}>
-                Yatirimi Onayla
+                Yatırımı Onayla
               </button>
             </div>
           )}

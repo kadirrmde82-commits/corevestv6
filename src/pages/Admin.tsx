@@ -188,7 +188,7 @@ export default function Admin() {
                 <table className="w-full text-left">
                   <thead>
                     <tr style={{ borderBottom: '1px solid rgba(248,251,255,0.08)' }}>
-                      {['ID', 'E-posta', 'Isim', 'Bakiye', 'Yatirim', 'VIP', 'Tiklama', 'Referans', ''].map((h) => (
+                      {['ID', 'E-posta', 'İsim', 'Bakiye', 'Yatırım', 'VIP', 'Tıklama', 'Referans', ''].map((h) => (
                         <th key={h} className="px-4 py-3 text-[10px] font-bold uppercase" style={{ color: '#8fa5b8' }}>{h}</th>
                       ))}
                     </tr>
@@ -295,7 +295,7 @@ export default function Admin() {
             {walletEditOpen && walletEditId !== null && (
               <div className="glass-card" style={{ padding: '16px', border: '1px solid rgba(255,215,0,0.2)', background: 'rgba(255,215,0,0.04)' }}>
                 <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                  <Pencil size={16} style={{ color: '#FFD700' }} /> Duzenle
+                  <Pencil size={16} style={{ color: '#FFD700' }} /> Düzenle
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <input type="text" value={marketForm.symbol} onChange={(e) => setMarketForm(p => ({ ...p, symbol: e.target.value }))} placeholder="Anahtar" className="glass-input" style={{ minHeight: '38px', fontSize: '12px' }} />
@@ -336,7 +336,7 @@ export default function Admin() {
                         <td className="px-4 py-3">{statusBadge(w.active === 1 ? 'approved' : 'rejected')}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
-                            <button onClick={() => { setWalletEditId(w.id); setMarketForm({ symbol: w.key, name: w.label, basePrice: w.address, change: '', color: w.color }); setWalletEditOpen(true); }} className="grid place-items-center rounded-lg" style={{ width: '30px', height: '30px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }} title="Duzenle"><Pencil size={12} /></button>
+                            <button onClick={() => { setWalletEditId(w.id); setMarketForm({ symbol: w.key, name: w.label, basePrice: w.address, change: '', color: w.color }); setWalletEditOpen(true); }} className="grid place-items-center rounded-lg" style={{ width: '30px', height: '30px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }} title="Düzenle"><Pencil size={12} /></button>
                             <button onClick={() => { if (confirm(`${w.label} silinecek. Emin misiniz?`)) deleteWalletAddr.mutate({ id: w.id }); }} className="grid place-items-center rounded-lg" style={{ width: '30px', height: '30px', color: '#ef4444', background: 'rgba(239,68,68,0.1)' }} title="Sil"><Trash2 size={12} /></button>
                           </div>
                         </td>
@@ -360,9 +360,9 @@ export default function Admin() {
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 <input type="text" value={marketForm.symbol} onChange={(e) => setMarketForm(p => ({ ...p, symbol: e.target.value }))} placeholder="Sembol (BTC)" className="glass-input" style={{ minHeight: '38px', fontSize: '12px' }} />
-                <input type="text" value={marketForm.name} onChange={(e) => setMarketForm(p => ({ ...p, name: e.target.value }))} placeholder="Isim (Bitcoin)" className="glass-input" style={{ minHeight: '38px', fontSize: '12px' }} />
+                <input type="text" value={marketForm.name} onChange={(e) => setMarketForm(p => ({ ...p, name: e.target.value }))} placeholder="İsim (Bitcoin)" className="glass-input" style={{ minHeight: '38px', fontSize: '12px' }} />
                 <input type="text" value={marketForm.basePrice} onChange={(e) => setMarketForm(p => ({ ...p, basePrice: e.target.value }))} placeholder="Fiyat" className="glass-input" style={{ minHeight: '38px', fontSize: '12px' }} />
-                <input type="text" value={marketForm.change} onChange={(e) => setMarketForm(p => ({ ...p, change: e.target.value }))} placeholder="Degisim %" className="glass-input" style={{ minHeight: '38px', fontSize: '12px' }} />
+                <input type="text" value={marketForm.change} onChange={(e) => setMarketForm(p => ({ ...p, change: e.target.value }))} placeholder="Değişim %" className="glass-input" style={{ minHeight: '38px', fontSize: '12px' }} />
                 <div className="flex gap-2">
                   <input type="color" value={marketForm.color} onChange={(e) => setMarketForm(p => ({ ...p, color: e.target.value }))} style={{ width: '38px', height: '38px', border: 'none', borderRadius: '10px', cursor: 'pointer', background: 'transparent' }} />
                   <button onClick={() => { if (!marketForm.symbol || !marketForm.name || !marketForm.basePrice || !marketForm.change) return; createMarketPrice.mutate({ symbol: marketForm.symbol, name: marketForm.name, basePrice: marketForm.basePrice, change: marketForm.change, color: marketForm.color }); }} className="btn-primary flex-1" style={{ minHeight: '38px', fontSize: '12px' }}><Plus size={14} />Ekle</button>
@@ -374,13 +374,13 @@ export default function Admin() {
             {marketEditOpen && marketEditId !== null && (
               <div className="glass-card" style={{ padding: '16px', border: '1px solid rgba(255,215,0,0.2)', background: 'rgba(255,215,0,0.04)' }}>
                 <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                  <Pencil size={16} style={{ color: '#FFD700' }} /> Duzenle
+                  <Pencil size={16} style={{ color: '#FFD700' }} /> Düzenle
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                   <input type="text" value={marketForm.symbol} onChange={(e) => setMarketForm(p => ({ ...p, symbol: e.target.value }))} placeholder="Sembol" className="glass-input" style={{ minHeight: '38px', fontSize: '12px' }} />
-                  <input type="text" value={marketForm.name} onChange={(e) => setMarketForm(p => ({ ...p, name: e.target.value }))} placeholder="Isim" className="glass-input" style={{ minHeight: '38px', fontSize: '12px' }} />
+                  <input type="text" value={marketForm.name} onChange={(e) => setMarketForm(p => ({ ...p, name: e.target.value }))} placeholder="İsim" className="glass-input" style={{ minHeight: '38px', fontSize: '12px' }} />
                   <input type="text" value={marketForm.basePrice} onChange={(e) => setMarketForm(p => ({ ...p, basePrice: e.target.value }))} placeholder="Fiyat" className="glass-input" style={{ minHeight: '38px', fontSize: '12px' }} />
-                  <input type="text" value={marketForm.change} onChange={(e) => setMarketForm(p => ({ ...p, change: e.target.value }))} placeholder="Degisim %" className="glass-input" style={{ minHeight: '38px', fontSize: '12px' }} />
+                  <input type="text" value={marketForm.change} onChange={(e) => setMarketForm(p => ({ ...p, change: e.target.value }))} placeholder="Değişim %" className="glass-input" style={{ minHeight: '38px', fontSize: '12px' }} />
                   <div className="flex gap-2">
                     <input type="color" value={marketForm.color} onChange={(e) => setMarketForm(p => ({ ...p, color: e.target.value }))} style={{ width: '38px', height: '38px', border: 'none', borderRadius: '10px', cursor: 'pointer', background: 'transparent' }} />
                     <button onClick={() => { if (!marketEditId) return; updateMarketPrice.mutate({ id: marketEditId, symbol: marketForm.symbol || undefined, name: marketForm.name || undefined, basePrice: marketForm.basePrice || undefined, change: marketForm.change || undefined, color: marketForm.color || undefined }); }} className="btn-primary flex-1" style={{ minHeight: '38px', fontSize: '12px' }}><Check size={14} />Kaydet</button>
@@ -396,7 +396,7 @@ export default function Admin() {
                 <table className="w-full text-left">
                   <thead>
                     <tr style={{ borderBottom: '1px solid rgba(248,251,255,0.08)' }}>
-                      {['Sembol', 'Isim', 'Fiyat', 'Degisim', 'Renk', 'Durum', ''].map((h) => (
+                      {['Sembol', 'İsim', 'Fiyat', 'Değişim', 'Renk', 'Durum', ''].map((h) => (
                         <th key={h} className="px-4 py-3 text-[10px] font-bold uppercase" style={{ color: '#8fa5b8' }}>{h}</th>
                       ))}
                     </tr>
@@ -419,7 +419,7 @@ export default function Admin() {
                         <td className="px-4 py-3">{statusBadge(coin.active === 1 ? 'approved' : 'rejected')}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
-                            <button onClick={() => { setMarketEditId(coin.id); setMarketForm({ symbol: coin.symbol, name: coin.name, basePrice: String(coin.basePrice), change: String(coin.change), color: coin.color }); setMarketEditOpen(true); }} className="grid place-items-center rounded-lg" style={{ width: '30px', height: '30px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }} title="Duzenle"><Pencil size={12} /></button>
+                            <button onClick={() => { setMarketEditId(coin.id); setMarketForm({ symbol: coin.symbol, name: coin.name, basePrice: String(coin.basePrice), change: String(coin.change), color: coin.color }); setMarketEditOpen(true); }} className="grid place-items-center rounded-lg" style={{ width: '30px', height: '30px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }} title="Düzenle"><Pencil size={12} /></button>
                             <button onClick={() => { if (confirm(`${coin.symbol} silinecek. Emin misiniz?`)) deleteMarketPrice.mutate({ id: coin.id }); }} className="grid place-items-center rounded-lg" style={{ width: '30px', height: '30px', color: '#ef4444', background: 'rgba(239,68,68,0.1)' }} title="Sil"><Trash2 size={12} /></button>
                           </div>
                         </td>
@@ -455,11 +455,11 @@ export default function Admin() {
                 <span className="text-xs" style={{ color: '#8fa5b8' }}>E-posta</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-white">{memberDetail.email}</span>
-                  <button onClick={() => { setEditUserName(memberDetail.name || ''); setEditUserEmail(memberDetail.email || ''); setEditUserOpen(true); }} className="grid place-items-center rounded-lg" style={{ width: '26px', height: '26px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }} title="Duzenle"><Edit3 size={12} /></button>
+                  <button onClick={() => { setEditUserName(memberDetail.name || ''); setEditUserEmail(memberDetail.email || ''); setEditUserOpen(true); }} className="grid place-items-center rounded-lg" style={{ width: '26px', height: '26px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }} title="Düzenle"><Edit3 size={12} /></button>
                 </div>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs" style={{ color: '#8fa5b8' }}>Isim</span>
+                <span className="text-xs" style={{ color: '#8fa5b8' }}>İsim</span>
                 <span className="text-sm font-bold text-white">{memberDetail.name}</span>
               </div>
               <div className="flex justify-between items-center">
@@ -467,10 +467,10 @@ export default function Admin() {
                 <span className="text-[10px] font-extrabold px-2 py-1 rounded-full" style={{ background: memberDetail.role === 'admin' ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.06)', color: memberDetail.role === 'admin' ? '#FFD700' : '#8fa5b8' }}>{memberDetail.role}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs" style={{ color: '#8fa5b8' }}>Sifre</span>
+                <span className="text-xs" style={{ color: '#8fa5b8' }}>Şifre</span>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-mono" style={{ color: '#5a6a7a' }}>************ (hash)</span>
-                  <button onClick={() => { setNewPassword(''); setResetPwOpen(true); }} className="grid place-items-center rounded-lg" style={{ width: '26px', height: '26px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }} title="Sifre Sifirla"><Lock size={12} /></button>
+                  <button onClick={() => { setNewPassword(''); setResetPwOpen(true); }} className="grid place-items-center rounded-lg" style={{ width: '26px', height: '26px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }} title="Şifre Sıfırla"><Lock size={12} /></button>
                 </div>
               </div>
               <div className="flex justify-between items-center">
@@ -483,13 +483,13 @@ export default function Admin() {
             {editUserOpen && (
               <div className="mb-4 p-4 rounded-xl" style={{ background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.2)' }}>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-bold text-white">Kullanici Bilgilerini Duzenle</span>
+                  <span className="text-sm font-bold text-white">Kullanıcı Bilgilerini Düzenle</span>
                   <button onClick={() => setEditUserOpen(false)} className="btn-secondary" style={{ minHeight: '28px', width: '28px', padding: 0 }}><X size={12} /></button>
                 </div>
                 <div className="space-y-2 mb-3">
                   <div>
-                    <label className="label-text block mb-1">Isim</label>
-                    <input type="text" value={editUserName} onChange={(e) => setEditUserName(e.target.value)} placeholder="Isim girin" className="glass-input" style={{ minHeight: '40px' }} />
+                    <label className="label-text block mb-1">İsim</label>
+                    <input type="text" value={editUserName} onChange={(e) => setEditUserName(e.target.value)} placeholder="İsim girin" className="glass-input" style={{ minHeight: '40px' }} />
                   </div>
                   <div>
                     <label className="label-text block mb-1">E-posta</label>
@@ -504,18 +504,18 @@ export default function Admin() {
             {resetPwOpen && (
               <div className="mb-4 p-4 rounded-xl" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-bold text-white">Sifre Sifirla</span>
+                <span className="text-sm font-bold text-white">Şifre Sıfırla</span>
                   <button onClick={() => setResetPwOpen(false)} className="btn-secondary" style={{ minHeight: '28px', width: '28px', padding: 0 }}><X size={12} /></button>
                 </div>
                 <p className="text-xs mb-2" style={{ color: '#8fa5b8' }}>
-                  Uyenin mevcut sifresi hashlenmis olarak saklanir. Asla gorulemez. Yeni bir sifre atayabilirsiniz.
+                  Üyenin mevcut şifresi hashlenmiş olarak saklanır. Asla görülemez. Yeni bir şifre atayabilirsiniz.
                 </p>
                 <div className="mb-2">
-                  <label className="label-text block mb-1">Yeni Sifre</label>
+                  <label className="label-text block mb-1">Yeni Şifre</label>
                   <input type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="En az 6 karakter" className="glass-input" style={{ minHeight: '40px' }} />
                 </div>
                 <button onClick={() => { if (!newPassword || newPassword.length < 6) return; resetPassword.mutate({ userId: selectedMemberId, newPassword }); }} className="btn-primary w-full" style={{ minHeight: '38px', fontSize: '12px', background: 'rgba(239,68,68,0.85)' }}>
-                  Sifreyi Guncelle
+                  Şifreyi Güncelle
                 </button>
               </div>
             )}
@@ -534,7 +534,7 @@ export default function Admin() {
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs" style={{ color: '#8fa5b8' }}>Yatirim</span>
+                    <span className="text-xs" style={{ color: '#8fa5b8' }}>Yatırım</span>
                     <span className="text-sm font-bold text-white">${memberDetail.profile.investment.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -544,28 +544,28 @@ export default function Admin() {
                       <button onClick={() => { setEditVipValue(memberDetail.profile!.vipLevel); setEditVipOpen(true); }} className="grid place-items-center rounded-lg" style={{ width: '26px', height: '26px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }}><Edit3 size={12} /></button>
                     </div>
                   </div>
-                  <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Toplam Kazanc</span><span className="text-sm text-white">${memberDetail.profile.totalEarned.toFixed(2)}</span></div>
-                  <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Toplam Tiklama</span><span className="text-sm text-white">{memberDetail.profile.totalClicks}</span></div>
+                  <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Toplam Kazanç</span><span className="text-sm text-white">${memberDetail.profile.totalEarned.toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Toplam Tıklama</span><span className="text-sm text-white">{memberDetail.profile.totalClicks}</span></div>
                   <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Ardışık Tıklama</span><span className="text-sm text-white">{memberDetail.profile.consecutiveClicks}</span></div>
                   <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Aylık Çekim</span><span className="text-sm text-white">{memberDetail.profile.monthlyWithdrawalCount}</span></div>
                   <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Referans Kodu</span><span className="text-sm font-mono text-white">{memberDetail.profile.referralCode}</span></div>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs" style={{ color: '#8fa5b8' }}>Cark Hakki</span>
+                    <span className="text-xs" style={{ color: '#8fa5b8' }}>Çark Hakkı</span>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-bold" style={{ color: '#FFD700' }}>{memberDetail.availableSpins ?? 0} mevcut</span>
                       <span className="text-xs" style={{ color: '#5a6a7a' }}>({memberDetail.wheelSpinsUsed ?? 0} kullanildi)</span>
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs" style={{ color: '#8fa5b8' }}>Referans Kazanci</span>
+                    <span className="text-xs" style={{ color: '#8fa5b8' }}>Referans Kazancı</span>
                     <span className="text-sm font-bold" style={{ color: '#10b981' }}>${(memberDetail as any).totalReferralEarnings?.toFixed(2) ?? '0.00'}</span>
                   </div>
                 </div>
 
                 {/* Quick Actions */}
                 <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => setGrantWheelOpen(true)} className="btn-primary" style={{ fontSize: '12px', minHeight: '38px' }}><Gift size={14} />Cark Hakki</button>
-                  <button onClick={() => { updateInvestment.mutate({ userId: selectedMemberId, newInvestment: memberDetail.profile!.investment }); }} className="btn-secondary" style={{ fontSize: '12px', minHeight: '38px' }}><RefreshCw size={14} />Yatirimi Guncelle</button>
+                  <button onClick={() => setGrantWheelOpen(true)} className="btn-primary" style={{ fontSize: '12px', minHeight: '38px' }}><Gift size={14} />Çark Hakkı</button>
+                  <button onClick={() => { updateInvestment.mutate({ userId: selectedMemberId, newInvestment: memberDetail.profile!.investment }); }} className="btn-secondary" style={{ fontSize: '12px', minHeight: '38px' }}><RefreshCw size={14} />Yatırımı Güncelle</button>
                 </div>
                 <div className="mt-2">
                   <button onClick={() => { if (confirm(`Üye #${memberDetail.publicId ?? selectedMemberId} - ${memberDetail.email} kalıcı olarak silinecek. Emin misiniz?`)) deleteMember.mutate({ userId: selectedMemberId }); }} className="w-full flex items-center justify-center gap-2 font-bold text-sm rounded-xl text-white" style={{ minHeight: '38px', fontSize: '12px', background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.3)' }}><X size={14} />Üyeliği Sil</button>
@@ -618,7 +618,7 @@ export default function Admin() {
             {grantWheelOpen && (
               <div className="mt-4 p-4 rounded-xl" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)' }}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-bold text-white">Cark Hakki Ayarla</span>
+                  <span className="text-sm font-bold text-white">Çark Hakkı Ayarla</span>
                   <button onClick={() => setGrantWheelOpen(false)} className="btn-secondary" style={{ minHeight: '28px', width: '28px', padding: 0 }}><X size={12} /></button>
                 </div>
                 <p className="text-xs mb-2" style={{ color: '#8fa5b8' }}>
@@ -645,11 +645,11 @@ export default function Admin() {
       {detailDeposit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}>
           <div className="w-full max-w-md animate-fade-in" style={{ background: 'rgba(5, 9, 20, 0.98)', border: '1px solid rgba(248,251,255,0.1)', borderRadius: '22px', padding: '24px', boxShadow: '0 24px 60px rgba(0,0,0,0.5)' }}>
-            <div className="flex items-center justify-between mb-5"><h3 className="text-lg font-bold text-white">Yatirim Talebi Detayi</h3><button onClick={() => setDetailDeposit(null)} className="btn-secondary" style={{ minHeight: '32px', width: '32px', padding: 0 }}><X size={14} /></button></div>
+            <div className="flex items-center justify-between mb-5"><h3 className="text-lg font-bold text-white">Yatırım Talebi Detayı</h3><button onClick={() => setDetailDeposit(null)} className="btn-secondary" style={{ minHeight: '32px', width: '32px', padding: 0 }}><X size={14} /></button></div>
             <div className="space-y-3 mb-5">
               <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Miktar</span><span className="text-sm font-bold text-white">${Number(detailDeposit.amount).toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Kripto</span><span className="text-sm font-bold text-white">{(detailDeposit as any).cryptoType?.toUpperCase() || 'TRC20'}</span></div>
-              <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Kullanici ID</span><span className="text-sm font-bold text-white">#{detailDeposit.userPublicId ?? detailDeposit.userId}</span></div>
+              <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Kullanıcı ID</span><span className="text-sm font-bold text-white">#{detailDeposit.userPublicId ?? detailDeposit.userId}</span></div>
               <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>E-posta</span><span className="text-sm font-bold text-white">{(detailDeposit as any).email || (detailDeposit as any).userEmail || '-'}</span></div>
               {(detailDeposit as any).userNote && <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Not</span><span className="text-sm text-white">{(detailDeposit as any).userNote}</span></div>}
               <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>TX ID</span><span className="text-xs font-mono text-white">{detailDeposit.txid}</span></div>
@@ -671,7 +671,7 @@ export default function Admin() {
       {detailWithdraw && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}>
           <div className="w-full max-w-md animate-fade-in" style={{ background: 'rgba(5, 9, 20, 0.98)', border: '1px solid rgba(248,251,255,0.1)', borderRadius: '22px', padding: '24px', boxShadow: '0 24px 60px rgba(0,0,0,0.5)' }}>
-            <div className="flex items-center justify-between mb-5"><h3 className="text-lg font-bold text-white">Cekim Talebi Detayi</h3><button onClick={() => setDetailWithdraw(null)} className="btn-secondary" style={{ minHeight: '32px', width: '32px', padding: 0 }}><X size={14} /></button></div>
+            <div className="flex items-center justify-between mb-5"><h3 className="text-lg font-bold text-white">Çekim Talebi Detayı</h3><button onClick={() => setDetailWithdraw(null)} className="btn-secondary" style={{ minHeight: '32px', width: '32px', padding: 0 }}><X size={14} /></button></div>
             <div className="space-y-3 mb-5">
               <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Miktar</span><span className="text-sm font-bold text-white">${Number(detailWithdraw.amount).toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>E-posta</span><span className="text-sm font-bold text-white">{detailWithdraw.email}</span></div>
@@ -680,7 +680,7 @@ export default function Admin() {
             </div>
             {detailWithdraw.status === 'pending' && (
               <div className="flex gap-3">
-                <button onClick={() => { approveWithdraw.mutate({ id: detailWithdraw.id }); setDetailWithdraw(null); }} className="flex-1 inline-flex items-center justify-center gap-2 font-extrabold text-sm rounded-xl text-white" style={{ minHeight: '46px', background: '#10b981' }}><Check size={16} />Onayla (Odundi)</button>
+                <button onClick={() => { approveWithdraw.mutate({ id: detailWithdraw.id }); setDetailWithdraw(null); }} className="flex-1 inline-flex items-center justify-center gap-2 font-extrabold text-sm rounded-xl text-white" style={{ minHeight: '46px', background: '#10b981' }}><Check size={16} />Onayla (Ödendi)</button>
                 <button onClick={() => { rejectWithdraw.mutate({ id: detailWithdraw.id }); setDetailWithdraw(null); }} className="flex-1 inline-flex items-center justify-center gap-2 font-extrabold text-sm rounded-xl text-white" style={{ minHeight: '46px', background: '#ef4444' }}><X size={16} />Reddet</button>
               </div>
             )}
