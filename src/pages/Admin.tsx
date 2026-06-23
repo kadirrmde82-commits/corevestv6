@@ -129,8 +129,15 @@ export default function Admin() {
         },
         body: formData,
       });
-      const result = await response.json();
+      const responseText = await response.text();
+      let result: { error?: string; imageUrl?: string } = {};
+      try {
+        result = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        result = { error: responseText || 'Görsel yüklenemedi' };
+      }
       if (!response.ok) throw new Error(result?.error || 'Görsel yüklenemedi');
+      if (!result.imageUrl) throw new Error('Görsel adresi alınamadı');
       setContentValue(ANNOUNCEMENT_CONTENT_KEYS.imageUrl, result.imageUrl);
       await utils.siteContent.adminList.invalidate();
       await utils.siteContent.public.invalidate();

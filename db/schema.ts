@@ -208,6 +208,21 @@ export const siteContent = mysqlTable("site_content", {
 export type SiteContent = typeof siteContent.$inferSelect;
 export type InsertSiteContent = typeof siteContent.$inferInsert;
 
+// ─── Uploaded Site Assets ───
+export const siteAssets = mysqlTable("site_assets", {
+  key: varchar("key", { length: 64 }).primaryKey(),
+  mimeType: varchar("mimeType", { length: 128 }).notNull(),
+  data: longtext("data").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt")
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
+export type SiteAsset = typeof siteAssets.$inferSelect;
+export type InsertSiteAsset = typeof siteAssets.$inferInsert;
+
 // ─── Referral Earnings ───
 // Tracks commission earnings from referral clicks (tier 1: 10%, tier 2: 6%, tier 3: 3%)
 export const referralEarnings = mysqlTable("referral_earnings", {
