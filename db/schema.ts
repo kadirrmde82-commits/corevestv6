@@ -14,7 +14,7 @@ import {
 export const users = mysqlTable("users", {
   id: serial("id").primaryKey(),
   // Public-facing member number. Internal relations continue using `id`.
-  publicId: int("publicId").unique(),
+  publicId: int("publicId"),
   // OAuth fields (nullable for local users)
   unionId: varchar("unionId", { length: 255 }).unique(),
   // Local auth fields (nullable for OAuth users)
