@@ -12,7 +12,7 @@ import { trpc } from '@/providers/trpc';
 import { VIP_TABLE } from '../store';
 import { ANNOUNCEMENT_CONTENT_KEYS, DEFAULT_SITE_CONTENT, FAQ_CONTENT_KEYS } from '@contracts/site-content';
 
-type AdminTab = 'members' | 'memberData' | 'deposits' | 'withdrawals' | 'tickets' | 'content' | 'marketPrices' | 'walletAddresses';
+type AdminTab = 'members' | 'memberData' | 'system' | 'deposits' | 'withdrawals' | 'tickets' | 'content' | 'marketPrices' | 'walletAddresses';
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -52,6 +52,11 @@ export default function Admin() {
   const utils = trpc.useUtils();
   const { data: stats } = trpc.adminMember.stats.useQuery(undefined, { refetchInterval: 10000 });
   const { data: memberReports = [] } = trpc.adminMember.exportData.useQuery(undefined, { refetchInterval: 10000 });
+  const { data: systemOverview } = trpc.adminSystem.overview.useQuery(undefined, { refetchInterval: 10000 });
+  const { data: withdrawalRisks = [] } = trpc.adminSystem.withdrawalRisks.useQuery(undefined, { refetchInterval: 10000 });
+  const { data: loginEvents = [] } = trpc.adminSystem.loginEvents.useQuery(undefined, { refetchInterval: 10000 });
+  const { data: adminLogs = [] } = trpc.adminSystem.logs.useQuery(undefined, { refetchInterval: 10000 });
+  const { data: maintenance } = trpc.adminSystem.maintenance.useQuery(undefined, { refetchInterval: 10000 });
   const { data: membersData } = trpc.adminMember.list.useQuery(
     { search: searchQuery || undefined, page: 1, limit: 50 },
     { refetchInterval: 10000 }
@@ -97,6 +102,8 @@ export default function Admin() {
   const updateMarketPrice = trpc.marketPrice.update.useMutation({ onSuccess: () => { utils.marketPrice.listAll.invalidate(); setMarketEditOpen(false); setMarketEditId(null); } });
   const deleteMarketPrice = trpc.marketPrice.delete.useMutation({ onSuccess: () => utils.marketPrice.listAll.invalidate() });
   const updateSiteContent = trpc.siteContent.updateMany.useMutation({ onSuccess: () => { utils.siteContent.adminList.invalidate(); utils.siteContent.public.invalidate(); } });
+  const setMaintenance = trpc.adminSystem.setMaintenance.useMutation({ onSuccess: () => { utils.adminSystem.maintenance.invalidate(); utils.adminSystem.publicMaintenance.invalidate(); utils.adminSystem.logs.invalidate(); } });
+  const backupQuery = trpc.adminSystem.backup.useQuery(undefined, { enabled: false });
 
   // Detail modals
   const [detailDeposit, setDetailDeposit] = useState<typeof allDeposits[0] | null>(null);
@@ -277,6 +284,19 @@ export default function Admin() {
     printWindow.document.close();
   };
 
+  const downloadFullBackup = async () => {
+    const result = await backupQuery.refetch();
+    if (!result.data) {
+      alert('Yedek alınamadı.');
+      return;
+    }
+    downloadBlob(
+      JSON.stringify(result.data, null, 2),
+      `corevest-tam-yedek-${new Date().toISOString().slice(0, 10)}.json`,
+      'application/json;charset=utf-8'
+    );
+  };
+
   return (
     <div className="page-bg min-h-screen">
       {/* Topbar */}
@@ -313,6 +333,7 @@ export default function Admin() {
           {[
             { key: 'members' as AdminTab, label: 'Uyeler', icon: Users },
             { key: 'memberData' as AdminTab, label: 'Üye Dataları', icon: FileText },
+            { key: 'system' as AdminTab, label: 'Güvenlik & Sistem', icon: Shield },
             { key: 'deposits' as AdminTab, label: 'Yatırım Talepleri', icon: ArrowDownLeft },
             { key: 'withdrawals' as AdminTab, label: 'Çekim Talepleri', icon: ArrowUpRight },
             { key: 'tickets' as AdminTab, label: 'Destek Ticketları', icon: Headphones },
@@ -386,6 +407,97 @@ export default function Admin() {
         )}
 
         {/* ─── DEPOSITS TAB ─── */}
+        {activeTab === 'system' && (
+          <div className="grid gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {(systemOverview?.notifications ?? []).map((item: any) => (
+                <div key={item.type} className="glass-card">
+                  <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>{item.title}</span>
+                  <strong className="block text-2xl mt-1" style={{ color: item.count > 0 ? '#FFD700' : '#5a6a7a' }}>{item.count}</strong>
+                </div>
+              ))}
+            </div>
+
+            <div className="glass-card">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold text-white">Bakım Modu</h2>
+                  <p className="text-sm mt-1" style={{ color: '#8fa5b8' }}>Açıldığında kullanıcılar bakım ekranı görür, admin panel çalışmaya devam eder.</p>
+                </div>
+                <button
+                  onClick={() => setMaintenance.mutate({ enabled: !(maintenance?.enabled ?? false) })}
+                  className={maintenance?.enabled ? 'btn-primary' : 'btn-secondary'}
+                  style={{ minHeight: '42px' }}
+                >
+                  {maintenance?.enabled ? 'Bakımı Kapat' : 'Bakımı Aç'}
+                </button>
+              </div>
+            </div>
+
+            <div className="glass-card">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold text-white">Tam Sistem Yedeği</h2>
+                  <p className="text-sm mt-1" style={{ color: '#8fa5b8' }}>Üyeler, yatırımlar, çekimler, referanslar, ticketlar ve bonus kayıtlarını JSON olarak indirir.</p>
+                </div>
+                <button onClick={downloadFullBackup} className="btn-primary" style={{ minHeight: '42px' }}>
+                  <Download size={15} /> Tam Yedek İndir
+                </button>
+              </div>
+            </div>
+
+            <div className="glass-card">
+              <h2 className="text-lg font-bold text-white mb-3">Çekim Güvenlik Kontrolü</h2>
+              <div className="grid gap-2">
+                {withdrawalRisks.slice(0, 20).map((risk: any) => (
+                  <div key={risk.id} className="rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.06)' }}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <span className="text-sm font-bold text-white">Çekim #{risk.id} · Üye #{risk.userId}</span>
+                        <p className="text-xs mt-1" style={{ color: '#8fa5b8' }}>${Number(risk.amount).toFixed(2)} · {risk.wallet}</p>
+                      </div>
+                      <span className="text-[10px] font-extrabold px-2 py-1 rounded-full" style={{ background: risk.riskScore > 0 ? 'rgba(239,68,68,0.14)' : 'rgba(16,185,129,0.12)', color: risk.riskScore > 0 ? '#ef4444' : '#10b981' }}>
+                        {risk.riskScore > 0 ? `${risk.riskScore} risk` : 'Temiz'}
+                      </span>
+                    </div>
+                    {risk.labels.length > 0 && <p className="text-xs mt-2" style={{ color: '#FFD700' }}>{risk.labels.join(' · ')}</p>}
+                  </div>
+                ))}
+                {withdrawalRisks.length === 0 && <p className="text-sm text-center py-6" style={{ color: '#5a6a7a' }}>Çekim kaydı yok.</p>}
+              </div>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-3">
+              <div className="glass-card">
+                <h2 className="text-lg font-bold text-white mb-3">IP / Cihaz Takibi</h2>
+                <div className="grid gap-2 max-h-[420px] overflow-y-auto pr-1">
+                  {loginEvents.map((event: any) => (
+                    <div key={event.id} className="rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.06)' }}>
+                      <span className="text-sm font-bold text-white">{event.email || `Üye #${event.userId}`}</span>
+                      <p className="text-xs mt-1" style={{ color: '#8fa5b8' }}>{event.ipAddress || '-'} · {event.createdAt ? new Date(event.createdAt).toLocaleString('tr-TR') : ''}</p>
+                      <p className="text-[10px] mt-1 truncate" style={{ color: '#5a6a7a' }}>{event.userAgent || '-'}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="glass-card">
+                <h2 className="text-lg font-bold text-white mb-3">Admin İşlem Logları</h2>
+                <div className="grid gap-2 max-h-[420px] overflow-y-auto pr-1">
+                  {adminLogs.map((log: any) => (
+                    <div key={log.id} className="rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.06)' }}>
+                      <span className="text-sm font-bold text-white">{log.action}</span>
+                      <p className="text-xs mt-1" style={{ color: '#8fa5b8' }}>{log.adminEmail || `Admin #${log.adminUserId}`} · {log.targetType || '-'} #{log.targetId || '-'}</p>
+                      <p className="text-[10px] mt-1" style={{ color: '#5a6a7a' }}>{log.ipAddress || '-'} · {log.createdAt ? new Date(log.createdAt).toLocaleString('tr-TR') : ''}</p>
+                    </div>
+                  ))}
+                  {adminLogs.length === 0 && <p className="text-sm text-center py-6" style={{ color: '#5a6a7a' }}>Henüz admin işlem logu yok.</p>}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'memberData' && (
           <div className="grid gap-3">
             <div className="glass-card">

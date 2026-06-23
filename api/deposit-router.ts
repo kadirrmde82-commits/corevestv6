@@ -5,6 +5,7 @@ import { getDb } from "./queries/connection";
 import { deposits, profiles, users, referrals, vipBonuses } from "@db/schema";
 import { awardReferralWheelBonus } from "./wheel-router";
 import { capAmount, getVipInfo, getVipLevel } from "./vip-config";
+import { logAdminActivity } from "./admin-system-router";
 
 async function getTier1ReferralCount(userId: number) {
   const db = getDb();
@@ -78,7 +79,7 @@ export const depositRouter = createRouter({
   // Approve a deposit (admin)
   approve: adminQuery
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const db = getDb();
       const deposit = await db.query.deposits.findFirst({
         where: eq(deposits.id, input.id),
@@ -139,18 +140,21 @@ export const depositRouter = createRouter({
         await awardReferralWheelBonus(db, deposit.userId, depositAmount);
       }
 
+      await logAdminActivity({ adminUserId: ctx.user.id, action: "deposit.approve", targetType: "deposit", targetId: input.id, details: { userId: deposit.userId, amount: deposit.amount }, req: ctx.req });
+
       return { success: true };
     }),
 
   // Reject a deposit (admin)
   reject: adminQuery
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const db = getDb();
       await db
         .update(deposits)
         .set({ status: "rejected" })
         .where(eq(deposits.id, input.id));
+      await logAdminActivity({ adminUserId: ctx.user.id, action: "deposit.reject", targetType: "deposit", targetId: input.id, req: ctx.req });
       return { success: true };
     }),
 });

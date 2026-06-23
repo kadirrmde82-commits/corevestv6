@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { createRouter, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { users, profiles } from "@db/schema";
+import { users, profiles, userLoginEvents } from "@db/schema";
 import {
   hashPassword,
   verifyPassword,
@@ -14,6 +14,12 @@ import { createUniqueMemberId } from "./member-id";
 
 function generateReferralCode(): string {
   return "CV" + Math.random().toString(36).substring(2, 7).toUpperCase();
+}
+
+function ipFromRequest(req: Request) {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || req.headers.get("x-real-ip")
+    || "unknown";
 }
 
 export const localAuthRouter = createRouter({
@@ -82,7 +88,7 @@ export const localAuthRouter = createRouter({
         password: z.string(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const db = getDb();
 
       const user = await db.query.users.findFirst({
@@ -107,6 +113,13 @@ export const localAuthRouter = createRouter({
         .update(users)
         .set({ lastSignInAt: new Date() })
         .where(eq(users.id, user.id));
+
+      await db.insert(userLoginEvents).values({
+        userId: user.id,
+        ipAddress: ipFromRequest(ctx.req),
+        userAgent: ctx.req.headers.get("user-agent") || null,
+        success: 1,
+      });
 
       const token = await signLocalToken(user.id);
 

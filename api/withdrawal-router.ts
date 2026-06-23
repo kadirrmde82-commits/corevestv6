@@ -3,6 +3,7 @@ import { eq, desc } from "drizzle-orm";
 import { createRouter, authedQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { withdrawals, profiles } from "@db/schema";
+import { logAdminActivity } from "./admin-system-router";
 
 const WITHDRAWAL_FEE_PERCENT = 5; // %5 kesinti
 const MIN_WITHDRAWAL_AMOUNT = 50; // Minimum çekim 50$
@@ -305,7 +306,7 @@ export const withdrawalRouter = createRouter({
 
   approve: adminQuery
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const db = getDb();
       const withdrawal = await db.query.withdrawals.findFirst({
         where: eq(withdrawals.id, input.id),
@@ -352,12 +353,14 @@ export const withdrawalRouter = createRouter({
           .where(eq(profiles.userId, withdrawal.userId));
       }
 
+      await logAdminActivity({ adminUserId: ctx.user.id, action: "withdrawal.approve", targetType: "withdrawal", targetId: input.id, details: { userId: withdrawal.userId, amount: withdrawal.amount }, req: ctx.req });
+
       return { success: true };
     }),
 
   reject: adminQuery
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const db = getDb();
       const withdrawal = await db.query.withdrawals.findFirst({
         where: eq(withdrawals.id, input.id),
@@ -382,6 +385,7 @@ export const withdrawalRouter = createRouter({
         .update(withdrawals)
         .set({ status: "rejected" })
         .where(eq(withdrawals.id, input.id));
+      await logAdminActivity({ adminUserId: ctx.user.id, action: "withdrawal.reject", targetType: "withdrawal", targetId: input.id, details: { userId: withdrawal.userId, amount: withdrawal.amount }, req: ctx.req });
       return { success: true };
     }),
 });

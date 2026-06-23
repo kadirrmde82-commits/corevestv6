@@ -15,6 +15,7 @@ import {
   referrals,
   referralEarnings,
 } from "@db/schema";
+import { logAdminActivity } from "./admin-system-router";
 
 export const adminMemberRouter = createRouter({
   // List all members with profiles
@@ -209,7 +210,7 @@ export const adminMemberRouter = createRouter({
         email: z.string().email().max(320).optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const db = getDb();
       const { userId, ...data } = input;
       const updateData: Record<string, any> = {};
@@ -219,6 +220,7 @@ export const adminMemberRouter = createRouter({
         .update(users)
         .set(updateData)
         .where(eq(users.id, userId));
+      await logAdminActivity({ adminUserId: ctx.user.id, action: "member.updateUser", targetType: "user", targetId: userId, details: updateData, req: ctx.req });
       return { success: true };
     }),
 
@@ -307,12 +309,13 @@ export const adminMemberRouter = createRouter({
         newBalance: z.number(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const db = getDb();
       await db
         .update(profiles)
         .set({ balance: String(input.newBalance) })
         .where(eq(profiles.userId, input.userId));
+      await logAdminActivity({ adminUserId: ctx.user.id, action: "member.updateBalance", targetType: "user", targetId: input.userId, details: { newBalance: input.newBalance }, req: ctx.req });
       return { success: true, newBalance: input.newBalance };
     }),
 
@@ -324,12 +327,13 @@ export const adminMemberRouter = createRouter({
         newInvestment: z.number(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const db = getDb();
       await db
         .update(profiles)
         .set({ investment: String(input.newInvestment) })
         .where(eq(profiles.userId, input.userId));
+      await logAdminActivity({ adminUserId: ctx.user.id, action: "member.updateInvestment", targetType: "user", targetId: input.userId, details: { newInvestment: input.newInvestment }, req: ctx.req });
       return { success: true, newInvestment: input.newInvestment };
     }),
 
@@ -341,12 +345,13 @@ export const adminMemberRouter = createRouter({
         vipLevel: z.number().min(0).max(6),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const db = getDb();
       await db
         .update(profiles)
         .set({ vipLevel: input.vipLevel })
         .where(eq(profiles.userId, input.userId));
+      await logAdminActivity({ adminUserId: ctx.user.id, action: "member.updateVip", targetType: "user", targetId: input.userId, details: { vipLevel: input.vipLevel }, req: ctx.req });
       return { success: true, vipLevel: input.vipLevel };
     }),
 
@@ -359,7 +364,7 @@ export const adminMemberRouter = createRouter({
         note: z.string().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const db = getDb();
       await db.insert(wheelReferralBonuses).values({
         userId: input.userId,
@@ -367,6 +372,7 @@ export const adminMemberRouter = createRouter({
         investmentAmount: "0",
         spinsEarned: input.spins,
       });
+      await logAdminActivity({ adminUserId: ctx.user.id, action: "member.adjustWheelSpins", targetType: "user", targetId: input.userId, details: { spins: input.spins, note: input.note }, req: ctx.req });
       return { success: true, spinsAdjusted: input.spins };
     }),
 
@@ -390,20 +396,21 @@ export const adminMemberRouter = createRouter({
         newPassword: z.string().min(6).max(100),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const db = getDb();
       const passwordHash = hashPassword(input.newPassword);
       await db
         .update(users)
         .set({ passwordHash })
         .where(eq(users.id, input.userId));
+      await logAdminActivity({ adminUserId: ctx.user.id, action: "member.resetPassword", targetType: "user", targetId: input.userId, req: ctx.req });
       return { success: true };
     }),
 
   // Delete a member and all related data
   delete: adminQuery
     .input(z.object({ userId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const db = getDb();
       const uid = input.userId;
 
@@ -455,6 +462,8 @@ export const adminMemberRouter = createRouter({
 
       // 11. User (finally)
       await db.delete(users).where(eq(users.id, uid));
+
+      await logAdminActivity({ adminUserId: ctx.user.id, action: "member.delete", targetType: "user", targetId: uid, req: ctx.req });
 
       return { success: true };
     }),

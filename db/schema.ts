@@ -249,3 +249,43 @@ export const referralEarnings = mysqlTable("referral_earnings", {
 
 export type ReferralEarning = typeof referralEarnings.$inferSelect;
 export type InsertReferralEarning = typeof referralEarnings.$inferInsert;
+
+export const adminActivityLogs = mysqlTable("admin_activity_logs", {
+  id: serial("id").primaryKey(),
+  adminUserId: bigint("adminUserId", { mode: "number", unsigned: true }).notNull(),
+  action: varchar("action", { length: 128 }).notNull(),
+  targetType: varchar("targetType", { length: 64 }),
+  targetId: bigint("targetId", { mode: "number", unsigned: true }),
+  details: text("details"),
+  ipAddress: varchar("ipAddress", { length: 64 }),
+  userAgent: text("userAgent"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AdminActivityLog = typeof adminActivityLogs.$inferSelect;
+export type InsertAdminActivityLog = typeof adminActivityLogs.$inferInsert;
+
+export const userLoginEvents = mysqlTable("user_login_events", {
+  id: serial("id").primaryKey(),
+  userId: bigint("userId", { mode: "number", unsigned: true }).notNull(),
+  ipAddress: varchar("ipAddress", { length: 64 }),
+  userAgent: text("userAgent"),
+  success: int("success").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserLoginEvent = typeof userLoginEvents.$inferSelect;
+export type InsertUserLoginEvent = typeof userLoginEvents.$inferInsert;
+
+export const systemSettings = mysqlTable("system_settings", {
+  key: varchar("key", { length: 64 }).primaryKey(),
+  value: text("value").notNull(),
+  updatedBy: bigint("updatedBy", { mode: "number", unsigned: true }),
+  updatedAt: timestamp("updatedAt")
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export type InsertSystemSetting = typeof systemSettings.$inferInsert;

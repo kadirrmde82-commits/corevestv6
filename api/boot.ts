@@ -41,6 +41,45 @@ async function ensureVipBonusesTable() {
   `);
 }
 
+async function ensureSystemTables() {
+  const db = getDb();
+  await ensureVipBonusesTable();
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS admin_activity_logs (
+      \`id\` bigint unsigned NOT NULL AUTO_INCREMENT,
+      \`adminUserId\` bigint unsigned NOT NULL,
+      \`action\` varchar(128) NOT NULL,
+      \`targetType\` varchar(64),
+      \`targetId\` bigint unsigned,
+      \`details\` text,
+      \`ipAddress\` varchar(64),
+      \`userAgent\` text,
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`id\`)
+    )
+  `);
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS user_login_events (
+      \`id\` bigint unsigned NOT NULL AUTO_INCREMENT,
+      \`userId\` bigint unsigned NOT NULL,
+      \`ipAddress\` varchar(64),
+      \`userAgent\` text,
+      \`success\` int NOT NULL DEFAULT 1,
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`id\`)
+    )
+  `);
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS system_settings (
+      \`key\` varchar(64) NOT NULL,
+      \`value\` text NOT NULL,
+      \`updatedBy\` bigint unsigned,
+      \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`key\`)
+    )
+  `);
+}
+
 function errorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
   return String(error);
@@ -146,7 +185,7 @@ export default app;
 
 if (env.isProduction) {
   await ensureAdminAccount();
-  await ensureVipBonusesTable();
+  await ensureSystemTables();
   const { serve } = await import("@hono/node-server");
   const { serveStaticFiles } = await import("./lib/vite");
   serveStaticFiles(app);

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { referrals, profiles, referralEarnings } from "@db/schema";
@@ -167,5 +167,22 @@ export const referralRouter = createRouter({
       tier2: rows.filter((row) => row.tier === 2).reduce((sum, row) => sum + Number(row.commissionAmount), 0),
       tier3: rows.filter((row) => row.tier === 3).reduce((sum, row) => sum + Number(row.commissionAmount), 0),
     };
+  }),
+
+  earningsList: authedQuery.query(async ({ ctx }) => {
+    const db = getDb();
+    const rows = await db.query.referralEarnings.findMany({
+      where: eq(referralEarnings.referrerUserId, ctx.user.id),
+      orderBy: [desc(referralEarnings.createdAt)],
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      tier: row.tier,
+      clickEarning: Number(row.clickEarning),
+      commissionRate: Number(row.commissionRate),
+      commissionAmount: Number(row.commissionAmount),
+      createdAt: row.createdAt,
+    }));
   }),
 });
