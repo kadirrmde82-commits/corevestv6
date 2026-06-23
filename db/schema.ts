@@ -269,6 +269,8 @@ export const userLoginEvents = mysqlTable("user_login_events", {
   id: serial("id").primaryKey(),
   userId: bigint("userId", { mode: "number", unsigned: true }).notNull(),
   ipAddress: varchar("ipAddress", { length: 64 }),
+  country: varchar("country", { length: 128 }),
+  city: varchar("city", { length: 128 }),
   userAgent: text("userAgent"),
   success: int("success").default(1).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

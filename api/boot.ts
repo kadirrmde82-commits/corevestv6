@@ -43,6 +43,13 @@ async function ensureVipBonusesTable() {
 
 async function ensureSystemTables() {
   const db = getDb();
+  const tryExecute = async (query: ReturnType<typeof sql>) => {
+    try {
+      await db.execute(query);
+    } catch {
+      // Column likely already exists on older MySQL versions that do not support IF NOT EXISTS cleanly.
+    }
+  };
   await ensureVipBonusesTable();
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS admin_activity_logs (
@@ -63,12 +70,16 @@ async function ensureSystemTables() {
       \`id\` bigint unsigned NOT NULL AUTO_INCREMENT,
       \`userId\` bigint unsigned NOT NULL,
       \`ipAddress\` varchar(64),
+      \`country\` varchar(128),
+      \`city\` varchar(128),
       \`userAgent\` text,
       \`success\` int NOT NULL DEFAULT 1,
       \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (\`id\`)
     )
   `);
+  await tryExecute(sql`ALTER TABLE user_login_events ADD COLUMN \`country\` varchar(128)`);
+  await tryExecute(sql`ALTER TABLE user_login_events ADD COLUMN \`city\` varchar(128)`);
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS user_notifications (
       \`id\` bigint unsigned NOT NULL AUTO_INCREMENT,

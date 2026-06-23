@@ -418,7 +418,11 @@ export default function Admin() {
                       <tr key={m.id} className="transition-all hover:bg-white/5" style={{ borderBottom: '1px solid rgba(248,251,255,0.04)' }}>
                         <td className="px-4 py-3 text-xs text-white font-mono">{m.publicId ?? m.id}</td>
                         <td className="px-4 py-3 text-xs text-white">{m.email}</td>
-                        <td className="px-4 py-3 text-xs" style={{ color: '#8fa5b8' }}>{m.name}</td>
+                        <td className="px-4 py-3 text-xs">
+                          <button onClick={() => setSelectedMemberId(m.id)} className="font-bold hover:underline" style={{ color: '#8fa5b8' }}>
+                            {m.name || '-'}
+                          </button>
+                        </td>
                         <td className="px-4 py-3 text-xs font-bold" style={{ color: '#FFD700' }}>${m.balance.toFixed(2)}</td>
                         <td className="px-4 py-3 text-xs text-white">${m.investment.toLocaleString()}</td>
                         <td className="px-4 py-3"><span className="text-[10px] font-extrabold px-2 py-1 rounded-full" style={{ background: 'rgba(255,215,0,0.12)', color: '#FFD700' }}>VIP{m.vipLevel}</span></td>
@@ -655,6 +659,7 @@ export default function Admin() {
                     <div key={event.id} className="rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.06)' }}>
                       <span className="text-sm font-bold text-white">{event.email || `Üye #${event.userId}`}</span>
                       <p className="text-xs mt-1" style={{ color: '#8fa5b8' }}>{event.ipAddress || '-'} · {event.createdAt ? new Date(event.createdAt).toLocaleString('tr-TR') : ''}</p>
+                      <p className="text-[10px] mt-1" style={{ color: '#8fa5b8' }}>{[event.country, event.city].filter(Boolean).join(' / ') || 'Konum bilinmiyor'}</p>
                       <p className="text-[10px] mt-1 truncate" style={{ color: '#5a6a7a' }}>{event.userAgent || '-'}</p>
                     </div>
                   ))}
@@ -761,7 +766,9 @@ export default function Admin() {
                     <span className="text-xs" style={{ color: '#8fa5b8' }}>{d.email && d.email.trim() ? d.email : (d.userEmail || '-')}</span>
                   </div>
                 </div>
-                <span className="text-xs shrink-0" style={{ color: '#5a6a7a' }}>{d.createdAt ? new Date(d.createdAt).toLocaleDateString() : ''}</span>
+                <span className="text-xs shrink-0 text-right" style={{ color: '#5a6a7a' }}>
+                  {d.createdAt ? new Date(d.createdAt).toLocaleString('tr-TR') : ''}
+                </span>
               </button>
             ))}
             {allDeposits.length === 0 && <p className="text-sm text-center py-8" style={{ color: '#5a6a7a' }}>Henuz yatirim talebi yok.</p>}
@@ -1186,6 +1193,25 @@ export default function Admin() {
                 <span className="text-xs" style={{ color: '#8fa5b8' }}>Uyelik Tarihi</span>
                 <span className="text-sm text-white">{memberDetail.createdAt ? new Date(memberDetail.createdAt).toLocaleDateString() : '-'}</span>
               </div>
+              <div className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.06)' }}>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-bold" style={{ color: '#8fa5b8' }}>Son IP / Konum</span>
+                  <span className="text-[10px]" style={{ color: '#5a6a7a' }}>
+                    {(memberDetail as any).latestLogin?.createdAt ? new Date((memberDetail as any).latestLogin.createdAt).toLocaleString('tr-TR') : 'Giriş kaydı yok'}
+                  </span>
+                </div>
+                <div className="grid gap-1">
+                  <div className="flex justify-between gap-3">
+                    <span className="text-xs" style={{ color: '#8fa5b8' }}>IP Adresi</span>
+                    <span className="text-xs font-mono text-white">{(memberDetail as any).latestLogin?.ipAddress || '-'}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-xs" style={{ color: '#8fa5b8' }}>Ülke / Şehir</span>
+                    <span className="text-xs text-white">{[(memberDetail as any).latestLogin?.country, (memberDetail as any).latestLogin?.city].filter(Boolean).join(' / ') || '-'}</span>
+                  </div>
+                  <p className="text-[10px] truncate" style={{ color: '#5a6a7a' }}>{(memberDetail as any).latestLogin?.userAgent || 'Cihaz bilgisi yok'}</p>
+                </div>
+              </div>
             </div>
 
             {/* Edit User Info Form */}
@@ -1361,6 +1387,7 @@ export default function Admin() {
               <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Kullanıcı ID</span><span className="text-sm font-bold text-white">#{detailDeposit.userPublicId ?? detailDeposit.userId}</span></div>
               <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>E-posta</span><span className="text-sm font-bold text-white">{(detailDeposit as any).email || (detailDeposit as any).userEmail || '-'}</span></div>
               {(detailDeposit as any).userNote && <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Not</span><span className="text-sm text-white">{(detailDeposit as any).userNote}</span></div>}
+              <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Talep Tarihi / Saati</span><span className="text-sm font-bold text-white">{detailDeposit.createdAt ? new Date(detailDeposit.createdAt).toLocaleString('tr-TR') : '-'}</span></div>
               <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>TX ID</span><span className="text-xs font-mono text-white">{detailDeposit.txid}</span></div>
               <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Durum</span>{statusBadge(detailDeposit.status)}</div>
             </div>

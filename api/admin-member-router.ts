@@ -14,6 +14,7 @@ import {
   ticketMessages,
   referrals,
   referralEarnings,
+  userLoginEvents,
 } from "@db/schema";
 import { logAdminActivity } from "./admin-system-router";
 
@@ -248,6 +249,10 @@ export const adminMemberRouter = createRouter({
         .from(referralEarnings)
         .where(eq(referralEarnings.referrerUserId, input.userId))
         .orderBy(desc(referralEarnings.createdAt));
+      const latestLogin = await db.query.userLoginEvents.findFirst({
+        where: eq(userLoginEvents.userId, input.userId),
+        orderBy: [desc(userLoginEvents.createdAt)],
+      });
 
       if (!user) throw new Error("User not found");
 
@@ -288,6 +293,13 @@ export const adminMemberRouter = createRouter({
         referralBonusSpins,
         totalEarnedSpins,
         referralBonuses: bonuses,
+        latestLogin: latestLogin ? {
+          ipAddress: latestLogin.ipAddress,
+          country: latestLogin.country,
+          city: latestLogin.city,
+          userAgent: latestLogin.userAgent,
+          createdAt: latestLogin.createdAt,
+        } : null,
         referralEarnings: refEarnings.map(e => ({
           id: e.id,
           referredUserId: e.referredUserId,

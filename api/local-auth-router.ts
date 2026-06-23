@@ -22,6 +22,47 @@ function ipFromRequest(req: Request) {
     || "unknown";
 }
 
+function headerText(req: Request, names: string[]) {
+  for (const name of names) {
+    const value = req.headers.get(name);
+    if (value) return decodeURIComponent(value);
+  }
+  return null;
+}
+
+function isPublicIp(ip: string) {
+  if (!ip || ip === "unknown" || ip === "::1" || ip.startsWith("127.") || ip.startsWith("10.") || ip.startsWith("192.168.")) {
+    return false;
+  }
+  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(ip)) return false;
+  return true;
+}
+
+async function getGeoFromRequest(req: Request, ip: string) {
+  const headerCountry = headerText(req, ["cf-ipcountry", "x-vercel-ip-country"]);
+  const headerCity = headerText(req, ["x-vercel-ip-city"]);
+  if (headerCountry || headerCity) {
+    return { country: headerCountry, city: headerCity };
+  }
+
+  if (!isPublicIp(ip)) return { country: null, city: null };
+
+  try {
+    const response = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, {
+      headers: { accept: "application/json", "user-agent": "CoreVest login geo" },
+      signal: AbortSignal.timeout(1200),
+    });
+    if (!response.ok) return { country: null, city: null };
+    const data = await response.json() as { country_name?: string; country?: string; city?: string };
+    return {
+      country: data.country_name || data.country || null,
+      city: data.city || null,
+    };
+  } catch {
+    return { country: null, city: null };
+  }
+}
+
 export const localAuthRouter = createRouter({
   // Register a new local user
   register: publicQuery
@@ -114,9 +155,13 @@ export const localAuthRouter = createRouter({
         .set({ lastSignInAt: new Date() })
         .where(eq(users.id, user.id));
 
+      const ipAddress = ipFromRequest(ctx.req);
+      const geo = await getGeoFromRequest(ctx.req, ipAddress);
       await db.insert(userLoginEvents).values({
         userId: user.id,
-        ipAddress: ipFromRequest(ctx.req),
+        ipAddress,
+        country: geo.country,
+        city: geo.city,
         userAgent: ctx.req.headers.get("user-agent") || null,
         success: 1,
       });

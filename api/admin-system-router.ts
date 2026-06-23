@@ -230,6 +230,8 @@ export const adminSystemRouter = createRouter({
         email: users.email,
         name: users.name,
         ipAddress: userLoginEvents.ipAddress,
+        country: userLoginEvents.country,
+        city: userLoginEvents.city,
         userAgent: userLoginEvents.userAgent,
         success: userLoginEvents.success,
         createdAt: userLoginEvents.createdAt,
