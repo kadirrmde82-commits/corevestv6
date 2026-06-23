@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { createRouter, publicQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { marketPrices } from "../db/schema";
+import { enrichMarketPrices } from "./market-live";
 
 export const marketPriceRouter = createRouter({
   // Public: list all active market prices
@@ -12,7 +13,7 @@ export const marketPriceRouter = createRouter({
       .select()
       .from(marketPrices)
       .where(eq(marketPrices.active, 1));
-    return rows;
+    return enrichMarketPrices(rows);
   }),
 
   // Admin: list all prices (including inactive)

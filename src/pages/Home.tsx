@@ -20,15 +20,7 @@ export default function Home() {
     staleTime: 1000 * 60,
     refetchInterval: 1000 * 30,
   });
-
-  const [animatedPrices, setAnimatedPrices] = useState<number[]>([]);
-
-  // Sync animated prices when market coins load
-  useEffect(() => {
-    if (marketCoins.length > 0 && animatedPrices.length === 0) {
-      setAnimatedPrices(marketCoins.map((c: { basePrice: string | number }) => Number(c.basePrice)));
-    }
-  }, [marketCoins, animatedPrices.length]);
+  const hasLiveMarketData = marketCoins.some((coin: { live?: boolean }) => coin.live);
 
   const dismissAnnouncement = () => {
     setShowAnnouncement(false);
@@ -73,19 +65,6 @@ export default function Home() {
   const nextVip = useMemo(() => {
     return VIP_TABLE.find(v => v.level === currentVip + 1);
   }, [currentVip]);
-
-  // Simulate live prices
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setAnimatedPrices(prev =>
-        prev.map((p) => {
-          const change = (Math.random() - 0.5) * p * 0.002;
-          return Math.max(0, p + change);
-        })
-      );
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
 
   if (!profile) return null;
 
@@ -261,17 +240,17 @@ export default function Home() {
               <p className="text-xs" style={{ color: '#8fa5b8' }}>{t('home.marketSubtitle')}</p>
             </div>
             <div className="status-badge text-[10px]">
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              LIVE
+              <span className={`w-2 h-2 rounded-full ${hasLiveMarketData ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'}`} />
+              {hasLiveMarketData ? 'CANLI' : 'YEDEK VERİ'}
             </div>
           </div>
           <div className="grid gap-2">
             {marketCoins.length === 0 && (
               <p className="text-xs text-center py-4" style={{ color: '#5a6a7a' }}>Piyasa verisi yukleniyor...</p>
             )}
-            {marketCoins.map((coin: { id: number; symbol: string; name: string; basePrice: string | number; change: string | number; color: string }, i: number) => {
+            {marketCoins.map((coin: { id: number; symbol: string; name: string; basePrice: string | number; change: string | number; color: string; live?: boolean; source?: string }) => {
               const isUp = Number(coin.change) >= 0;
-              const livePrice = animatedPrices[i] ?? Number(coin.basePrice);
+              const livePrice = Number(coin.basePrice);
               return (
                 <div key={coin.symbol} className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.05)' }}>
                   <div className="grid place-items-center rounded-lg font-extrabold text-xs shrink-0" style={{ width: '40px', height: '40px', background: `${coin.color}18`, color: coin.color }}>{coin.symbol.slice(0, 2)}</div>
