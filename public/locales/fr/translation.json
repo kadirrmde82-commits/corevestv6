@@ -216,7 +216,14 @@
     "yourLevel": "Votre niveau",
     "daily": "Quotidien",
     "balanceCapReached": "Vous avez atteint la limite de solde VIP.",
-    "balanceCapReachedDesc": "Le solde maximum pour ce niveau VIP est de {{amount}}$, les clics sont donc désactivés."
+    "balanceCapReachedDesc": "Le solde maximum pour ce niveau VIP est de {{amount}}$, les clics sont donc désactivés.",
+    "vipDetailTitle": "Conditions VIP {{level}}",
+    "vipDetailSubtitle": "Limites d’investissement, de gain et de solde pour ce niveau.",
+    "maxBalance": "Solde maximum",
+    "levelBonus": "Bonus de niveau",
+    "noRequirement": "Aucune condition",
+    "noBonus": "Aucun bonus",
+    "vipCapNote": "Lorsque le solde maximum est atteint, les clics sont désactivés et les gains automatiques ne peuvent pas dépasser cette limite."
   },
   "referralExtra": {
     "qrInvite": "Inviter avec QR",

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Crown, Clock, TrendingUp, DollarSign, Calendar,
-  MousePointerClick, ChevronRight, Users
+  MousePointerClick, ChevronRight, Users, X
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { trpc } from '@/providers/trpc';
@@ -28,6 +28,7 @@ export default function Quantify() {
   const { t } = useTranslation();
   const [countdown, setCountdown] = useState({ hours: 0, minutes: 0, seconds: 0, total: 0 });
   const [showSuccess, setShowSuccess] = useState(false);
+  const [selectedVipLevel, setSelectedVipLevel] = useState<number | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -87,6 +88,8 @@ export default function Quantify() {
   }, [canClick, clickMutation]);
 
   if (!profile) return null;
+
+  const selectedVip = selectedVipLevel !== null ? VIP_TABLE.find(vip => vip.level === selectedVipLevel) : null;
 
   return (
     <Layout>
@@ -202,7 +205,13 @@ export default function Quantify() {
             {VIP_TABLE.filter(v => v.level > 0).map((vip) => {
               const isCurrent = vip.level === currentVipLevel;
               return (
-                <div key={vip.level} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all" style={{ background: isCurrent ? 'rgba(255,215,0,0.08)' : 'rgba(255,255,255,0.03)', border: isCurrent ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(248,251,255,0.05)' }}>
+                <button
+                  key={vip.level}
+                  type="button"
+                  onClick={() => setSelectedVipLevel(vip.level)}
+                  className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all hover:bg-white/5"
+                  style={{ background: isCurrent ? 'rgba(255,215,0,0.08)' : 'rgba(255,255,255,0.03)', border: isCurrent ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(248,251,255,0.05)' }}
+                >
                   <div className="grid place-items-center rounded-lg shrink-0 font-extrabold text-sm" style={{ width: '42px', height: '42px', color: isCurrent ? '#FFD700' : '#5a6a7a', background: isCurrent ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.04)' }}>V{vip.level}</div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -215,12 +224,52 @@ export default function Quantify() {
                     <span className="text-sm font-extrabold" style={{ color: '#FFD700' }}>%{vip.rateMin.toFixed(2)} - %{vip.rateMax.toFixed(2)}</span>
                     <span className="text-xs block" style={{ color: '#5a6a7a' }}>{t('quantifyExtra.daily')}</span>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
         </div>
       </div>
+
+      {selectedVip && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.62)', backdropFilter: 'blur(5px)' }} onClick={() => setSelectedVipLevel(null)}>
+          <div
+            className="w-full max-w-sm animate-fade-in"
+            style={{ background: 'rgba(5, 9, 20, 0.96)', border: '1px solid rgba(255,215,0,0.18)', borderRadius: '22px', padding: '22px', boxShadow: '0 24px 60px rgba(0,0,0,0.5)' }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <div className="status-badge mb-2"><Crown size={14} />VIP {selectedVip.level}</div>
+                <h3 className="text-lg font-bold text-white">{t('quantifyExtra.vipDetailTitle', { level: selectedVip.level })}</h3>
+                <p className="text-xs mt-1" style={{ color: '#8fa5b8' }}>{t('quantifyExtra.vipDetailSubtitle')}</p>
+              </div>
+              <button onClick={() => setSelectedVipLevel(null)} className="btn-secondary" style={{ minHeight: '32px', width: '32px', padding: 0 }}>
+                <X size={14} />
+              </button>
+            </div>
+
+            <div className="grid gap-2">
+              {[
+                { label: t('quantifyExtra.minInvestment'), value: `$${selectedVip.min.toLocaleString()}` },
+                { label: t('quantifyExtra.activeReferral'), value: selectedVip.refsRequired > 0 ? `${selectedVip.refsRequired}` : t('quantifyExtra.noRequirement') },
+                { label: t('quantifyExtra.dailyRate'), value: `%${selectedVip.rateMin.toFixed(2)} - %${selectedVip.rateMax.toFixed(2)}` },
+                { label: t('quantifyExtra.maxBalance'), value: `$${selectedVip.balanceCap.toLocaleString()}` },
+                { label: t('quantifyExtra.levelBonus'), value: selectedVip.bonus > 0 ? `$${selectedVip.bonus.toLocaleString()}` : t('quantifyExtra.noBonus') },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center justify-between gap-3 rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(248,251,255,0.06)' }}>
+                  <span className="text-xs" style={{ color: '#8fa5b8' }}>{item.label}</span>
+                  <span className="text-sm font-extrabold text-white text-right">{item.value}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-xl p-3" style={{ background: 'rgba(255,215,0,0.07)', border: '1px solid rgba(255,215,0,0.14)' }}>
+              <p className="text-xs" style={{ color: '#FFD700' }}>{t('quantifyExtra.vipCapNote')}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

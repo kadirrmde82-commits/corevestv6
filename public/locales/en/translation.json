@@ -216,7 +216,14 @@
     "yourLevel": "Your Level",
     "daily": "Daily",
     "balanceCapReached": "You reached your VIP balance limit.",
-    "balanceCapReachedDesc": "The maximum balance for this VIP level is ${{amount}}, so clicking is now disabled."
+    "balanceCapReachedDesc": "The maximum balance for this VIP level is ${{amount}}, so clicking is now disabled.",
+    "vipDetailTitle": "VIP {{level}} Requirements",
+    "vipDetailSubtitle": "Investment, earning and balance limits for this level.",
+    "maxBalance": "Maximum Balance",
+    "levelBonus": "Level Bonus",
+    "noRequirement": "No requirement",
+    "noBonus": "No bonus",
+    "vipCapNote": "When the maximum balance limit is reached, clicking is disabled and automatic earnings cannot exceed this limit."
   },
   "referralExtra": {
     "qrInvite": "Invite with QR",

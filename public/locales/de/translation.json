@@ -216,7 +216,14 @@
     "yourLevel": "Dein Level",
     "daily": "Täglich",
     "balanceCapReached": "Du hast dein VIP-Guthabenlimit erreicht.",
-    "balanceCapReachedDesc": "Das maximale Guthaben für dieses VIP-Level beträgt ${{amount}}, daher sind Klicks deaktiviert."
+    "balanceCapReachedDesc": "Das maximale Guthaben für dieses VIP-Level beträgt ${{amount}}, daher sind Klicks deaktiviert.",
+    "vipDetailTitle": "VIP {{level}} Anforderungen",
+    "vipDetailSubtitle": "Investitions-, Gewinn- und Guthabenlimits für dieses Level.",
+    "maxBalance": "Maximales Guthaben",
+    "levelBonus": "Level-Bonus",
+    "noRequirement": "Keine Anforderung",
+    "noBonus": "Kein Bonus",
+    "vipCapNote": "Wenn das maximale Guthaben erreicht ist, sind Klicks deaktiviert und automatische Gewinne können dieses Limit nicht überschreiten."
   },
   "referralExtra": {
     "qrInvite": "Mit QR einladen",

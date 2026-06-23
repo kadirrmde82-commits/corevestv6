@@ -216,7 +216,14 @@
     "yourLevel": "Sizin Seviyeniz",
     "daily": "Günlük",
     "balanceCapReached": "VIP bakiye limitine ulaştınız.",
-    "balanceCapReachedDesc": "Bu VIP seviyesinde maksimum bakiye {{amount}}$ olduğu için artık tıklama yapılamaz."
+    "balanceCapReachedDesc": "Bu VIP seviyesinde maksimum bakiye {{amount}}$ olduğu için artık tıklama yapılamaz.",
+    "vipDetailTitle": "VIP {{level}} Şartları",
+    "vipDetailSubtitle": "Bu seviyedeki yatırım, kazanç ve bakiye limitleri.",
+    "maxBalance": "Maksimum Bakiye",
+    "levelBonus": "Seviye Bonusu",
+    "noRequirement": "Şart yok",
+    "noBonus": "Bonus yok",
+    "vipCapNote": "Maksimum bakiye limitine ulaşıldığında tıklama yapılamaz ve otomatik kazançlar bu limiti aşamaz."
   },
   "referralExtra": {
     "qrInvite": "QR ile Davet Et",

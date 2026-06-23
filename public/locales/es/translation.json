@@ -216,7 +216,14 @@
     "yourLevel": "Tu nivel",
     "daily": "Diario",
     "balanceCapReached": "Alcanzaste el límite de saldo VIP.",
-    "balanceCapReachedDesc": "El saldo máximo para este nivel VIP es ${{amount}}, por eso los clics están desactivados."
+    "balanceCapReachedDesc": "El saldo máximo para este nivel VIP es ${{amount}}, por eso los clics están desactivados.",
+    "vipDetailTitle": "Requisitos VIP {{level}}",
+    "vipDetailSubtitle": "Límites de inversión, ganancias y saldo para este nivel.",
+    "maxBalance": "Saldo máximo",
+    "levelBonus": "Bono de nivel",
+    "noRequirement": "Sin requisito",
+    "noBonus": "Sin bono",
+    "vipCapNote": "Al alcanzar el saldo máximo, los clics se desactivan y las ganancias automáticas no pueden superar este límite."
   },
   "referralExtra": {
     "qrInvite": "Invitar con QR",
