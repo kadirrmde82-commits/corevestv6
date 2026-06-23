@@ -306,7 +306,8 @@
       "warning": "Nachdem du an eine der obigen Adressen gesendet hast, klicke auf \"Einzahlung bestätigen\".",
       "confirm": "Einzahlung bestätigen",
       "checkingTitle": "Deine Transaktion wird geprüft",
-      "checkingText": "Dieser Vorgang dauert etwa 15-20 Minuten."
+      "checkingText": "Dieser Vorgang dauert etwa 15-20 Minuten.",
+      "sending": "Wird gesendet..."
     },
     "withdraw": {
       "title": "Auszahlen",

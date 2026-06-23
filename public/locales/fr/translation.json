@@ -306,7 +306,8 @@
       "warning": "Après avoir envoyé à l’une des adresses ci-dessus, cliquez sur \"Confirmer le dépôt\".",
       "confirm": "Confirmer le dépôt",
       "checkingTitle": "Votre transaction est en cours de vérification",
-      "checkingText": "Ce processus prend environ 15 à 20 minutes."
+      "checkingText": "Ce processus prend environ 15 à 20 minutes.",
+      "sending": "Envoi..."
     },
     "withdraw": {
       "title": "Retirer",

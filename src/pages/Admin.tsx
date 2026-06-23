@@ -71,7 +71,10 @@ export default function Admin() {
     { search: searchQuery || undefined, page: 1, limit: 50 },
     { refetchInterval: 10000 }
   );
-  const { data: allDeposits = [] } = trpc.deposit.listAll.useQuery(undefined, { refetchInterval: 10000 });
+  const { data: allDeposits = [], refetch: refetchDeposits, isFetching: depositsFetching } = trpc.deposit.listAll.useQuery(undefined, {
+    refetchInterval: activeTab === 'deposits' ? 3000 : 10000,
+    refetchOnWindowFocus: true,
+  });
   const { data: allWithdrawals = [] } = trpc.withdrawal.listAll.useQuery(undefined, { refetchInterval: 10000 });
   const { data: allTickets = [] } = trpc.ticket.listAll.useQuery(undefined, { refetchInterval: 10000 });
   const { data: allMarketPrices = [] } = trpc.marketPrice.listAll.useQuery(undefined, { refetchInterval: 10000 });
@@ -820,6 +823,15 @@ export default function Admin() {
 
         {activeTab === 'deposits' && (
           <div className="grid gap-2">
+            <div className="glass-card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-white">Yatırım Talepleri</h2>
+                <p className="text-xs mt-1" style={{ color: '#8fa5b8' }}>Bu sayfa açıkken talepler otomatik olarak birkaç saniyede bir yenilenir.</p>
+              </div>
+              <button onClick={() => refetchDeposits()} className="btn-secondary" style={{ minHeight: '38px' }}>
+                <RefreshCw size={14} className={depositsFetching ? 'animate-spin' : ''} /> Yenile
+              </button>
+            </div>
             {allDeposits.map((d: any) => (
               <button key={d.id} onClick={() => setDetailDeposit(d)} className="glass-card flex items-center gap-4 text-left w-full transition-all hover:bg-white/5" style={{ padding: '14px 16px' }}>
                 <div className="grid place-items-center rounded-lg shrink-0" style={{ width: '42px', height: '42px', background: 'rgba(16,185,129,0.1)', color: '#10b981' }}><ArrowDownLeft size={18} /></div>

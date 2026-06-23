@@ -306,7 +306,8 @@
       "warning": "After sending to one of the addresses above, click the \"Confirm Deposit\" button.",
       "confirm": "Confirm Deposit",
       "checkingTitle": "Your transaction is being checked",
-      "checkingText": "This process takes approximately 15-20 minutes."
+      "checkingText": "This process takes approximately 15-20 minutes.",
+      "sending": "Sending..."
     },
     "withdraw": {
       "title": "Withdraw",

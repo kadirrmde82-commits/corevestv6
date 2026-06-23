@@ -306,7 +306,8 @@
       "warning": "Yukarıdaki adreslerden birine gönderim yaptıktan sonra \"Yatırımı Onayla\" butonuna tıklayınız.",
       "confirm": "Yatırımı Onayla",
       "checkingTitle": "İşleminiz Kontrol Ediliyor",
-      "checkingText": "Bu işlem yaklaşık 15-20 dakika sürmektedir."
+      "checkingText": "Bu işlem yaklaşık 15-20 dakika sürmektedir.",
+      "sending": "Gönderiliyor..."
     },
     "withdraw": {
       "title": "Para Çek",

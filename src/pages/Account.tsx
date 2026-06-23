@@ -126,6 +126,10 @@ export default function Account() {
       utils.deposit.list.invalidate();
       setDepositStatus('checking');
     },
+    onError: (error) => {
+      setDepositStatus('idle');
+      alert(error.message || 'Yatırım talebi gönderilemedi. Lütfen tekrar deneyin.');
+    },
   });
 
   // Withdrawal mutations
@@ -201,7 +205,8 @@ export default function Account() {
   };
 
   const handleDeposit = () => {
-    if (!depositAmount || Number(depositAmount) <= 0 || !depositEmail.trim()) return;
+    if (!depositAmount || Number(depositAmount) <= 0 || !depositEmail.trim() || depositMutation.isPending) return;
+    setDepositStatus('checking');
     depositMutation.mutate({
       amount: Number(depositAmount),
       email: depositEmail.trim(),
@@ -283,7 +288,7 @@ export default function Account() {
               <div className="mx-auto mb-4 grid place-items-center rounded-full animate-pulse" style={{ width: '64px', height: '64px', background: 'rgba(255,215,0,0.1)' }}><Clock size={32} style={{ color: '#FFD700' }} /></div>
               <p className="text-base font-bold text-white mb-2">{t('accountExtra.deposit.checkingTitle')}</p>
               <p className="text-sm" style={{ color: '#8fa5b8' }}>{t('accountExtra.deposit.checkingText')}</p>
-              <button onClick={() => setView('main')} className="btn-secondary mt-4">{t('accountExtra.ok')}</button>
+              <button onClick={() => { setView('main'); setDepositAmount(''); setDepositEmail(''); setDepositStatus('idle'); }} className="btn-secondary mt-4">{t('accountExtra.ok')}</button>
             </div>
           ) : (
             <div className="grid gap-3">
@@ -337,8 +342,8 @@ export default function Account() {
                 </p>
               </div>
 
-              <button onClick={handleDeposit} className="btn-primary" disabled={!depositAmount || Number(depositAmount) <= 0 || !depositEmail.trim()} style={{ opacity: (!depositAmount || Number(depositAmount) <= 0 || !depositEmail.trim()) ? 0.4 : 1 }}>
-                {t('accountExtra.deposit.confirm')}
+              <button onClick={handleDeposit} className="btn-primary" disabled={!depositAmount || Number(depositAmount) <= 0 || !depositEmail.trim() || depositMutation.isPending} style={{ opacity: (!depositAmount || Number(depositAmount) <= 0 || !depositEmail.trim() || depositMutation.isPending) ? 0.4 : 1 }}>
+                {depositMutation.isPending ? t('accountExtra.deposit.sending') : t('accountExtra.deposit.confirm')}
               </button>
             </div>
           )}

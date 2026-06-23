@@ -306,7 +306,8 @@
       "warning": "Dopo aver inviato a uno degli indirizzi sopra, clicca su \"Conferma deposito\".",
       "confirm": "Conferma deposito",
       "checkingTitle": "La tua transazione è in verifica",
-      "checkingText": "Questo processo richiede circa 15-20 minuti."
+      "checkingText": "Questo processo richiede circa 15-20 minuti.",
+      "sending": "Invio..."
     },
     "withdraw": {
       "title": "Preleva",

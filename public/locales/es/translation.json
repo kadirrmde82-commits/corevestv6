@@ -306,7 +306,8 @@
       "warning": "Después de enviar a una de las direcciones anteriores, haz clic en \"Confirmar depósito\".",
       "confirm": "Confirmar depósito",
       "checkingTitle": "Tu transacción está siendo revisada",
-      "checkingText": "Este proceso tarda aproximadamente 15-20 minutos."
+      "checkingText": "Este proceso tarda aproximadamente 15-20 minutos.",
+      "sending": "Enviando..."
     },
     "withdraw": {
       "title": "Retirar",
