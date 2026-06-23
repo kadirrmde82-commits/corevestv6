@@ -104,6 +104,102 @@ export const adminMemberRouter = createRouter({
       return { members, total, page, limit };
     }),
 
+  exportData: adminQuery.query(async () => {
+    const db = getDb();
+    const memberRows = await db
+      .select()
+      .from(users)
+      .leftJoin(profiles, eq(users.id, profiles.userId))
+      .orderBy(desc(users.createdAt));
+
+    const allDeposits = await db.select().from(deposits);
+    const allWithdrawals = await db.select().from(withdrawals);
+    const allReferrals = await db.select().from(referrals);
+    const allReferralEarnings = await db.select().from(referralEarnings);
+
+    const sumByUser = <T extends { userId: number; amount: unknown; status?: string }>(
+      rows: T[],
+      status?: string
+    ) => {
+      const map = new Map<number, number>();
+      for (const row of rows) {
+        if (status && row.status !== status) continue;
+        map.set(row.userId, (map.get(row.userId) ?? 0) + Number(row.amount));
+      }
+      return map;
+    };
+
+    const countByUser = <T extends { userId: number; status?: string }>(
+      rows: T[],
+      status?: string
+    ) => {
+      const map = new Map<number, number>();
+      for (const row of rows) {
+        if (status && row.status !== status) continue;
+        map.set(row.userId, (map.get(row.userId) ?? 0) + 1);
+      }
+      return map;
+    };
+
+    const depositApproved = sumByUser(allDeposits, "approved");
+    const depositPendingCount = countByUser(allDeposits, "pending");
+    const withdrawalApproved = sumByUser(allWithdrawals, "approved");
+    const withdrawalPendingCount = countByUser(allWithdrawals, "pending");
+
+    const referralCounts = new Map<number, { tier1: number; tier2: number; tier3: number }>();
+    for (const referral of allReferrals) {
+      const current = referralCounts.get(referral.referrerUserId) ?? { tier1: 0, tier2: 0, tier3: 0 };
+      if (referral.tier === 1) current.tier1 += 1;
+      if (referral.tier === 2) current.tier2 += 1;
+      if (referral.tier === 3) current.tier3 += 1;
+      referralCounts.set(referral.referrerUserId, current);
+    }
+
+    const referralEarningsByUser = new Map<number, number>();
+    for (const earning of allReferralEarnings) {
+      referralEarningsByUser.set(
+        earning.referrerUserId,
+        (referralEarningsByUser.get(earning.referrerUserId) ?? 0) + Number(earning.commissionAmount)
+      );
+    }
+
+    return memberRows.map((row: any) => {
+      const user = row.users;
+      const profile = row.profiles;
+      const refs = referralCounts.get(user.id) ?? { tier1: 0, tier2: 0, tier3: 0 };
+
+      return {
+        id: user.id,
+        publicId: user.publicId,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        createdAt: user.createdAt,
+        lastSignInAt: user.lastSignInAt,
+        referralCode: profile?.referralCode ?? "",
+        referredBy: profile?.referredBy ?? "",
+        vipLevel: profile?.vipLevel ?? 0,
+        balance: Number(profile?.balance ?? 0),
+        investment: Number(profile?.investment ?? 0),
+        totalEarned: Number(profile?.totalEarned ?? 0),
+        totalClicks: profile?.totalClicks ?? 0,
+        consecutiveClicks: profile?.consecutiveClicks ?? 0,
+        monthlyWithdrawalCount: profile?.monthlyWithdrawalCount ?? 0,
+        lastClickAt: profile?.lastClickAt ?? null,
+        lastWithdrawalAt: profile?.lastWithdrawalAt ?? null,
+        joinDate: profile?.joinDate ?? user.createdAt,
+        approvedDepositTotal: depositApproved.get(user.id) ?? 0,
+        pendingDepositCount: depositPendingCount.get(user.id) ?? 0,
+        approvedWithdrawalTotal: withdrawalApproved.get(user.id) ?? 0,
+        pendingWithdrawalCount: withdrawalPendingCount.get(user.id) ?? 0,
+        referralTier1: refs.tier1,
+        referralTier2: refs.tier2,
+        referralTier3: refs.tier3,
+        referralEarningsTotal: referralEarningsByUser.get(user.id) ?? 0,
+      };
+    });
+  }),
+
   // Update member user info (name + email)
   updateUser: adminQuery
     .input(

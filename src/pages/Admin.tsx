@@ -5,14 +5,14 @@ import {
   Check, X, Wallet, Shield, LogOut,
   Send, MessageCircle, Lock, ChevronRight, Headphones,
   Search, Edit3, Gift, Eye, RefreshCw,
-  TrendingUp, Plus, Pencil, Trash2, Bitcoin, Minus, FileText
+  TrendingUp, Plus, Pencil, Trash2, Bitcoin, Minus, FileText, Download
 } from 'lucide-react';
 import LanguageSelector from '../components/LanguageSelector';
 import { trpc } from '@/providers/trpc';
 import { VIP_TABLE } from '../store';
 import { ANNOUNCEMENT_CONTENT_KEYS, DEFAULT_SITE_CONTENT, FAQ_CONTENT_KEYS } from '@contracts/site-content';
 
-type AdminTab = 'members' | 'deposits' | 'withdrawals' | 'tickets' | 'content' | 'marketPrices' | 'walletAddresses';
+type AdminTab = 'members' | 'memberData' | 'deposits' | 'withdrawals' | 'tickets' | 'content' | 'marketPrices' | 'walletAddresses';
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -51,6 +51,7 @@ export default function Admin() {
   // Data queries
   const utils = trpc.useUtils();
   const { data: stats } = trpc.adminMember.stats.useQuery(undefined, { refetchInterval: 10000 });
+  const { data: memberReports = [] } = trpc.adminMember.exportData.useQuery(undefined, { refetchInterval: 10000 });
   const { data: membersData } = trpc.adminMember.list.useQuery(
     { search: searchQuery || undefined, page: 1, limit: 50 },
     { refetchInterval: 10000 }
@@ -173,6 +174,109 @@ export default function Admin() {
     return <span className="text-[10px] font-extrabold px-2 py-1 rounded-full" style={{ background: c.bg, color: c.color }}>{c.label}</span>;
   };
 
+  const reportColumns = [
+    { key: 'publicId', label: 'Üye ID' },
+    { key: 'email', label: 'E-posta' },
+    { key: 'name', label: 'İsim' },
+    { key: 'role', label: 'Rol' },
+    { key: 'vipLevel', label: 'VIP' },
+    { key: 'balance', label: 'Bakiye' },
+    { key: 'investment', label: 'Yatırım' },
+    { key: 'totalEarned', label: 'Toplam Kazanç' },
+    { key: 'totalClicks', label: 'Toplam Tıklama' },
+    { key: 'consecutiveClicks', label: 'Ardışık Tıklama' },
+    { key: 'referralCode', label: 'Referans Kodu' },
+    { key: 'referredBy', label: 'Davet Eden Kod' },
+    { key: 'referralTier1', label: 'Ref T1' },
+    { key: 'referralTier2', label: 'Ref T2' },
+    { key: 'referralTier3', label: 'Ref T3' },
+    { key: 'referralEarningsTotal', label: 'Referans Kazancı' },
+    { key: 'approvedDepositTotal', label: 'Onaylı Yatırım' },
+    { key: 'pendingDepositCount', label: 'Bekleyen Yatırım' },
+    { key: 'approvedWithdrawalTotal', label: 'Onaylı Çekim' },
+    { key: 'pendingWithdrawalCount', label: 'Bekleyen Çekim' },
+    { key: 'monthlyWithdrawalCount', label: 'Aylık Çekim Sayısı' },
+    { key: 'joinDate', label: 'Üyelik Tarihi' },
+    { key: 'lastClickAt', label: 'Son Tıklama' },
+    { key: 'lastWithdrawalAt', label: 'Son Çekim' },
+    { key: 'lastSignInAt', label: 'Son Giriş' },
+  ];
+
+  const formatReportValue = (value: unknown, key: string) => {
+    if (value === null || value === undefined || value === '') return '-';
+    if (['balance', 'investment', 'totalEarned', 'referralEarningsTotal', 'approvedDepositTotal', 'approvedWithdrawalTotal'].includes(key)) {
+      return `$${Number(value).toFixed(2)}`;
+    }
+    if (['joinDate', 'lastClickAt', 'lastWithdrawalAt', 'lastSignInAt'].includes(key)) {
+      const date = new Date(String(value));
+      return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString('tr-TR');
+    }
+    if (key === 'vipLevel') return `VIP ${value}`;
+    return String(value);
+  };
+
+  const escapeHtml = (value: string) => value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+
+  const buildReportTableHtml = () => {
+    const header = reportColumns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join('');
+    const rows = memberReports.map((member: any) => (
+      `<tr>${reportColumns.map((column) => `<td>${escapeHtml(formatReportValue(member[column.key], column.key))}</td>`).join('')}</tr>`
+    )).join('');
+    return `<table><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table>`;
+  };
+
+  const downloadBlob = (content: string, filename: string, type: string) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportMembersExcel = () => {
+    const html = `<!doctype html><html><head><meta charset="UTF-8" /></head><body>${buildReportTableHtml()}</body></html>`;
+    downloadBlob(html, `corevest-uye-datalari-${new Date().toISOString().slice(0, 10)}.xls`, 'application/vnd.ms-excel;charset=utf-8');
+  };
+
+  const exportMembersPdf = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('PDF penceresi açılamadı. Tarayıcı popup iznini kontrol edin.');
+      return;
+    }
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+          <title>Corevest Üye Dataları</title>
+          <style>
+            body { font-family: Arial, sans-serif; color: #111827; padding: 24px; }
+            h1 { margin: 0 0 6px; font-size: 22px; }
+            p { margin: 0 0 18px; color: #4b5563; font-size: 12px; }
+            table { width: 100%; border-collapse: collapse; font-size: 10px; }
+            th, td { border: 1px solid #d1d5db; padding: 6px; text-align: left; white-space: nowrap; }
+            th { background: #f3f4f6; font-weight: 700; }
+            @media print { body { padding: 10px; } table { font-size: 8px; } }
+          </style>
+        </head>
+        <body>
+          <h1>Corevest Üye Dataları</h1>
+          <p>Oluşturma tarihi: ${new Date().toLocaleString('tr-TR')} · Toplam üye: ${memberReports.length}</p>
+          ${buildReportTableHtml()}
+          <script>window.onload = () => { window.print(); };</script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   return (
     <div className="page-bg min-h-screen">
       {/* Topbar */}
@@ -208,6 +312,7 @@ export default function Admin() {
         <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
           {[
             { key: 'members' as AdminTab, label: 'Uyeler', icon: Users },
+            { key: 'memberData' as AdminTab, label: 'Üye Dataları', icon: FileText },
             { key: 'deposits' as AdminTab, label: 'Yatırım Talepleri', icon: ArrowDownLeft },
             { key: 'withdrawals' as AdminTab, label: 'Çekim Talepleri', icon: ArrowUpRight },
             { key: 'tickets' as AdminTab, label: 'Destek Ticketları', icon: Headphones },
@@ -281,6 +386,71 @@ export default function Admin() {
         )}
 
         {/* ─── DEPOSITS TAB ─── */}
+        {activeTab === 'memberData' && (
+          <div className="grid gap-3">
+            <div className="glass-card">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold text-white">Tüm Üye Dataları</h2>
+                  <p className="text-sm mt-1" style={{ color: '#8fa5b8' }}>
+                    Tüm üyelerin bakiye, yatırım, VIP, tıklama, referans, yatırım ve çekim özetlerini buradan görebilir ve indirebilirsiniz.
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button onClick={exportMembersExcel} className="btn-primary" style={{ minHeight: '40px' }} disabled={memberReports.length === 0}>
+                    <Download size={15} /> Excel İndir
+                  </button>
+                  <button onClick={exportMembersPdf} className="btn-secondary" style={{ minHeight: '40px' }} disabled={memberReports.length === 0}>
+                    <FileText size={15} /> PDF Aç / İndir
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { label: 'Rapor Üye Sayısı', value: memberReports.length.toLocaleString(), color: '#FFD700' },
+                { label: 'Toplam Bakiye', value: `$${memberReports.reduce((sum: number, member: any) => sum + Number(member.balance || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`, color: '#10b981' },
+                { label: 'Toplam Yatırım', value: `$${memberReports.reduce((sum: number, member: any) => sum + Number(member.investment || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`, color: '#35d7ff' },
+                { label: 'Toplam Referans Kazancı', value: `$${memberReports.reduce((sum: number, member: any) => sum + Number(member.referralEarningsTotal || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`, color: '#a78bfa' },
+              ].map((item) => (
+                <div key={item.label} className="glass-card">
+                  <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>{item.label}</span>
+                  <strong className="block text-lg mt-1" style={{ color: item.color }}>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(248,251,255,0.08)' }}>
+                      {reportColumns.map((column) => (
+                        <th key={column.key} className="px-4 py-3 text-[10px] font-bold uppercase whitespace-nowrap" style={{ color: '#8fa5b8' }}>
+                          {column.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {memberReports.map((member: any) => (
+                      <tr key={member.id} className="transition-all hover:bg-white/5" style={{ borderBottom: '1px solid rgba(248,251,255,0.04)' }}>
+                        {reportColumns.map((column) => (
+                          <td key={column.key} className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: column.key === 'balance' || column.key === 'investment' ? '#FFD700' : '#c8d6e5' }}>
+                            {formatReportValue(member[column.key], column.key)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {memberReports.length === 0 && <p className="text-sm text-center py-8" style={{ color: '#5a6a7a' }}>Üye datası bulunamadı.</p>}
+            </div>
+          </div>
+        )}
+
         {activeTab === 'deposits' && (
           <div className="grid gap-2">
             {allDeposits.map((d: any) => (
