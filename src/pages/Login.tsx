@@ -8,6 +8,7 @@ import { trpc } from '@/providers/trpc';
 export default function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const telegramSupportUrl = 'https://t.me/corevestsupport';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -92,7 +93,7 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="mb-5">
+        <div className="mb-3">
           <label className="label-text block mb-2">{t('login.password')}</label>
           <div className="relative">
             <Lock
@@ -110,6 +111,22 @@ export default function Login() {
               required
             />
           </div>
+        </div>
+
+        <div className="mb-5 text-right">
+          <button
+            type="button"
+            onClick={() => window.open(telegramSupportUrl, '_blank', 'noopener,noreferrer')}
+            className="text-xs font-semibold underline-offset-2 hover:underline"
+            style={{
+              color: '#FFD700',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            {t('login.forgotPassword')}
+          </button>
         </div>
 
         <button
