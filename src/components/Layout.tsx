@@ -14,7 +14,6 @@ export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [selectedNotificationId, setSelectedNotificationId] = useState<number | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const touchStartYRef = useRef<number | null>(null);
   const lastRefreshAtRef = useRef(0);
   const utils = trpc.useUtils();
@@ -46,11 +45,10 @@ export default function Layout({ children }: LayoutProps) {
     const now = Date.now();
     if (!force && now - lastRefreshAtRef.current < 1200) return;
     lastRefreshAtRef.current = now;
-    setIsRefreshing(true);
     try {
       await utils.invalidate();
-    } finally {
-      window.setTimeout(() => setIsRefreshing(false), 450);
+    } catch {
+      // Silent refresh: users should not see refresh errors during background updates.
     }
   }, [utils]);
 
@@ -101,12 +99,6 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="page-bg min-h-screen pb-24">
-      {isRefreshing && (
-        <div className="fixed top-3 left-1/2 -translate-x-1/2 z-50 rounded-full px-4 py-2 text-xs font-extrabold" style={{ background: 'rgba(255,215,0,0.95)', color: '#04070d', boxShadow: '0 10px 30px rgba(0,0,0,0.28)' }}>
-          Güncelleniyor...
-        </div>
-      )}
-
       {/* Topbar */}
       <div
         className="sticky top-0 z-20 flex items-center justify-between gap-4 px-4 py-3 mb-4"
