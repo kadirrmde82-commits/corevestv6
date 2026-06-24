@@ -31,6 +31,29 @@ async function getTier1ReferralCountForUser(userId: number) {
   return rows[0]?.count ?? 0;
 }
 
+async function deductMemberEarning(
+  userId: number,
+  amount: number,
+  options: { deductTotalEarned?: boolean; deductTotalClicks?: boolean } = {}
+) {
+  const db = getDb();
+  const profile = await db.query.profiles.findFirst({ where: eq(profiles.userId, userId) });
+  if (!profile) return;
+
+  await db
+    .update(profiles)
+    .set({
+      balance: String(Math.max(0, Number(profile.balance) - amount)),
+      totalEarned: options.deductTotalEarned
+        ? String(Math.max(0, Number(profile.totalEarned) - amount))
+        : profile.totalEarned,
+      totalClicks: options.deductTotalClicks
+        ? Math.max(0, Number(profile.totalClicks) - 1)
+        : profile.totalClicks,
+    })
+    .where(eq(profiles.userId, userId));
+}
+
 export const adminMemberRouter = createRouter({
   // List all members with profiles
   list: adminQuery
@@ -253,10 +276,22 @@ export const adminMemberRouter = createRouter({
         .select({ count: count() })
         .from(wheelSpins)
         .where(eq(wheelSpins.userId, input.userId));
+      const spinRows = await db.query.wheelSpins.findMany({
+        where: eq(wheelSpins.userId, input.userId),
+        orderBy: [desc(wheelSpins.createdAt)],
+      });
       const bonuses = await db
         .select()
         .from(wheelReferralBonuses)
         .where(eq(wheelReferralBonuses.userId, input.userId));
+      const memberClickEarnings = await db.query.clickEarnings.findMany({
+        where: eq(clickEarnings.userId, input.userId),
+        orderBy: [desc(clickEarnings.createdAt)],
+      });
+      const memberVipBonuses = await db.query.vipBonuses.findMany({
+        where: eq(vipBonuses.userId, input.userId),
+        orderBy: [desc(vipBonuses.createdAt)],
+      });
       const refEarnings = await db
         .select()
         .from(referralEarnings)
@@ -315,6 +350,24 @@ export const adminMemberRouter = createRouter({
         referralBonusSpins,
         totalEarnedSpins,
         referralBonuses: bonuses,
+        wheelSpins: spinRows.map((spin) => ({
+          id: spin.id,
+          prize: Number(spin.prize),
+          createdAt: spin.createdAt,
+        })),
+        clickEarnings: memberClickEarnings.map((earning) => ({
+          id: earning.id,
+          vipLevel: earning.vipLevel,
+          dailyRate: Number(earning.dailyRate),
+          amount: Number(earning.amount),
+          createdAt: earning.createdAt,
+        })),
+        vipBonuses: memberVipBonuses.map((bonus) => ({
+          id: bonus.id,
+          vipLevel: bonus.vipLevel,
+          amount: Number(bonus.amount),
+          createdAt: bonus.createdAt,
+        })),
         deposits: memberDeposits.map((deposit) => ({
           id: deposit.id,
           amount: Number(deposit.amount),
@@ -493,6 +546,91 @@ export const adminMemberRouter = createRouter({
         targetType: "deposit",
         targetId: input.depositId,
         details: { userId: deposit.userId, amount: deposit.amount, status: deposit.status },
+        req: ctx.req,
+      });
+      return { success: true };
+    }),
+
+  deleteClickEarning: adminQuery
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = getDb();
+      const earning = await db.query.clickEarnings.findFirst({ where: eq(clickEarnings.id, input.id) });
+      if (!earning) throw new Error("Click earning not found");
+
+      await deductMemberEarning(earning.userId, Number(earning.amount), {
+        deductTotalEarned: true,
+        deductTotalClicks: true,
+      });
+      await db.delete(clickEarnings).where(eq(clickEarnings.id, input.id));
+      await logAdminActivity({
+        adminUserId: ctx.user.id,
+        action: "member.deleteClickEarning",
+        targetType: "click_earning",
+        targetId: input.id,
+        details: { userId: earning.userId, amount: earning.amount },
+        req: ctx.req,
+      });
+      return { success: true };
+    }),
+
+  deleteWheelSpin: adminQuery
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = getDb();
+      const spin = await db.query.wheelSpins.findFirst({ where: eq(wheelSpins.id, input.id) });
+      if (!spin) throw new Error("Wheel spin not found");
+
+      await deductMemberEarning(spin.userId, Number(spin.prize), { deductTotalEarned: false });
+      await db.delete(wheelSpins).where(eq(wheelSpins.id, input.id));
+      await logAdminActivity({
+        adminUserId: ctx.user.id,
+        action: "member.deleteWheelSpin",
+        targetType: "wheel_spin",
+        targetId: input.id,
+        details: { userId: spin.userId, amount: spin.prize },
+        req: ctx.req,
+      });
+      return { success: true };
+    }),
+
+  deleteVipBonus: adminQuery
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = getDb();
+      const bonus = await db.query.vipBonuses.findFirst({ where: eq(vipBonuses.id, input.id) });
+      if (!bonus) throw new Error("VIP bonus not found");
+
+      await deductMemberEarning(bonus.userId, Number(bonus.amount), { deductTotalEarned: true });
+      await db.delete(vipBonuses).where(eq(vipBonuses.id, input.id));
+      await logAdminActivity({
+        adminUserId: ctx.user.id,
+        action: "member.deleteVipBonus",
+        targetType: "vip_bonus",
+        targetId: input.id,
+        details: { userId: bonus.userId, amount: bonus.amount, vipLevel: bonus.vipLevel },
+        req: ctx.req,
+      });
+      return { success: true };
+    }),
+
+  deleteReferralEarning: adminQuery
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = getDb();
+      const earning = await db.query.referralEarnings.findFirst({ where: eq(referralEarnings.id, input.id) });
+      if (!earning) throw new Error("Referral earning not found");
+
+      await deductMemberEarning(earning.referrerUserId, Number(earning.commissionAmount), {
+        deductTotalEarned: true,
+      });
+      await db.delete(referralEarnings).where(eq(referralEarnings.id, input.id));
+      await logAdminActivity({
+        adminUserId: ctx.user.id,
+        action: "member.deleteReferralEarning",
+        targetType: "referral_earning",
+        targetId: input.id,
+        details: { userId: earning.referrerUserId, referredUserId: earning.referredUserId, amount: earning.commissionAmount },
         req: ctx.req,
       });
       return { success: true };

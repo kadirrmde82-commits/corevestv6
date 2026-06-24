@@ -99,6 +99,10 @@ export default function Admin() {
   const updateInvestment = trpc.adminMember.updateInvestment.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); } });
   const addMemberDeposit = trpc.adminMember.addDeposit.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); utils.deposit.listAll.invalidate(); setManualDepositAmount(''); setManualDepositEmail(''); } });
   const deleteMemberDeposit = trpc.adminMember.deleteDeposit.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); utils.deposit.listAll.invalidate(); } });
+  const deleteClickEarning = trpc.adminMember.deleteClickEarning.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); } });
+  const deleteWheelSpin = trpc.adminMember.deleteWheelSpin.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); } });
+  const deleteVipBonus = trpc.adminMember.deleteVipBonus.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); } });
+  const deleteReferralEarning = trpc.adminMember.deleteReferralEarning.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); } });
   const updateVip = trpc.adminMember.updateVip.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); setEditVipOpen(false); } });
   const approveDeposit = trpc.deposit.approve.useMutation({ onSuccess: () => utils.deposit.listAll.invalidate() });
   const rejectDeposit = trpc.deposit.reject.useMutation({ onSuccess: () => utils.deposit.listAll.invalidate() });
@@ -1430,6 +1434,91 @@ export default function Admin() {
                     {((memberDetail as any).deposits ?? []).length === 0 && <p className="text-xs text-center py-4" style={{ color: '#5a6a7a' }}>Yatırım kaydı yok.</p>}
                   </div>
                 </div>
+
+                <div className="mt-4 p-4 rounded-xl" style={{ background: 'rgba(255,215,0,0.05)', border: '1px solid rgba(255,215,0,0.14)' }}>
+                  <h4 className="text-sm font-bold text-white mb-1">Üye Kazançları</h4>
+                  <p className="text-[11px] mb-3" style={{ color: '#8fa5b8' }}>Buradan tıklama, çark, VIP bonusu ve referans kazançlarını tek tek silebilirsiniz. Silinen tutar üyenin bakiyesinden düşer.</p>
+
+                  <div className="grid gap-3">
+                    <div>
+                      <h5 className="text-[11px] font-bold mb-2" style={{ color: '#FFD700' }}>Tıklama Kazançları</h5>
+                      <div className="grid gap-2 max-h-[140px] overflow-y-auto">
+                        {((memberDetail as any).clickEarnings ?? []).slice(0, 20).map((earning: any) => (
+                          <div key={earning.id} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.06)' }}>
+                            <div>
+                              <span className="text-xs font-bold" style={{ color: '#10b981' }}>+${Number(earning.amount).toFixed(2)}</span>
+                              <p className="text-[10px]" style={{ color: '#8fa5b8' }}>VIP {earning.vipLevel} · %{Number(earning.dailyRate).toFixed(2)} · {earning.createdAt ? new Date(earning.createdAt).toLocaleString('tr-TR') : '-'}</p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                if (confirm('Bu tıklama kazancı silinsin mi? Tutar bakiyeden ve toplam kazançtan düşer.')) {
+                                  deleteClickEarning.mutate({ id: earning.id });
+                                }
+                              }}
+                              className="grid place-items-center rounded-lg"
+                              style={{ width: '30px', height: '30px', color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        ))}
+                        {((memberDetail as any).clickEarnings ?? []).length === 0 && <p className="text-xs text-center py-3" style={{ color: '#5a6a7a' }}>Tıklama kazancı yok.</p>}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h5 className="text-[11px] font-bold mb-2" style={{ color: '#FFD700' }}>Çark Kazançları</h5>
+                      <div className="grid gap-2 max-h-[140px] overflow-y-auto">
+                        {((memberDetail as any).wheelSpins ?? []).slice(0, 20).map((spin: any) => (
+                          <div key={spin.id} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.06)' }}>
+                            <div>
+                              <span className="text-xs font-bold" style={{ color: '#10b981' }}>+${Number(spin.prize).toFixed(2)}</span>
+                              <p className="text-[10px]" style={{ color: '#8fa5b8' }}>{spin.createdAt ? new Date(spin.createdAt).toLocaleString('tr-TR') : '-'}</p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                if (confirm('Bu çark kazancı silinsin mi? Tutar üyenin bakiyesinden düşer.')) {
+                                  deleteWheelSpin.mutate({ id: spin.id });
+                                }
+                              }}
+                              className="grid place-items-center rounded-lg"
+                              style={{ width: '30px', height: '30px', color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        ))}
+                        {((memberDetail as any).wheelSpins ?? []).length === 0 && <p className="text-xs text-center py-3" style={{ color: '#5a6a7a' }}>Çark kazancı yok.</p>}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h5 className="text-[11px] font-bold mb-2" style={{ color: '#FFD700' }}>VIP Bonusları</h5>
+                      <div className="grid gap-2 max-h-[140px] overflow-y-auto">
+                        {((memberDetail as any).vipBonuses ?? []).slice(0, 20).map((bonus: any) => (
+                          <div key={bonus.id} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.06)' }}>
+                            <div>
+                              <span className="text-xs font-bold" style={{ color: '#10b981' }}>+${Number(bonus.amount).toFixed(2)}</span>
+                              <p className="text-[10px]" style={{ color: '#8fa5b8' }}>VIP {bonus.vipLevel} · {bonus.createdAt ? new Date(bonus.createdAt).toLocaleString('tr-TR') : '-'}</p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                if (confirm('Bu VIP bonusu silinsin mi? Tutar bakiyeden ve toplam kazançtan düşer.')) {
+                                  deleteVipBonus.mutate({ id: bonus.id });
+                                }
+                              }}
+                              className="grid place-items-center rounded-lg"
+                              style={{ width: '30px', height: '30px', color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        ))}
+                        {((memberDetail as any).vipBonuses ?? []).length === 0 && <p className="text-xs text-center py-3" style={{ color: '#5a6a7a' }}>VIP bonusu yok.</p>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </>
             )}
 
@@ -1459,14 +1548,27 @@ export default function Admin() {
                 <h4 className="text-xs font-bold mb-2" style={{ color: '#8fa5b8' }}>SON REFERANS KAZANCLARI</h4>
                 <div className="grid gap-1 max-h-[150px] overflow-y-auto">
                   {(memberDetail as any).referralEarnings.slice(0, 10).map((e: any) => (
-                    <div key={e.id} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(248,251,255,0.04)' }}>
+                    <div key={e.id} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(248,251,255,0.04)' }}>
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: e.tier === 1 ? 'rgba(255,215,0,0.12)' : e.tier === 2 ? 'rgba(139,92,246,0.12)' : 'rgba(53,215,255,0.12)', color: e.tier === 1 ? '#FFD700' : e.tier === 2 ? '#8b5cf6' : '#35d7ff' }}>Tier-{e.tier}</span>
                         <span className="text-xs" style={{ color: '#8fa5b8' }}>#{e.referredUserId}</span>
                       </div>
-                      <div className="text-right">
-                        <span className="text-xs font-bold" style={{ color: '#10b981' }}>+${e.commissionAmount.toFixed(2)}</span>
-                        <span className="text-[10px] ml-1" style={{ color: '#5a6a7a' }}>(%{e.commissionRate})</span>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <span className="text-xs font-bold" style={{ color: '#10b981' }}>+${e.commissionAmount.toFixed(2)}</span>
+                          <span className="text-[10px] ml-1" style={{ color: '#5a6a7a' }}>(%{e.commissionRate})</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (confirm('Bu referans kazancı silinsin mi? Tutar bakiyeden ve toplam kazançtan düşer.')) {
+                              deleteReferralEarning.mutate({ id: e.id });
+                            }
+                          }}
+                          className="grid place-items-center rounded-lg"
+                          style={{ width: '28px', height: '28px', color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}
+                        >
+                          <Trash2 size={12} />
+                        </button>
                       </div>
                     </div>
                   ))}
