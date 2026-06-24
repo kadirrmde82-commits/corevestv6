@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, MousePointerClick, Users, UserCircle, HelpCircle } from 'lucide-react';
 
-export default function BottomNav() {
+export default function BottomNav({ onTabPress }: { onTabPress?: () => void }) {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -31,7 +31,10 @@ export default function BottomNav() {
         return (
           <button
             key={tab.key}
-            onClick={() => navigate(tab.path)}
+            onClick={() => {
+              onTabPress?.();
+              navigate(tab.path);
+            }}
             className="flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2 transition-all min-w-[64px]"
             style={{
               background: isActive ? 'rgba(255,215,0,0.12)' : 'transparent',

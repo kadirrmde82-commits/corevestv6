@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, X } from 'lucide-react';
 import BottomNav from './BottomNav';
@@ -14,6 +14,9 @@ export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [selectedNotificationId, setSelectedNotificationId] = useState<number | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const touchStartYRef = useRef<number | null>(null);
+  const lastRefreshAtRef = useRef(0);
   const utils = trpc.useUtils();
   const heartbeat = trpc.presence.heartbeat.useMutation();
   const { data: notifications = [] } = trpc.notification.list.useQuery(undefined, {
@@ -39,10 +42,23 @@ export default function Layout({ children }: LayoutProps) {
   const unreadCount = notifications.filter((item) => !item.readAt).length;
   const selectedNotification = notifications.find((item) => item.id === selectedNotificationId) ?? null;
 
+  const refreshAllUserData = useCallback(async (force = false) => {
+    const now = Date.now();
+    if (!force && now - lastRefreshAtRef.current < 1200) return;
+    lastRefreshAtRef.current = now;
+    setIsRefreshing(true);
+    try {
+      await utils.invalidate();
+    } finally {
+      window.setTimeout(() => setIsRefreshing(false), 450);
+    }
+  }, [utils]);
+
   useEffect(() => {
     const sendHeartbeat = () => {
       if (document.visibilityState === 'visible') {
         heartbeat.mutate({ path: window.location.hash || window.location.pathname });
+        refreshAllUserData();
       }
     };
     sendHeartbeat();
@@ -54,10 +70,43 @@ export default function Layout({ children }: LayoutProps) {
       window.removeEventListener('focus', sendHeartbeat);
       document.removeEventListener('visibilitychange', sendHeartbeat);
     };
-  }, [heartbeat]);
+  }, [heartbeat, refreshAllUserData]);
+
+  useEffect(() => {
+    const handleTouchStart = (event: TouchEvent) => {
+      if (window.scrollY <= 2) {
+        touchStartYRef.current = event.touches[0]?.clientY ?? null;
+      } else {
+        touchStartYRef.current = null;
+      }
+    };
+
+    const handleTouchEnd = (event: TouchEvent) => {
+      const startY = touchStartYRef.current;
+      touchStartYRef.current = null;
+      if (startY === null || window.scrollY > 8) return;
+      const endY = event.changedTouches[0]?.clientY ?? startY;
+      if (endY - startY > 70) {
+        refreshAllUserData(true);
+      }
+    };
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [refreshAllUserData]);
 
   return (
     <div className="page-bg min-h-screen pb-24">
+      {isRefreshing && (
+        <div className="fixed top-3 left-1/2 -translate-x-1/2 z-50 rounded-full px-4 py-2 text-xs font-extrabold" style={{ background: 'rgba(255,215,0,0.95)', color: '#04070d', boxShadow: '0 10px 30px rgba(0,0,0,0.28)' }}>
+          Güncelleniyor...
+        </div>
+      )}
+
       {/* Topbar */}
       <div
         className="sticky top-0 z-20 flex items-center justify-between gap-4 px-4 py-3 mb-4"
@@ -189,7 +238,7 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       )}
 
-      <BottomNav />
+      <BottomNav onTabPress={() => refreshAllUserData(true)} />
     </div>
   );
 }
