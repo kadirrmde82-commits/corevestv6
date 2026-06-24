@@ -40,15 +40,18 @@ export default function Quantify() {
   const utils = trpc.useUtils();
 
   const { data: profile } = trpc.profile.me.useQuery(undefined, {
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 10,
+    refetchInterval: 1000 * 10,
     retry: false,
   });
   const { data: clickStatus } = trpc.click.status.useQuery(undefined, {
     staleTime: 1000 * 10,
+    refetchInterval: 1000 * 10,
     retry: false,
   });
   const { data: referralCount } = trpc.referral.count.useQuery(undefined, {
-    staleTime: 1000 * 60,
+    staleTime: 1000 * 20,
+    refetchInterval: 1000 * 20,
     retry: false,
   });
 

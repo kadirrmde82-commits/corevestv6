@@ -13,19 +13,23 @@ export default function Referral() {
   const [qrDataUrl, setQrDataUrl] = useState('');
 
   const { data: profile } = trpc.profile.me.useQuery(undefined, {
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 10,
+    refetchInterval: 1000 * 10,
     retry: false,
   });
   const { data: network } = trpc.referral.myNetwork.useQuery(undefined, {
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 15,
+    refetchInterval: 1000 * 15,
     retry: false,
   });
   const { data: counts } = trpc.referral.count.useQuery(undefined, {
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 15,
+    refetchInterval: 1000 * 15,
     retry: false,
   });
   const { data: earningsSummary } = trpc.referral.earningsSummary.useQuery(undefined, {
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 15,
+    refetchInterval: 1000 * 15,
     retry: false,
   });
 

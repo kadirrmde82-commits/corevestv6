@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Gift, RotateCcw } from 'lucide-react';
 import { trpc } from '@/providers/trpc';
@@ -23,24 +23,42 @@ export default function Wheel() {
   const [rotation, setRotation] = useState(BASE_LANDING_ANGLE);
   const [isSpinning, setIsSpinning] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [resultAmount, setResultAmount] = useState(10);
+  const spinStartedAtRef = useRef(0);
 
   const { data: status } = trpc.wheel.status.useQuery(undefined, {
     staleTime: 5000,
+    refetchInterval: 10000,
     retry: false,
   });
 
   const spinMutation = trpc.wheel.spin.useMutation({
-    onSuccess: () => {
+    onSuccess: (result) => {
+      setResultAmount(Number(result.actualPrize || 10));
+      utils.wheel.status.setData(undefined, (old) => old ? {
+        ...old,
+        availableSpins: result.remainingSpins,
+        totalSpins: Number(old.totalSpins || 0) + 1,
+      } : old);
+      utils.profile.me.setData(undefined, (old) => old ? {
+        ...old,
+        balance: String(result.newBalance),
+        totalEarned: String(result.newTotalEarned ?? (Number(old.totalEarned) + Number(result.actualPrize || 0))),
+      } : old);
       utils.wheel.status.invalidate();
+      utils.wheel.list.invalidate();
       utils.profile.me.invalidate();
 
+      const elapsed = Date.now() - spinStartedAtRef.current;
+      const delay = Math.max(0, 4200 - elapsed);
       setTimeout(() => {
         setShowResult(true);
         setIsSpinning(false);
-      }, 4200);
+      }, delay);
     },
-    onError: () => {
+    onError: (error) => {
       setIsSpinning(false);
+      alert(error.message || 'Çark çevrilemedi. Lütfen tekrar deneyin.');
     },
   });
 
@@ -49,14 +67,13 @@ export default function Wheel() {
 
     setShowResult(false);
     setIsSpinning(true);
+    spinStartedAtRef.current = Date.now();
 
     const fullSpins = 5 * 360;
     const targetRotation = rotation + fullSpins;
     setRotation(targetRotation);
 
-    setTimeout(() => {
-      spinMutation.mutate();
-    }, 4000);
+    spinMutation.mutate();
   }, [isSpinning, status, rotation, spinMutation]);
 
   const availableSpins = status?.availableSpins || 0;
@@ -214,7 +231,7 @@ export default function Wheel() {
           <p className="text-sm font-bold text-white mb-1">{t('wheel.congrats')}</p>
           <p className="text-xs" style={{ color: '#8fa5b8' }}>{t('wheel.won')}</p>
           <p className="text-xl font-extrabold mt-2" style={{ color: '#FFD700' }}>
-            {t('wheel.added')}
+            ${resultAmount.toFixed(2)} {t('wheel.added')}
           </p>
         </div>
       )}

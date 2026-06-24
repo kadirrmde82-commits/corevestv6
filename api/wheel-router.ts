@@ -178,6 +178,7 @@ export const wheelRouter = createRouter({
       throw new Error("VIP bakiye limitine ulaştınız.");
     }
     const newBalance = Number(profile.balance) + actualPrize;
+    const newTotalEarned = Number(profile.totalEarned) + actualPrize;
 
     // 5. Record the spin
     await db.insert(wheelSpins).values({
@@ -188,7 +189,10 @@ export const wheelRouter = createRouter({
     // 6. Add to balance
     await db
       .update(profiles)
-      .set({ balance: String(newBalance) })
+      .set({
+        balance: String(newBalance),
+        totalEarned: String(newTotalEarned),
+      })
       .where(eq(profiles.userId, ctx.user.id));
 
     return {
@@ -196,6 +200,7 @@ export const wheelRouter = createRouter({
       visualPrize: visualPrize.label,
       actualPrize,
       newBalance,
+      newTotalEarned,
       remainingSpins: availableSpins - 1,
     };
   }),

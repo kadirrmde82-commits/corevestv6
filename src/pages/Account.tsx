@@ -33,34 +33,41 @@ export default function Account() {
   const [installMessage, setInstallMessage] = useState('');
 
   const { data: profile } = trpc.profile.me.useQuery(undefined, {
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 10,
+    refetchInterval: 1000 * 10,
     retry: false,
   });
   const { data: walletAddresses = [] } = trpc.walletAddress.list.useQuery(undefined, {
     staleTime: 1000 * 60,
   });
   const { data: deposits = [] } = trpc.deposit.list.useQuery(undefined, {
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 10,
+    refetchInterval: 1000 * 10,
     retry: false,
   });
   const { data: withdrawals = [] } = trpc.withdrawal.list.useQuery(undefined, {
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 10,
+    refetchInterval: 1000 * 10,
     retry: false,
   });
   const { data: tickets = [] } = trpc.ticket.list.useQuery(undefined, {
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 10,
+    refetchInterval: 1000 * 10,
     retry: false,
   });
   const { data: wheelHistory = [] } = trpc.wheel.list.useQuery(undefined, {
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 10,
+    refetchInterval: 1000 * 10,
     retry: false,
   });
   const { data: referralEarnings = [] } = trpc.referral.earningsList.useQuery(undefined, {
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 10,
+    refetchInterval: 1000 * 10,
     retry: false,
   });
   const { data: clickEarnings = [] } = trpc.click.history.useQuery(undefined, {
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 10,
+    refetchInterval: 1000 * 10,
     retry: false,
   });
 
