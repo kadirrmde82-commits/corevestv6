@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Crown, Clock, TrendingUp, DollarSign, Calendar,
@@ -7,6 +7,9 @@ import {
 import Layout from '../components/Layout';
 import { trpc } from '@/providers/trpc';
 import { VIP_TABLE } from '../store';
+
+const PROCESSING_MIN_SECONDS = 10;
+const PROCESSING_MAX_SECONDS = 20;
 
 function getTimeRemainingTR(): { hours: number; minutes: number; seconds: number; total: number } {
   const now = Date.now();
@@ -29,6 +32,10 @@ export default function Quantify() {
   const [countdown, setCountdown] = useState({ hours: 0, minutes: 0, seconds: 0, total: 0 });
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedVipLevel, setSelectedVipLevel] = useState<number | null>(null);
+  const [isProcessingTrade, setIsProcessingTrade] = useState(false);
+  const [processingSecondsLeft, setProcessingSecondsLeft] = useState(0);
+  const processingTimeoutRef = useRef<number | null>(null);
+  const processingIntervalRef = useRef<number | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -49,8 +56,13 @@ export default function Quantify() {
     onSuccess: () => {
       utils.profile.me.invalidate();
       utils.click.status.invalidate();
+      setIsProcessingTrade(false);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
+    },
+    onError: (error) => {
+      setIsProcessingTrade(false);
+      alert(error.message || t('quantifyExtra.processingError'));
     },
   });
 
@@ -82,10 +94,34 @@ export default function Quantify() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (processingTimeoutRef.current) window.clearTimeout(processingTimeoutRef.current);
+      if (processingIntervalRef.current) window.clearInterval(processingIntervalRef.current);
+    };
+  }, []);
+
   const handleClick = useCallback(() => {
-    if (!canClick) return;
-    clickMutation.mutate({});
-  }, [canClick, clickMutation]);
+    if (!canClick || isProcessingTrade || clickMutation.isPending) return;
+
+    if (processingTimeoutRef.current) window.clearTimeout(processingTimeoutRef.current);
+    if (processingIntervalRef.current) window.clearInterval(processingIntervalRef.current);
+
+    const processingSeconds = Math.floor(Math.random() * (PROCESSING_MAX_SECONDS - PROCESSING_MIN_SECONDS + 1)) + PROCESSING_MIN_SECONDS;
+    setShowSuccess(false);
+    setIsProcessingTrade(true);
+    setProcessingSecondsLeft(processingSeconds);
+
+    processingIntervalRef.current = window.setInterval(() => {
+      setProcessingSecondsLeft((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+
+    processingTimeoutRef.current = window.setTimeout(() => {
+      if (processingIntervalRef.current) window.clearInterval(processingIntervalRef.current);
+      processingIntervalRef.current = null;
+      clickMutation.mutate({});
+    }, processingSeconds * 1000);
+  }, [canClick, clickMutation, isProcessingTrade]);
 
   if (!profile) return null;
 
@@ -147,8 +183,19 @@ export default function Quantify() {
             <>
               <div className="mx-auto mb-4 grid place-items-center rounded-full animate-glow" style={{ width: '72px', height: '72px', background: 'linear-gradient(135deg, #FFD700, #FFA500)' }}><MousePointerClick size={32} color="#04070d" /></div>
               <p className="text-sm mb-3" style={{ color: '#8fa5b8' }}>{t('quantifyExtra.dailyEarning')} <strong style={{ color: '#FFD700' }}>${dailyEarningMin.toFixed(2)} - ${dailyEarningMax.toFixed(2)}</strong> (%{dailyRateMin.toFixed(2)} - %{dailyRateMax.toFixed(2)})</p>
-              <button onClick={handleClick} className="btn-primary" style={{ maxWidth: '300px', margin: '0 auto', fontSize: '1rem', minHeight: '52px' }}>{t('quantify.clickButton')}</button>
-              {showSuccess && <p className="mt-3 text-sm font-semibold" style={{ color: '#10b981' }}>+${dailyEarning.toFixed(2)} {t('quantifyExtra.earned')}</p>}
+              <button disabled={isProcessingTrade || clickMutation.isPending} onClick={handleClick} className="btn-primary" style={{ maxWidth: '300px', margin: '0 auto', fontSize: '1rem', minHeight: '52px', opacity: isProcessingTrade || clickMutation.isPending ? 0.75 : 1 }}>
+                {isProcessingTrade || clickMutation.isPending ? t('quantifyExtra.processingButton') : t('quantify.clickButton')}
+              </button>
+              {isProcessingTrade && (
+                <div className="mt-4 mx-auto rounded-2xl p-4 animate-pulse" style={{ maxWidth: '340px', background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.18)' }}>
+                  <p className="text-sm font-extrabold" style={{ color: '#FFD700' }}>{t('quantifyExtra.processingTitle')}</p>
+                  <p className="text-xs mt-1" style={{ color: '#8fa5b8' }}>{t('quantifyExtra.processingDescription')}</p>
+                  <p className="text-xs font-bold mt-2" style={{ color: '#10b981' }}>
+                    {t('quantifyExtra.processingSecondsLeft', { seconds: processingSecondsLeft })}
+                  </p>
+                </div>
+              )}
+              {showSuccess && <p className="mt-3 text-sm font-semibold" style={{ color: '#10b981' }}>{t('quantifyExtra.processingSuccess')} +${dailyEarning.toFixed(2)} {t('quantifyExtra.earned')}</p>}
             </>
           ) : (
             <>
