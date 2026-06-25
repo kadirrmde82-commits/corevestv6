@@ -1,20 +1,12 @@
 import { z } from "zod";
-import { and, count, eq, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { createRouter, authedQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { deposits, profiles, users, referrals, vipBonuses } from "@db/schema";
+import { deposits, profiles, users, vipBonuses } from "@db/schema";
 import { awardReferralWheelBonus } from "./wheel-router";
 import { capAmount, getVipInfo, getVipLevel } from "./vip-config";
 import { logAdminActivity } from "./admin-system-router";
-
-async function getTier1ReferralCount(userId: number) {
-  const db = getDb();
-  const rows = await db
-    .select({ count: count() })
-    .from(referrals)
-    .where(and(eq(referrals.referrerUserId, userId), eq(referrals.tier, 1)));
-  return rows[0]?.count ?? 0;
-}
+import { getQualifiedTier1ReferralCount } from "./referral-qualification";
 
 export const depositRouter = createRouter({
   // Create a new deposit request
@@ -101,7 +93,7 @@ export const depositRouter = createRouter({
         const currentInvestment = Number(userProfile.investment);
         const depositAmount = Number(deposit.amount);
         const newInvestment = currentInvestment + depositAmount;
-        const activeRefs = await getTier1ReferralCount(deposit.userId);
+        const activeRefs = await getQualifiedTier1ReferralCount(deposit.userId);
         const previousVipLevel = getVipLevel(currentInvestment, activeRefs);
         const newVipLevel = getVipLevel(newInvestment, activeRefs);
         let balanceAfterBonuses = Number(userProfile.balance) + depositAmount;

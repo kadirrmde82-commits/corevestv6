@@ -1,9 +1,10 @@
 import { z } from "zod";
-import { and, count, desc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { clickEarnings, profiles, referrals, referralEarnings } from "@db/schema";
 import { capAmount, getRandomDailyRate, getVipInfo, getVipLevel } from "./vip-config";
+import { getQualifiedTier1ReferralCount } from "./referral-qualification";
 
 export const REFERRAL_COMMISSIONS = {
   tier1: 10,
@@ -61,12 +62,7 @@ function getTimeRemaining(lastClickAt: Date | null): {
 }
 
 async function getTier1ReferralCount(userId: number) {
-  const db = getDb();
-  const rows = await db
-    .select({ count: count() })
-    .from(referrals)
-    .where(and(eq(referrals.referrerUserId, userId), eq(referrals.tier, 1)));
-  return rows[0]?.count ?? 0;
+  return getQualifiedTier1ReferralCount(userId);
 }
 
 export const clickRouter = createRouter({

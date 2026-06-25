@@ -104,11 +104,21 @@ export default function Admin() {
   const deleteVipBonus = trpc.adminMember.deleteVipBonus.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); } });
   const deleteReferralEarning = trpc.adminMember.deleteReferralEarning.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); } });
   const updateVip = trpc.adminMember.updateVip.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); setEditVipOpen(false); } });
+  const setWithdrawalAccess = trpc.adminMember.setWithdrawalAccess.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); } });
   const approveDeposit = trpc.deposit.approve.useMutation({ onSuccess: () => utils.deposit.listAll.invalidate() });
   const rejectDeposit = trpc.deposit.reject.useMutation({ onSuccess: () => utils.deposit.listAll.invalidate() });
   const approveWithdraw = trpc.withdrawal.approve.useMutation({ onSuccess: () => utils.withdrawal.listAll.invalidate() });
   const rejectWithdraw = trpc.withdrawal.reject.useMutation({ onSuccess: () => utils.withdrawal.listAll.invalidate() });
   const adminReply = trpc.ticket.adminReply.useMutation({ onSuccess: () => { utils.ticket.listAll.invalidate(); setTicketReply(''); } });
+  const deleteTicketMessage = trpc.ticket.deleteMessage.useMutation({
+    onSuccess: (_result, variables) => {
+      utils.ticket.listAll.invalidate();
+      setDetailTicket((current: any) => current ? {
+        ...current,
+        messages: current.messages.filter((message: any) => message.id !== variables.messageId),
+      } : current);
+    },
+  });
   const resolveTicket = trpc.ticket.resolve.useMutation({ onSuccess: () => utils.ticket.listAll.invalidate() });
   const closeTicketAdmin = trpc.ticket.adminClose.useMutation({ onSuccess: () => utils.ticket.listAll.invalidate() });
   const deleteTicket = trpc.ticket.delete.useMutation({ onSuccess: () => { utils.ticket.listAll.invalidate(); setDetailTicket(null); } });
@@ -1372,6 +1382,23 @@ export default function Admin() {
                   <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Toplam Tıklama</span><span className="text-sm text-white">{memberDetail.profile.totalClicks}</span></div>
                   <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Ardışık Tıklama</span><span className="text-sm text-white">{memberDetail.profile.consecutiveClicks}</span></div>
                   <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Aylık Çekim</span><span className="text-sm text-white">{memberDetail.profile.monthlyWithdrawalCount}</span></div>
+                  <div className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.06)' }}>
+                    <div className="flex justify-between items-center gap-2 mb-2">
+                      <span className="text-xs font-bold" style={{ color: '#8fa5b8' }}>Çekim Yetkisi</span>
+                      <span className="text-[10px] font-extrabold px-2 py-1 rounded-full" style={{
+                        background: memberDetail.profile.withdrawalAccess === 1 ? 'rgba(16,185,129,0.12)' : memberDetail.profile.withdrawalAccess === 2 ? 'rgba(239,68,68,0.12)' : 'rgba(90,106,122,0.15)',
+                        color: memberDetail.profile.withdrawalAccess === 1 ? '#10b981' : memberDetail.profile.withdrawalAccess === 2 ? '#ef4444' : '#8fa5b8',
+                      }}>
+                        {memberDetail.profile.withdrawalAccess === 1 ? 'İzinli' : memberDetail.profile.withdrawalAccess === 2 ? 'Kısıtlı' : 'Normal kurallar'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button onClick={() => setWithdrawalAccess.mutate({ userId: selectedMemberId, access: 0 })} className="rounded-lg px-2 py-2 text-[10px] font-extrabold" style={{ background: 'rgba(90,106,122,0.14)', color: '#8fa5b8' }}>Normal</button>
+                      <button onClick={() => setWithdrawalAccess.mutate({ userId: selectedMemberId, access: 1 })} className="rounded-lg px-2 py-2 text-[10px] font-extrabold" style={{ background: 'rgba(16,185,129,0.14)', color: '#10b981' }}>Kısıtı Kaldır</button>
+                      <button onClick={() => setWithdrawalAccess.mutate({ userId: selectedMemberId, access: 2 })} className="rounded-lg px-2 py-2 text-[10px] font-extrabold" style={{ background: 'rgba(239,68,68,0.14)', color: '#ef4444' }}>Kısıtla</button>
+                    </div>
+                    <p className="text-[10px] mt-2" style={{ color: '#5a6a7a' }}>Normal seçilirse 5 tıklama ve bekleme kuralı geçerli olur.</p>
+                  </div>
                   <div className="flex justify-between"><span className="text-xs" style={{ color: '#8fa5b8' }}>Referans Kodu</span><span className="text-sm font-mono text-white">{memberDetail.profile.referralCode}</span></div>
                   <div className="flex justify-between items-center">
                     <span className="text-xs" style={{ color: '#8fa5b8' }}>Çark Hakkı</span>
@@ -1668,10 +1695,28 @@ export default function Admin() {
             </div>
             <div className="flex-1 overflow-y-auto space-y-3 pr-1 mb-4" style={{ maxHeight: '400px' }}>
               {detailTicket.messages.map((msg: any, i: number) => (
-                <div key={i} className={`flex ${msg.sender === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                <div key={msg.id ?? i} className={`flex items-start gap-2 ${msg.sender === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                  {msg.sender !== 'admin' && (
+                    <button
+                      onClick={() => { if (confirm('Bu mesaj hem admin hem kullanıcı tarafında silinsin mi?')) deleteTicketMessage.mutate({ messageId: msg.id }); }}
+                      className="grid place-items-center rounded-lg mt-1"
+                      style={{ width: '26px', height: '26px', color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  )}
                   <div className="max-w-[80%] rounded-2xl px-4 py-2.5" style={{ background: msg.sender === 'admin' ? 'linear-gradient(135deg, #FFD700, #FFA500)' : 'rgba(255,255,255,0.08)', color: msg.sender === 'admin' ? '#04070d' : '#c8d6e5', borderBottomRightRadius: msg.sender === 'admin' ? '4px' : '16px', borderBottomLeftRadius: msg.sender === 'user' ? '4px' : '16px' }}>
                     <p className="text-sm">{msg.text}</p><span className="text-[10px] opacity-60 block mt-1">{msg.time}</span>
                   </div>
+                  {msg.sender === 'admin' && (
+                    <button
+                      onClick={() => { if (confirm('Bu mesaj hem admin hem kullanıcı tarafında silinsin mi?')) deleteTicketMessage.mutate({ messageId: msg.id }); }}
+                      className="grid place-items-center rounded-lg mt-1"
+                      style={{ width: '26px', height: '26px', color: '#ef4444', background: 'rgba(239,68,68,0.1)' }}
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

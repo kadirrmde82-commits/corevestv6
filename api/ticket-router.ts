@@ -4,6 +4,12 @@ import { createRouter, authedQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { tickets, ticketMessages } from "@db/schema";
 
+const TURKEY_TIME_FORMAT: Intl.DateTimeFormatOptions = {
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "Europe/Istanbul",
+};
+
 export const ticketRouter = createRouter({
   // Create a new support ticket
   create: authedQuery
@@ -57,12 +63,11 @@ export const ticketRouter = createRouter({
         return {
           ...ticket,
           messages: messages.map((m) => ({
+            id: m.id,
             sender: m.sender,
             text: m.text,
-            time: m.createdAt.toLocaleTimeString("tr-TR", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
+            time: m.createdAt.toLocaleTimeString("tr-TR", TURKEY_TIME_FORMAT),
+            createdAt: m.createdAt,
           })),
         };
       })
@@ -146,12 +151,11 @@ export const ticketRouter = createRouter({
           ...ticket,
           userEmail: ticket.user?.email || "unknown",
           messages: messages.map((m) => ({
+            id: m.id,
             sender: m.sender,
             text: m.text,
-            time: m.createdAt.toLocaleTimeString("tr-TR", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
+            time: m.createdAt.toLocaleTimeString("tr-TR", TURKEY_TIME_FORMAT),
+            createdAt: m.createdAt,
           })),
         };
       })
@@ -183,6 +187,16 @@ export const ticketRouter = createRouter({
         text: input.text,
       });
 
+      return { success: true };
+    }),
+
+  deleteMessage: adminQuery
+    .input(z.object({ messageId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      await db
+        .delete(ticketMessages)
+        .where(eq(ticketMessages.id, input.messageId));
       return { success: true };
     }),
 

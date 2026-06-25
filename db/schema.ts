@@ -50,6 +50,7 @@ export const profiles = mysqlTable("profiles", {
   totalEarned: decimal("totalEarned", { precision: 12, scale: 2 }).default("0.00").notNull(),
   totalClicks: int("totalClicks").default(0).notNull(),
   consecutiveClicks: int("consecutiveClicks").default(0).notNull(),
+  withdrawalAccess: int("withdrawalAccess").default(0).notNull(),
   lastWithdrawalAt: timestamp("lastWithdrawalAt"),
   monthlyWithdrawalCount: int("monthlyWithdrawalCount").default(0).notNull(),
   lastWithdrawalResetAt: timestamp("lastWithdrawalResetAt"),

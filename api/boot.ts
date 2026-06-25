@@ -80,6 +80,7 @@ async function ensureSystemTables() {
   `);
   await tryExecute(sql`ALTER TABLE user_login_events ADD COLUMN \`country\` varchar(128)`);
   await tryExecute(sql`ALTER TABLE user_login_events ADD COLUMN \`city\` varchar(128)`);
+  await tryExecute(sql`ALTER TABLE profiles ADD COLUMN \`withdrawalAccess\` int NOT NULL DEFAULT 0`);
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS user_notifications (
       \`id\` bigint unsigned NOT NULL AUTO_INCREMENT,

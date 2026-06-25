@@ -21,14 +21,10 @@ import {
 import { logAdminActivity } from "./admin-system-router";
 import { awardReferralWheelBonus } from "./wheel-router";
 import { capAmount, getVipInfo, getVipLevel } from "./vip-config";
+import { getQualifiedTier1ReferralCount } from "./referral-qualification";
 
 async function getTier1ReferralCountForUser(userId: number) {
-  const db = getDb();
-  const rows = await db
-    .select({ count: count() })
-    .from(referrals)
-    .where(and(eq(referrals.referrerUserId, userId), eq(referrals.tier, 1)));
-  return rows[0]?.count ?? 0;
+  return getQualifiedTier1ReferralCount(userId);
 }
 
 async function deductMemberEarning(
@@ -338,6 +334,7 @@ export const adminMemberRouter = createRouter({
               totalEarned: Number(profile.totalEarned),
               totalClicks: profile.totalClicks,
               consecutiveClicks: profile.consecutiveClicks,
+              withdrawalAccess: profile.withdrawalAccess,
               monthlyWithdrawalCount: profile.monthlyWithdrawalCount,
               lastWithdrawalAt: profile.lastWithdrawalAt,
               lastClickAt: profile.lastClickAt,
@@ -685,6 +682,30 @@ export const adminMemberRouter = createRouter({
         .set({ consecutiveClicks: 0 })
         .where(eq(profiles.userId, input.userId));
       return { success: true };
+    }),
+
+  setWithdrawalAccess: adminQuery
+    .input(
+      z.object({
+        userId: z.number(),
+        access: z.number().int().min(0).max(2),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = getDb();
+      await db
+        .update(profiles)
+        .set({ withdrawalAccess: input.access })
+        .where(eq(profiles.userId, input.userId));
+      await logAdminActivity({
+        adminUserId: ctx.user.id,
+        action: "member.setWithdrawalAccess",
+        targetType: "user",
+        targetId: input.userId,
+        details: { access: input.access },
+        req: ctx.req,
+      });
+      return { success: true, access: input.access };
     }),
 
   // Reset member password (admin sets new password)

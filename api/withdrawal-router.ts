@@ -13,7 +13,16 @@ const MAX_WITHDRAWAL_AMOUNT = 20000; // Tek seferde max 20.000$
 function canWithdraw(profile: {
   consecutiveClicks: number;
   lastWithdrawalAt: Date | null;
+  withdrawalAccess?: number;
 }): { allowed: boolean; reason?: string } {
+  if (profile.withdrawalAccess === 1) return { allowed: true };
+  if (profile.withdrawalAccess === 2) {
+    return {
+      allowed: false,
+      reason: "Çekim işleminiz geçici olarak kısıtlanmıştır. Lütfen destek ile iletişime geçin.",
+    };
+  }
+
   // Must have 5 consecutive clicks
   if (profile.consecutiveClicks < 5) {
     return {
@@ -99,6 +108,7 @@ export const withdrawalRouter = createRouter({
         is30DaysPassed: false,
         daysSinceJoin: 0,
         daysUntil30: 30,
+        withdrawalAccess: 0,
       };
     }
 
@@ -113,6 +123,7 @@ export const withdrawalRouter = createRouter({
     const result = canWithdraw({
       consecutiveClicks: profile.consecutiveClicks,
       lastWithdrawalAt: profile.lastWithdrawalAt,
+      withdrawalAccess: profile.withdrawalAccess,
     });
 
     return {
@@ -125,6 +136,7 @@ export const withdrawalRouter = createRouter({
       is30DaysPassed: monthlyInfo.is30DaysPassed,
       daysSinceJoin: monthlyInfo.daysSinceJoin,
       daysUntil30: monthlyInfo.daysUntil30,
+      withdrawalAccess: profile.withdrawalAccess,
     };
   }),
 
@@ -199,6 +211,7 @@ export const withdrawalRouter = createRouter({
       const check = canWithdraw({
         consecutiveClicks: profile.consecutiveClicks,
         lastWithdrawalAt: profile.lastWithdrawalAt,
+        withdrawalAccess: profile.withdrawalAccess,
       });
       if (!check.allowed) {
         throw new Error(check.reason);

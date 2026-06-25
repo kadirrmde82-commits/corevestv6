@@ -74,11 +74,7 @@ export default function Home() {
   // Calculate VIP level from investment
   const currentVip = useMemo(() => {
     if (!profile) return 0;
-    const investment = Number(profile.investment);
-    for (let i = VIP_TABLE.length - 1; i >= 0; i--) {
-      if (investment >= VIP_TABLE[i].min) return VIP_TABLE[i].level;
-    }
-    return 0;
+    return Number(profile.vipLevel || 0);
   }, [profile]);
 
   const nextVip = useMemo(() => {

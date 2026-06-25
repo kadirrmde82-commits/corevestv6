@@ -76,7 +76,7 @@ export default function Quantify() {
   const dailyEarning = clickStatus?.dailyEarning || 0;
   const dailyEarningMin = clickStatus?.dailyEarningMin ?? dailyEarning;
   const dailyEarningMax = clickStatus?.dailyEarningMax ?? dailyEarning;
-  const activeRefs = referralCount?.tier1 || 0;
+  const activeRefs = clickStatus?.activeRefs ?? referralCount?.tier1 ?? 0;
   const canClick = clickStatus?.canClick || false;
   const balanceCapReached = clickStatus?.balanceCapReached || false;
   const balanceCap = clickStatus?.balanceCap || 0;
