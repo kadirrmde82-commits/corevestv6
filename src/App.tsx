@@ -2,15 +2,15 @@ import { lazy, Suspense } from 'react';
 import type { ReactNode } from 'react';
 import { Navigate, Routes, Route } from 'react-router-dom';
 import { trpc } from '@/providers/trpc';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Home from './pages/Home';
+import Quantify from './pages/Quantify';
+import Referral from './pages/Referral';
+import Account from './pages/Account';
+import FAQ from './pages/FAQ';
 
-const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
-const Home = lazy(() => import('./pages/Home'));
-const Quantify = lazy(() => import('./pages/Quantify'));
-const Referral = lazy(() => import('./pages/Referral'));
-const Account = lazy(() => import('./pages/Account'));
 const Admin = lazy(() => import('./pages/Admin'));
-const FAQ = lazy(() => import('./pages/FAQ'));
 
 function PageLoader() {
   return (
