@@ -81,6 +81,8 @@ export default function Quantify() {
   const balanceCapReached = clickStatus?.balanceCapReached || false;
   const balanceCap = clickStatus?.balanceCap || 0;
   const investment = Number(profile?.investment || 0);
+  const earningsSummary = (profile as any)?.earningsSummary ?? { today: 0, yesterday: 0, total: Number((profile as any)?.totalEarned || 0) };
+  const totalBalance = Number((profile as any)?.balance || 0);
 
   const nextVip = (() => {
     const nv = VIP_TABLE.find(v => v.level === currentVipLevel + 1);
@@ -212,6 +214,25 @@ export default function Quantify() {
               </div>
             </>
           )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="glass-card text-center">
+            <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>Bugünkü Kazanç</span>
+            <strong className="block text-lg mt-1" style={{ color: '#10b981' }}>${Number(earningsSummary.today || 0).toFixed(2)}</strong>
+          </div>
+          <div className="glass-card text-center">
+            <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>Dünkü Kazanç</span>
+            <strong className="block text-lg mt-1" style={{ color: '#FFD700' }}>${Number(earningsSummary.yesterday || 0).toFixed(2)}</strong>
+          </div>
+          <div className="glass-card text-center">
+            <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>Toplam Gelir</span>
+            <strong className="block text-lg text-white mt-1">${Number(earningsSummary.total || (profile as any)?.totalEarned || 0).toFixed(2)}</strong>
+          </div>
+          <div className="glass-card text-center">
+            <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>Toplam Bakiye</span>
+            <strong className="block text-lg text-white mt-1">${totalBalance.toFixed(2)}</strong>
+          </div>
         </div>
 
         {currentVipLevel > 0 && (

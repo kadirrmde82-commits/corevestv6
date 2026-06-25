@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { trpc } from '@/providers/trpc';
-import { VIP_TABLE } from '../store';
 
 type ActionView = 'main' | 'deposit' | 'withdraw' | 'support' | 'history';
 type HistoryTab = 'deposits' | 'withdrawals' | 'clicks' | 'bonuses' | 'referrals';
@@ -279,11 +278,9 @@ export default function Account() {
   if (!profile) return null;
 
   const userId = (profile as any).publicId ?? (profile as any).userId ?? 0;
-  const investment = Number(profile.investment);
-  let vipLevel = 0;
-  for (let i = VIP_TABLE.length - 1; i >= 0; i--) {
-    if (investment >= VIP_TABLE[i].min) { vipLevel = VIP_TABLE[i].level; break; }
-  }
+  const userEmail = (profile as any).email ?? '';
+  const earningsSummary = (profile as any).earningsSummary ?? { today: 0, yesterday: 0, total: Number(profile.totalEarned || 0) };
+  const vipLevel = Number((profile as any).vipLevel || 0);
 
   // ─── DEPOSIT VIEW ───
   if (view === 'deposit') {
@@ -678,6 +675,7 @@ export default function Account() {
           <h1 className="text-xl font-bold text-white mb-1">{t('accountExtra.myAccount')}</h1>
           {/* USER ID - matches admin panel */}
           <p className="text-sm font-mono font-bold" style={{ color: '#FFD700' }}>ID: {userId}</p>
+          {userEmail && <p className="text-xs font-semibold mt-1" style={{ color: '#8fa5b8' }}>{userEmail}</p>}
           <p className="text-xs mt-1" style={{ color: '#5a6a7a' }}>{t('accountExtra.membership')}: {profile.joinDate ? new Date(profile.joinDate).toLocaleDateString() : ''}</p>
         </div>
 
@@ -697,6 +695,21 @@ export default function Account() {
         <div className="glass-card flex items-center gap-3">
           <div className="grid place-items-center rounded-xl" style={{ width: '42px', height: '42px', color: '#FFD700', background: 'rgba(255,215,0,0.1)' }}><ArrowDownLeft size={20} /></div>
           <div className="flex-1"><span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>{t('accountExtra.totalInvestment')}</span><strong className="block text-base text-white">${Number(profile.investment).toLocaleString()}</strong></div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <div className="glass-card text-center">
+            <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>Bugünkü Kazanç</span>
+            <strong className="block text-base mt-1" style={{ color: '#10b981' }}>${Number(earningsSummary.today || 0).toFixed(2)}</strong>
+          </div>
+          <div className="glass-card text-center">
+            <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>Dünkü Kazanç</span>
+            <strong className="block text-base mt-1" style={{ color: '#FFD700' }}>${Number(earningsSummary.yesterday || 0).toFixed(2)}</strong>
+          </div>
+          <div className="glass-card text-center">
+            <span className="text-xs font-medium" style={{ color: '#8fa5b8' }}>Toplam Kazanç</span>
+            <strong className="block text-base text-white mt-1">${Number(earningsSummary.total || profile.totalEarned || 0).toFixed(2)}</strong>
+          </div>
         </div>
 
         <div className="glass-card">

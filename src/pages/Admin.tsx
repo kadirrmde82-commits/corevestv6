@@ -81,7 +81,7 @@ export default function Admin() {
   const { data: allTickets = [] } = trpc.ticket.listAll.useQuery(undefined, { refetchInterval: 10000 });
   const { data: allMarketPrices = [] } = trpc.marketPrice.listAll.useQuery(undefined, { refetchInterval: 10000 });
   const { data: allWalletAddresses = [] } = trpc.walletAddress.listAll.useQuery(undefined, { refetchInterval: 10000 });
-  const { data: adminSiteContent } = trpc.siteContent.adminList.useQuery(undefined, { refetchInterval: 10000 });
+  const { data: adminSiteContent } = trpc.siteContent.adminList.useQuery(undefined, { refetchOnWindowFocus: true });
 
   useEffect(() => {
     if (adminSiteContent) setContentForm(adminSiteContent);
@@ -132,7 +132,17 @@ export default function Admin() {
   const createMarketPrice = trpc.marketPrice.create.useMutation({ onSuccess: () => { utils.marketPrice.listAll.invalidate(); setMarketForm({ symbol: '', name: '', basePrice: '', change: '', color: '#FFD700' }); } });
   const updateMarketPrice = trpc.marketPrice.update.useMutation({ onSuccess: () => { utils.marketPrice.listAll.invalidate(); setMarketEditOpen(false); setMarketEditId(null); } });
   const deleteMarketPrice = trpc.marketPrice.delete.useMutation({ onSuccess: () => utils.marketPrice.listAll.invalidate() });
-  const updateSiteContent = trpc.siteContent.updateMany.useMutation({ onSuccess: () => { utils.siteContent.adminList.invalidate(); utils.siteContent.public.invalidate(); } });
+  const updateSiteContent = trpc.siteContent.updateMany.useMutation({
+    onSuccess: async () => {
+      await utils.siteContent.adminList.invalidate();
+      await utils.siteContent.public.invalidate();
+      const refreshed = await utils.siteContent.adminList.fetch();
+      setContentForm(refreshed);
+    },
+    onError: (error) => {
+      alert(error.message || 'İçerikler kaydedilemedi. Lütfen tekrar deneyin.');
+    },
+  });
   const setMaintenance = trpc.adminSystem.setMaintenance.useMutation({ onSuccess: () => { utils.adminSystem.maintenance.invalidate(); utils.adminSystem.publicMaintenance.invalidate(); utils.adminSystem.logs.invalidate(); } });
   const clearLoginEvents = trpc.adminSystem.clearLoginEvents.useMutation({ onSuccess: () => { utils.adminSystem.loginEvents.invalidate(); utils.adminSystem.logs.invalidate(); } });
   const sendUserNotification = trpc.adminSystem.sendNotification.useMutation({
@@ -197,9 +207,7 @@ export default function Admin() {
   };
 
   const saveSiteContent = () => {
-    const valuesWithoutImage = { ...contentForm };
-    delete valuesWithoutImage[ANNOUNCEMENT_CONTENT_KEYS.imageUrl];
-    updateSiteContent.mutate({ values: valuesWithoutImage });
+    updateSiteContent.mutate({ values: { ...contentForm } });
   };
 
   const handleLogout = () => {

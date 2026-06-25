@@ -10,6 +10,8 @@ import {
   ArrowRight,
   AlertCircle,
   Check,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import AuthCard from '../components/AuthCard';
 import { trpc } from '@/providers/trpc';
@@ -34,6 +36,8 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [referralCode, setReferralCode] = useState(refFromUrl);
   const [securityCode, setSecurityCode] = useState(generateSecurityCode);
   const [enteredCode, setEnteredCode] = useState('');
@@ -185,14 +189,23 @@ export default function Register() {
               style={{ color: '#FFD700' }}
             />
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="En az 6 karakter"
-              className="glass-input pl-10"
+              className="glass-input pl-10 pr-11"
               style={{ minHeight: '46px' }}
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((value) => !value)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 grid place-items-center"
+              style={{ width: '30px', height: '30px', color: '#8fa5b8' }}
+              aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+            >
+              {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+            </button>
           </div>
         </div>
 
@@ -208,14 +221,23 @@ export default function Register() {
               style={{ color: '#FFD700' }}
             />
             <input
-              type="password"
+              type={showConfirmPassword ? 'text' : 'password'}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Şifreyi tekrar girin"
-              className="glass-input pl-10"
+              className="glass-input pl-10 pr-11"
               style={{ minHeight: '46px' }}
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((value) => !value)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 grid place-items-center"
+              style={{ width: '30px', height: '30px', color: '#8fa5b8' }}
+              aria-label={showConfirmPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+            >
+              {showConfirmPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+            </button>
           </div>
         </div>
 
