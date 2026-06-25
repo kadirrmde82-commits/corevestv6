@@ -158,7 +158,35 @@ export default function Account() {
     },
   });
   const cancelWithdrawMutation = trpc.withdrawal.cancel.useMutation({
-    onSuccess: () => {
+    onMutate: async ({ id }) => {
+      await Promise.all([
+        utils.withdrawal.list.cancel(),
+        utils.profile.me.cancel(),
+      ]);
+
+      const previousWithdrawals = utils.withdrawal.list.getData();
+      const previousProfile = utils.profile.me.getData();
+      const withdrawal = previousWithdrawals?.find((item: any) => item.id === id);
+
+      if (withdrawal?.status === 'pending') {
+        utils.withdrawal.list.setData(undefined, (current) => (current ?? []).map((item: any) => (
+          item.id === id ? { ...item, status: 'cancelled' } : item
+        )));
+
+        utils.profile.me.setData(undefined, (current: any) => current ? {
+          ...current,
+          balance: String(Number(current.balance || 0) + Number(withdrawal.amount || 0)),
+        } : current);
+      }
+
+      return { previousWithdrawals, previousProfile };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousWithdrawals) utils.withdrawal.list.setData(undefined, context.previousWithdrawals);
+      if (context?.previousProfile) utils.profile.me.setData(undefined, context.previousProfile);
+      alert(error.message || 'Çekim iptal edilemedi. Lütfen tekrar deneyin.');
+    },
+    onSettled: () => {
       utils.withdrawal.list.invalidate();
       utils.profile.me.invalidate();
     },
@@ -235,6 +263,7 @@ export default function Account() {
   };
 
   const handleCancelWithdraw = (id: number) => {
+    if (cancelWithdrawMutation.isPending) return;
     cancelWithdrawMutation.mutate({ id });
   };
 
@@ -596,7 +625,7 @@ export default function Account() {
                 <div key={w.id} className="glass-card" style={{ padding: '14px 16px' }}>
                   <div className="flex items-center justify-between mb-2"><div className="flex items-center gap-2"><span className="text-sm font-bold text-white">${Number(w.amount).toFixed(2)}</span>{statusLabel(w.status)}</div><span className="text-xs" style={{ color: '#5a6a7a' }}>{w.createdAt ? new Date(w.createdAt).toLocaleDateString() : ''}</span></div>
                   <p className="text-xs font-mono mb-2" style={{ color: '#8fa5b8' }}>{w.wallet}</p>
-                  {w.status === 'pending' && <button onClick={() => handleCancelWithdraw(w.id)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}><Ban size={12} />{t('accountExtra.cancelRequest')}</button>}
+                  {w.status === 'pending' && <button disabled={cancelWithdrawMutation.isPending} onClick={() => handleCancelWithdraw(w.id)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', opacity: cancelWithdrawMutation.isPending ? 0.6 : 1 }}><Ban size={12} />{cancelWithdrawMutation.isPending ? 'İptal ediliyor...' : t('accountExtra.cancelRequest')}</button>}
                 </div>
               ))}
             </div>
