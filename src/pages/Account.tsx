@@ -132,21 +132,70 @@ export default function Account() {
 
   // Deposit mutations
   const depositMutation = trpc.deposit.create.useMutation({
-    onSuccess: () => {
-      utils.deposit.list.invalidate();
+    onMutate: async (input) => {
+      await utils.deposit.list.cancel();
+      const previousDeposits = utils.deposit.list.getData();
+      const tempId = -Date.now();
+
+      utils.deposit.list.setData(undefined, (current) => [{
+        id: tempId,
+        amount: String(input.amount),
+        txid: 'Gönderiliyor...',
+        email: input.email,
+        cryptoType: input.cryptoType,
+        status: 'pending',
+        createdAt: new Date(),
+      } as any, ...(current ?? [])]);
+
       setDepositStatus('checking');
+      return { previousDeposits, tempId };
     },
-    onError: (error) => {
+    onSuccess: (result, _variables, context) => {
+      if (context?.tempId) {
+        utils.deposit.list.setData(undefined, (current) => (current ?? []).map((item: any) => (
+          item.id === context.tempId ? { ...item, id: result.id, txid: result.txid } : item
+        )));
+      }
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousDeposits) utils.deposit.list.setData(undefined, context.previousDeposits);
       setDepositStatus('idle');
       alert(error.message || 'Yatırım talebi gönderilemedi. Lütfen tekrar deneyin.');
+    },
+    onSettled: () => {
+      utils.deposit.list.invalidate();
     },
   });
 
   // Withdrawal mutations
   const withdrawMutation = trpc.withdrawal.create.useMutation({
-    onSuccess: () => {
-      utils.withdrawal.list.invalidate();
-      utils.profile.me.invalidate();
+    onMutate: async (input) => {
+      await Promise.all([
+        utils.withdrawal.list.cancel(),
+        utils.profile.me.cancel(),
+      ]);
+
+      const previousWithdrawals = utils.withdrawal.list.getData();
+      const previousProfile = utils.profile.me.getData();
+      const tempId = -Date.now();
+      const feePercent = feePreview?.feePercent ?? 0;
+      const totalDeduction = (feePreview?.isFirstFree ?? false) ? input.amount : input.amount + (input.amount * feePercent) / 100;
+
+      utils.withdrawal.list.setData(undefined, (current) => [{
+        id: tempId,
+        amount: String(input.amount),
+        email: input.email,
+        wallet: input.wallet,
+        status: 'pending',
+        createdAt: new Date(),
+      } as any, ...(current ?? [])]);
+
+      utils.profile.me.setData(undefined, (current: any) => current ? {
+        ...current,
+        balance: String(Math.max(0, Number(current.balance || 0) - totalDeduction)),
+        consecutiveClicks: 0,
+      } : current);
+
       setWithdrawSuccess(true);
       setTimeout(() => {
         setWithdrawSuccess(false);
@@ -155,6 +204,25 @@ export default function Account() {
         setWithdrawEmail('');
         setView('main');
       }, 2000);
+
+      return { previousWithdrawals, previousProfile, tempId };
+    },
+    onSuccess: (result, _variables, context) => {
+      if (context?.tempId) {
+        utils.withdrawal.list.setData(undefined, (current) => (current ?? []).map((item: any) => (
+          item.id === context.tempId ? { ...item, id: result.id } : item
+        )));
+      }
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousWithdrawals) utils.withdrawal.list.setData(undefined, context.previousWithdrawals);
+      if (context?.previousProfile) utils.profile.me.setData(undefined, context.previousProfile);
+      setWithdrawSuccess(false);
+      alert(error.message || 'Çekim talebi gönderilemedi. Lütfen tekrar deneyin.');
+    },
+    onSettled: () => {
+      utils.withdrawal.list.invalidate();
+      utils.profile.me.invalidate();
     },
   });
   const cancelWithdrawMutation = trpc.withdrawal.cancel.useMutation({
@@ -194,20 +262,86 @@ export default function Account() {
 
   // Ticket mutations
   const createTicketMutation = trpc.ticket.create.useMutation({
-    onSuccess: () => {
-      utils.ticket.list.invalidate();
+    onMutate: async (input) => {
+      await utils.ticket.list.cancel();
+      const previousTickets = utils.ticket.list.getData();
+      const tempId = -Date.now();
+      utils.ticket.list.setData(undefined, (current) => [{
+        id: tempId,
+        subject: input.subject,
+        status: 'open',
+        createdAt: new Date(),
+        messages: [{
+          id: tempId,
+          sender: 'user',
+          text: input.subject,
+          time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Istanbul' }),
+          createdAt: new Date(),
+        }],
+      } as any, ...(current ?? [])]);
       setNewSubject('');
       setShowNewTicket(false);
+      return { previousTickets, tempId };
+    },
+    onSuccess: (result, _variables, context) => {
+      if (context?.tempId) {
+        utils.ticket.list.setData(undefined, (current) => (current ?? []).map((ticket: any) => (
+          ticket.id === context.tempId ? { ...ticket, id: result.id, messages: ticket.messages.map((message: any) => ({ ...message, id: result.id })) } : ticket
+        )));
+      }
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousTickets) utils.ticket.list.setData(undefined, context.previousTickets);
+      alert(error.message || 'Destek talebi oluşturulamadı. Lütfen tekrar deneyin.');
+    },
+    onSettled: () => {
+      utils.ticket.list.invalidate();
     },
   });
   const addMessageMutation = trpc.ticket.addMessage.useMutation({
-    onSuccess: () => {
-      utils.ticket.list.invalidate();
+    onMutate: async (input) => {
+      await utils.ticket.list.cancel();
+      const previousTickets = utils.ticket.list.getData();
+      const tempId = -Date.now();
+      utils.ticket.list.setData(undefined, (current) => (current ?? []).map((ticket: any) => (
+        ticket.id === input.ticketId
+          ? {
+              ...ticket,
+              messages: [...(ticket.messages ?? []), {
+                id: tempId,
+                sender: 'user',
+                text: input.text,
+                time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Istanbul' }),
+                createdAt: new Date(),
+              }],
+            }
+          : ticket
+      )));
       setNewMessage('');
+      return { previousTickets };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousTickets) utils.ticket.list.setData(undefined, context.previousTickets);
+      alert(error.message || 'Mesaj gönderilemedi. Lütfen tekrar deneyin.');
+    },
+    onSettled: () => {
+      utils.ticket.list.invalidate();
     },
   });
   const closeTicketMutation = trpc.ticket.close.useMutation({
-    onSuccess: () => {
+    onMutate: async ({ ticketId }) => {
+      await utils.ticket.list.cancel();
+      const previousTickets = utils.ticket.list.getData();
+      utils.ticket.list.setData(undefined, (current) => (current ?? []).map((ticket: any) => (
+        ticket.id === ticketId ? { ...ticket, status: 'closed' } : ticket
+      )));
+      return { previousTickets };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousTickets) utils.ticket.list.setData(undefined, context.previousTickets);
+      alert(error.message || 'Destek talebi kapatılamadı. Lütfen tekrar deneyin.');
+    },
+    onSettled: () => {
       utils.ticket.list.invalidate();
     },
   });

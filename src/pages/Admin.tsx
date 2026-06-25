@@ -105,10 +105,82 @@ export default function Admin() {
   const deleteReferralEarning = trpc.adminMember.deleteReferralEarning.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); } });
   const updateVip = trpc.adminMember.updateVip.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); setEditVipOpen(false); } });
   const setWithdrawalAccess = trpc.adminMember.setWithdrawalAccess.useMutation({ onSuccess: () => { utils.adminMember.list.invalidate(); utils.adminMember.detail.invalidate(); } });
-  const approveDeposit = trpc.deposit.approve.useMutation({ onSuccess: () => utils.deposit.listAll.invalidate() });
-  const rejectDeposit = trpc.deposit.reject.useMutation({ onSuccess: () => utils.deposit.listAll.invalidate() });
-  const approveWithdraw = trpc.withdrawal.approve.useMutation({ onSuccess: () => utils.withdrawal.listAll.invalidate() });
-  const rejectWithdraw = trpc.withdrawal.reject.useMutation({ onSuccess: () => utils.withdrawal.listAll.invalidate() });
+  const approveDeposit = trpc.deposit.approve.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.deposit.listAll.cancel();
+      const previousDeposits = utils.deposit.listAll.getData();
+      utils.deposit.listAll.setData(undefined, (current) => (current ?? []).map((deposit: any) => (
+        deposit.id === id ? { ...deposit, status: 'approved' } : deposit
+      )));
+      return { previousDeposits };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousDeposits) utils.deposit.listAll.setData(undefined, context.previousDeposits);
+      alert(error.message || 'Yatırım onaylanamadı. Lütfen tekrar deneyin.');
+    },
+    onSettled: () => {
+      utils.deposit.listAll.invalidate();
+      utils.adminMember.list.invalidate();
+      utils.adminMember.detail.invalidate();
+      utils.adminSystem.analytics.invalidate();
+    },
+  });
+  const rejectDeposit = trpc.deposit.reject.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.deposit.listAll.cancel();
+      const previousDeposits = utils.deposit.listAll.getData();
+      utils.deposit.listAll.setData(undefined, (current) => (current ?? []).map((deposit: any) => (
+        deposit.id === id ? { ...deposit, status: 'rejected' } : deposit
+      )));
+      return { previousDeposits };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousDeposits) utils.deposit.listAll.setData(undefined, context.previousDeposits);
+      alert(error.message || 'Yatırım reddedilemedi. Lütfen tekrar deneyin.');
+    },
+    onSettled: () => {
+      utils.deposit.listAll.invalidate();
+      utils.adminSystem.analytics.invalidate();
+    },
+  });
+  const approveWithdraw = trpc.withdrawal.approve.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.withdrawal.listAll.cancel();
+      const previousWithdrawals = utils.withdrawal.listAll.getData();
+      utils.withdrawal.listAll.setData(undefined, (current) => (current ?? []).map((withdrawal: any) => (
+        withdrawal.id === id ? { ...withdrawal, status: 'approved' } : withdrawal
+      )));
+      return { previousWithdrawals };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousWithdrawals) utils.withdrawal.listAll.setData(undefined, context.previousWithdrawals);
+      alert(error.message || 'Çekim onaylanamadı. Lütfen tekrar deneyin.');
+    },
+    onSettled: () => {
+      utils.withdrawal.listAll.invalidate();
+      utils.adminSystem.analytics.invalidate();
+    },
+  });
+  const rejectWithdraw = trpc.withdrawal.reject.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.withdrawal.listAll.cancel();
+      const previousWithdrawals = utils.withdrawal.listAll.getData();
+      utils.withdrawal.listAll.setData(undefined, (current) => (current ?? []).map((withdrawal: any) => (
+        withdrawal.id === id ? { ...withdrawal, status: 'rejected' } : withdrawal
+      )));
+      return { previousWithdrawals };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousWithdrawals) utils.withdrawal.listAll.setData(undefined, context.previousWithdrawals);
+      alert(error.message || 'Çekim reddedilemedi. Lütfen tekrar deneyin.');
+    },
+    onSettled: () => {
+      utils.withdrawal.listAll.invalidate();
+      utils.adminMember.list.invalidate();
+      utils.adminMember.detail.invalidate();
+      utils.adminSystem.analytics.invalidate();
+    },
+  });
   const adminReply = trpc.ticket.adminReply.useMutation({ onSuccess: () => { utils.ticket.listAll.invalidate(); setTicketReply(''); } });
   const deleteTicketMessage = trpc.ticket.deleteMessage.useMutation({
     onSuccess: (_result, variables) => {

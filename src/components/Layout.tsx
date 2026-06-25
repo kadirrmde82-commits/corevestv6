@@ -46,7 +46,19 @@ export default function Layout({ children }: LayoutProps) {
     if (!force && now - lastRefreshAtRef.current < 1200) return;
     lastRefreshAtRef.current = now;
     try {
-      await utils.invalidate();
+      await Promise.allSettled([
+        utils.profile.me.invalidate(),
+        utils.notification.list.invalidate(),
+        utils.deposit.list.invalidate(),
+        utils.withdrawal.list.invalidate(),
+        utils.ticket.list.invalidate(),
+        utils.wheel.status.invalidate(),
+        utils.wheel.list.invalidate(),
+        utils.click.status.invalidate(),
+        utils.click.history.invalidate(),
+        utils.referral.count.invalidate(),
+        utils.referral.earningsList.invalidate(),
+      ]);
     } catch {
       // Silent refresh: users should not see refresh errors during background updates.
     }
