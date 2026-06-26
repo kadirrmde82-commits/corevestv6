@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, X } from 'lucide-react';
+import { Bell, Send, X } from 'lucide-react';
 import BottomNav from './BottomNav';
 import LanguageSelector from './LanguageSelector';
 import { trpc } from '@/providers/trpc';
@@ -131,6 +131,23 @@ export default function Layout({ children }: LayoutProps) {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <a
+            href="https://t.me/corevestai"
+            target="_blank"
+            rel="noreferrer"
+            className="grid place-items-center rounded-xl"
+            style={{
+              width: 38,
+              height: 38,
+              color: '#35d7ff',
+              background: 'rgba(53,215,255,0.09)',
+              border: '1px solid rgba(53,215,255,0.18)',
+            }}
+            aria-label="Telegram destek"
+            title="Telegram"
+          >
+            <Send size={18} />
+          </a>
           <button
             onClick={() => setNotificationsOpen(true)}
             className="relative grid place-items-center rounded-xl"

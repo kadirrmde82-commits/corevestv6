@@ -16,14 +16,26 @@ export const depositRouter = createRouter({
         amount: z.number().positive(),
         email: z.string().email().min(1),
         cryptoType: z.enum(["trc20", "sol", "trx", "eth"]),
+        targetPublicId: z.number().int().positive().optional(),
         userNote: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const db = getDb();
+      let targetUserId = ctx.user.id;
+
+      if (input.targetPublicId && input.targetPublicId !== ctx.user.publicId) {
+        const targetUser = await db.query.users.findFirst({
+          where: eq(users.publicId, input.targetPublicId),
+          columns: { id: true },
+        });
+        if (!targetUser) throw new Error("Bu üye ID bulunamadı. Lütfen ID'yi kontrol edin.");
+        targetUserId = targetUser.id;
+      }
+
       const txid = "TX-" + Math.floor(Math.random() * 900000 + 100000);
       const result = await db.insert(deposits).values({
-        userId: ctx.user.id,
+        userId: targetUserId,
         amount: String(input.amount),
         txid,
         email: input.email,
