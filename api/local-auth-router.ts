@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { createRouter, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { users, profiles, userLoginEvents } from "@db/schema";
+import { users, profiles, referrals, userLoginEvents } from "@db/schema";
 import {
   hashPassword,
   verifyPassword,
@@ -71,6 +71,7 @@ export const localAuthRouter = createRouter({
         email: z.string().email().min(1),
         password: z.string().min(6),
         name: z.string().optional(),
+        referralCode: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -84,6 +85,17 @@ export const localAuthRouter = createRouter({
         throw new TRPCError({
           code: "CONFLICT",
           message: "This email is already registered.",
+        });
+      }
+
+      const normalizedReferralCode = input.referralCode?.trim().toUpperCase();
+      const directReferrer = normalizedReferralCode ? await db.query.profiles.findFirst({
+        where: eq(profiles.referralCode, normalizedReferralCode),
+      }) : null;
+      if (normalizedReferralCode && !directReferrer) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Referans kodu bulunamadı. Lütfen kontrol edip tekrar deneyin.",
         });
       }
 
@@ -104,7 +116,41 @@ export const localAuthRouter = createRouter({
         userId,
         referralCode: code,
         balance: "5.00",
+        referredBy: normalizedReferralCode || null,
       });
+
+      if (normalizedReferralCode && directReferrer) {
+        if (!directReferrer || directReferrer.userId === userId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Referans kodu bulunamadı. Lütfen kontrol edip tekrar deneyin.",
+          });
+        }
+
+        const chain: { referrerId: number; tier: number }[] = [
+          { referrerId: directReferrer.userId, tier: 1 },
+        ];
+        const tier2Record = await db.query.referrals.findFirst({
+          where: eq(referrals.referredUserId, directReferrer.userId),
+        });
+        if (tier2Record) {
+          chain.push({ referrerId: tier2Record.referrerUserId, tier: 2 });
+          const tier3Record = await db.query.referrals.findFirst({
+            where: eq(referrals.referredUserId, tier2Record.referrerUserId),
+          });
+          if (tier3Record) {
+            chain.push({ referrerId: tier3Record.referrerUserId, tier: 3 });
+          }
+        }
+
+        for (const link of chain) {
+          await db.insert(referrals).values({
+            referrerUserId: link.referrerId,
+            referredUserId: userId,
+            tier: link.tier,
+          });
+        }
+      }
 
       // Generate token
       const token = await signLocalToken(userId);

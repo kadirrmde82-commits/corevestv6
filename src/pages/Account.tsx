@@ -5,7 +5,7 @@ import {
   Headphones, LogOut, ChevronRight, Clock, Check,
   Copy, MessageCircle, Lock, X, Receipt, Ban,
   ExternalLink, Plus, Send, MousePointerClick,
-  DollarSign, Calendar, Gift, Download,
+  DollarSign, Calendar, Gift, Download, AlertCircle,
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { trpc } from '@/providers/trpc';
@@ -162,6 +162,7 @@ export default function Account() {
     onError: (error, _variables, context) => {
       if (context?.previousDeposits) utils.deposit.list.setData(undefined, context.previousDeposits);
       setDepositStatus('idle');
+      setDepositError(error.message || 'Hatalı bilgi girdiniz. Lütfen bilgileri kontrol edip tekrar deneyin.');
       alert(error.message || 'Yatırım talebi gönderilemedi. Lütfen tekrar deneyin.');
     },
     onSettled: () => {
@@ -352,6 +353,7 @@ export default function Account() {
   const [depositAmount, setDepositAmount] = useState('');
   const [depositEmail, setDepositEmail] = useState('');
   const [depositTargetId, setDepositTargetId] = useState('');
+  const [depositError, setDepositError] = useState('');
   const [depositCrypto, setDepositCrypto] = useState('trc20');
   const [depositStatus, setDepositStatus] = useState<'idle' | 'checking'>('idle');
   const [copied, setCopied] = useState(false);
@@ -387,12 +389,30 @@ export default function Account() {
   };
 
   const handleDeposit = () => {
+    setDepositError('');
+    const emailValue = depositEmail.trim();
+    const amountValue = Number(depositAmount);
     const targetPublicId = Number(depositTargetId || currentPublicId);
-    if (!depositAmount || Number(depositAmount) <= 0 || !depositEmail.trim() || !Number.isInteger(targetPublicId) || targetPublicId <= 0 || depositMutation.isPending) return;
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
+
+    if (!amountValue || amountValue <= 0) {
+      setDepositError('Lütfen geçerli bir yatırım tutarı yazın.');
+      return;
+    }
+    if (!emailValid) {
+      setDepositError('E-posta adresi hatalı. Lütfen doğru e-posta yazıp tekrar deneyin.');
+      return;
+    }
+    if (!Number.isInteger(targetPublicId) || targetPublicId <= 0) {
+      setDepositError('Üye ID hatalı. Lütfen Hesabım bölümündeki ID formatında tekrar yazın.');
+      return;
+    }
+    if (depositMutation.isPending) return;
+
     setDepositStatus('checking');
     depositMutation.mutate({
-      amount: Number(depositAmount),
-      email: depositEmail.trim(),
+      amount: amountValue,
+      email: emailValue,
       cryptoType: depositCrypto as 'trc20' | 'sol' | 'trx' | 'eth',
       targetPublicId,
     });
@@ -463,7 +483,7 @@ export default function Account() {
       <Layout>
         <div className="grid gap-3 animate-fade-in">
           <div className="flex items-center gap-3 mb-2">
-            <button onClick={() => { setView('main'); setDepositStatus('idle'); setDepositAmount(''); setDepositTargetId(currentPublicId); }} className="btn-secondary" style={{ width: '36px', minHeight: '36px', padding: 0 }}><ArrowDownLeft size={16} style={{ transform: 'rotate(90deg)' }} /></button>
+            <button onClick={() => { setView('main'); setDepositStatus('idle'); setDepositAmount(''); setDepositError(''); setDepositTargetId(currentPublicId); }} className="btn-secondary" style={{ width: '36px', minHeight: '36px', padding: 0 }}><ArrowDownLeft size={16} style={{ transform: 'rotate(90deg)' }} /></button>
             <h1 className="text-xl font-bold text-white">{t('accountExtra.deposit.title')}</h1>
           </div>
           {depositStatus === 'checking' ? (
@@ -471,14 +491,14 @@ export default function Account() {
               <div className="mx-auto mb-4 grid place-items-center rounded-full animate-pulse" style={{ width: '64px', height: '64px', background: 'rgba(255,215,0,0.1)' }}><Clock size={32} style={{ color: '#FFD700' }} /></div>
               <p className="text-base font-bold text-white mb-2">{t('accountExtra.deposit.checkingTitle')}</p>
               <p className="text-sm" style={{ color: '#8fa5b8' }}>{t('accountExtra.deposit.checkingText')}</p>
-              <button onClick={() => { setView('main'); setDepositAmount(''); setDepositEmail(''); setDepositTargetId(currentPublicId); setDepositStatus('idle'); }} className="btn-secondary mt-4">{t('accountExtra.ok')}</button>
+              <button onClick={() => { setView('main'); setDepositAmount(''); setDepositEmail(''); setDepositError(''); setDepositTargetId(currentPublicId); setDepositStatus('idle'); }} className="btn-secondary mt-4">{t('accountExtra.ok')}</button>
             </div>
           ) : (
             <div className="grid gap-3">
               {/* Email (required) */}
               <div className="glass-card">
                 <label className="label-text block mb-2">{t('accountExtra.emailAddress')} <span style={{ color: '#ef4444' }}>*</span></label>
-                <input type="email" value={depositEmail} onChange={(e) => setDepositEmail(e.target.value)} placeholder={t('accountExtra.emailPlaceholder')} className="glass-input" style={{ minHeight: '46px' }} required />
+                <input type="email" value={depositEmail} onChange={(e) => { setDepositEmail(e.target.value); setDepositError(''); }} placeholder={t('accountExtra.emailPlaceholder')} className="glass-input" style={{ minHeight: '46px' }} required />
               </div>
 
               {/* Target Member ID */}
@@ -487,7 +507,7 @@ export default function Account() {
                 <input
                   type="number"
                   value={depositTargetId}
-                  onChange={(e) => setDepositTargetId(e.target.value.replace(/\D/g, ''))}
+                  onChange={(e) => { setDepositTargetId(e.target.value.replace(/\D/g, '')); setDepositError(''); }}
                   placeholder={currentPublicId || 'Üye ID'}
                   className="glass-input"
                   style={{ minHeight: '46px' }}
@@ -518,7 +538,7 @@ export default function Account() {
               {/* Deposit Amount */}
               <div className="glass-card">
                 <label className="label-text block mb-2">{t('accountExtra.deposit.amount')} ($)</label>
-                <input type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} placeholder={t('accountExtra.deposit.amountExample')} className="glass-input" style={{ minHeight: '46px' }} />
+                <input type="number" value={depositAmount} onChange={(e) => { setDepositAmount(e.target.value); setDepositError(''); }} placeholder={t('accountExtra.deposit.amountExample')} className="glass-input" style={{ minHeight: '46px' }} />
               </div>
 
               {/* Wallet Address */}
@@ -542,7 +562,14 @@ export default function Account() {
                 </p>
               </div>
 
-              <button onClick={handleDeposit} className="btn-primary" disabled={!depositAmount || Number(depositAmount) <= 0 || !depositEmail.trim() || !depositTargetId || depositMutation.isPending} style={{ opacity: (!depositAmount || Number(depositAmount) <= 0 || !depositEmail.trim() || !depositTargetId || depositMutation.isPending) ? 0.4 : 1 }}>
+              {depositError && (
+                <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.22)' }}>
+                  <AlertCircle size={16} style={{ color: '#ef4444', flexShrink: 0, marginTop: 1 }} />
+                  <p className="text-xs font-bold" style={{ color: '#ef4444' }}>{depositError}</p>
+                </div>
+              )}
+
+              <button onClick={handleDeposit} className="btn-primary" disabled={!depositAmount || !depositEmail.trim() || !depositTargetId || depositMutation.isPending} style={{ opacity: (!depositAmount || !depositEmail.trim() || !depositTargetId || depositMutation.isPending) ? 0.4 : 1 }}>
                 {depositMutation.isPending ? t('accountExtra.deposit.sending') : t('accountExtra.deposit.confirm')}
               </button>
             </div>

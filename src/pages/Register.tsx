@@ -86,6 +86,7 @@ export default function Register() {
       email,
       password,
       name: email.split('@')[0],
+      referralCode: referralCode.trim() || undefined,
     });
   };
 

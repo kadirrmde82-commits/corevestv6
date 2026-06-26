@@ -34,6 +34,7 @@ export default function Quantify() {
   const [selectedVipLevel, setSelectedVipLevel] = useState<number | null>(null);
   const [isProcessingTrade, setIsProcessingTrade] = useState(false);
   const [processingSecondsLeft, setProcessingSecondsLeft] = useState(0);
+  const [lastClickEarned, setLastClickEarned] = useState(0);
   const processingTimeoutRef = useRef<number | null>(null);
   const processingIntervalRef = useRef<number | null>(null);
 
@@ -55,16 +56,32 @@ export default function Quantify() {
     retry: false,
   });
 
+  const clearProcessingTimers = useCallback(() => {
+    if (processingTimeoutRef.current) window.clearTimeout(processingTimeoutRef.current);
+    if (processingIntervalRef.current) window.clearInterval(processingIntervalRef.current);
+    processingTimeoutRef.current = null;
+    processingIntervalRef.current = null;
+  }, []);
+
   const clickMutation = trpc.click.record.useMutation({
-    onSuccess: () => {
+    onSuccess: (result) => {
+      clearProcessingTimers();
       utils.profile.me.invalidate();
       utils.click.status.invalidate();
+      utils.click.history.invalidate();
+      utils.referral.count.invalidate();
+      utils.referral.earningsList.invalidate();
       setIsProcessingTrade(false);
+      setProcessingSecondsLeft(0);
+      setLastClickEarned(Number(result.earned || 0));
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     },
     onError: (error) => {
+      clearProcessingTimers();
+      utils.click.status.invalidate();
       setIsProcessingTrade(false);
+      setProcessingSecondsLeft(0);
       alert(error.message || t('quantifyExtra.processingError'));
     },
   });
@@ -101,32 +118,33 @@ export default function Quantify() {
 
   useEffect(() => {
     return () => {
-      if (processingTimeoutRef.current) window.clearTimeout(processingTimeoutRef.current);
-      if (processingIntervalRef.current) window.clearInterval(processingIntervalRef.current);
+      clearProcessingTimers();
     };
-  }, []);
+  }, [clearProcessingTimers]);
 
   const handleClick = useCallback(() => {
     if (!canClick || isProcessingTrade || clickMutation.isPending) return;
 
-    if (processingTimeoutRef.current) window.clearTimeout(processingTimeoutRef.current);
-    if (processingIntervalRef.current) window.clearInterval(processingIntervalRef.current);
+    clearProcessingTimers();
 
     const processingSeconds = Math.floor(Math.random() * (PROCESSING_MAX_SECONDS - PROCESSING_MIN_SECONDS + 1)) + PROCESSING_MIN_SECONDS;
+    const processingEndsAt = Date.now() + processingSeconds * 1000;
     setShowSuccess(false);
     setIsProcessingTrade(true);
     setProcessingSecondsLeft(processingSeconds);
 
     processingIntervalRef.current = window.setInterval(() => {
-      setProcessingSecondsLeft((seconds) => Math.max(0, seconds - 1));
+      const secondsLeft = Math.ceil((processingEndsAt - Date.now()) / 1000);
+      setProcessingSecondsLeft(Math.max(1, secondsLeft));
     }, 1000);
 
     processingTimeoutRef.current = window.setTimeout(() => {
       if (processingIntervalRef.current) window.clearInterval(processingIntervalRef.current);
       processingIntervalRef.current = null;
+      setProcessingSecondsLeft(1);
       clickMutation.mutate({});
     }, processingSeconds * 1000);
-  }, [canClick, clickMutation, isProcessingTrade]);
+  }, [canClick, clearProcessingTimers, clickMutation, isProcessingTrade]);
 
   if (!profile) return null;
 
@@ -200,7 +218,7 @@ export default function Quantify() {
                   </p>
                 </div>
               )}
-              {showSuccess && <p className="mt-3 text-sm font-semibold" style={{ color: '#10b981' }}>{t('quantifyExtra.processingSuccess')} +${dailyEarning.toFixed(2)} {t('quantifyExtra.earned')}</p>}
+              {showSuccess && <p className="mt-3 text-sm font-semibold" style={{ color: '#10b981' }}>{t('quantifyExtra.processingSuccess')} +${(lastClickEarned || dailyEarning).toFixed(2)} {t('quantifyExtra.earned')}</p>}
             </>
           ) : (
             <>
