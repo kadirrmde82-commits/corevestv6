@@ -71,6 +71,7 @@ export default function Quantify() {
       utils.click.history.invalidate();
       utils.referral.count.invalidate();
       utils.referral.earningsList.invalidate();
+      utils.referral.overview.invalidate();
       setIsProcessingTrade(false);
       setProcessingSecondsLeft(0);
       setLastClickEarned(Number(result.earned || 0));

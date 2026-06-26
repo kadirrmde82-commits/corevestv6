@@ -4,6 +4,145 @@ import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { referrals, profiles, referralEarnings, users } from "@db/schema";
 
+type ReferralPerson = {
+  id: number;
+  name: string;
+  email: string;
+  date: string;
+};
+
+type ReferralNetwork = {
+  tier1: ReferralPerson[];
+  tier2: ReferralPerson[];
+  tier3: ReferralPerson[];
+};
+
+async function getReferralNetwork(userId: number): Promise<ReferralNetwork> {
+  const db = getDb();
+  const currentProfile = await db.query.profiles.findFirst({
+    where: eq(profiles.userId, userId),
+  });
+
+  const allMyReferrals = await db.query.referrals.findMany({
+    where: eq(referrals.referrerUserId, userId),
+    with: {
+      referred: true,
+    },
+  });
+
+  const byReferredUserId = new Map<number, ReferralPerson & { referredUserId: number; tier: 1 | 2 | 3 }>();
+
+  for (const r of allMyReferrals) {
+    byReferredUserId.set(r.referredUserId, {
+      id: r.id,
+      referredUserId: r.referredUserId,
+      name: r.referred?.name || "Kullanici",
+      email: r.referred?.email || "",
+      date: r.createdAt.toISOString().split("T")[0],
+      tier: r.tier as 1 | 2 | 3,
+    });
+  }
+
+  if (currentProfile?.referralCode) {
+    const directRows = await db
+      .select({
+        userId: profiles.userId,
+        referralCode: profiles.referralCode,
+        createdAt: profiles.createdAt,
+        name: users.name,
+        email: users.email,
+      })
+      .from(profiles)
+      .leftJoin(users, eq(profiles.userId, users.id))
+      .where(eq(profiles.referredBy, currentProfile.referralCode));
+
+    for (const row of directRows) {
+      if (!byReferredUserId.has(row.userId)) {
+        byReferredUserId.set(row.userId, {
+          id: row.userId,
+          referredUserId: row.userId,
+          name: row.name || "Kullanici",
+          email: row.email || "",
+          date: row.createdAt.toISOString().split("T")[0],
+          tier: 1,
+        });
+      }
+    }
+
+    const tier1Codes = directRows.map((row) => row.referralCode).filter(Boolean);
+    const tier2Rows = tier1Codes.length > 0 ? await db
+      .select({
+        userId: profiles.userId,
+        referralCode: profiles.referralCode,
+        createdAt: profiles.createdAt,
+        name: users.name,
+        email: users.email,
+      })
+      .from(profiles)
+      .leftJoin(users, eq(profiles.userId, users.id))
+      .where(inArray(profiles.referredBy, tier1Codes)) : [];
+
+    for (const row of tier2Rows) {
+      if (!byReferredUserId.has(row.userId)) {
+        byReferredUserId.set(row.userId, {
+          id: row.userId,
+          referredUserId: row.userId,
+          name: row.name || "Kullanici",
+          email: row.email || "",
+          date: row.createdAt.toISOString().split("T")[0],
+          tier: 2,
+        });
+      }
+    }
+
+    const tier2Codes = tier2Rows.map((row) => row.referralCode).filter(Boolean);
+    const tier3Rows = tier2Codes.length > 0 ? await db
+      .select({
+        userId: profiles.userId,
+        createdAt: profiles.createdAt,
+        name: users.name,
+        email: users.email,
+      })
+      .from(profiles)
+      .leftJoin(users, eq(profiles.userId, users.id))
+      .where(inArray(profiles.referredBy, tier2Codes)) : [];
+
+    for (const row of tier3Rows) {
+      if (!byReferredUserId.has(row.userId)) {
+        byReferredUserId.set(row.userId, {
+          id: row.userId,
+          referredUserId: row.userId,
+          name: row.name || "Kullanici",
+          email: row.email || "",
+          date: row.createdAt.toISOString().split("T")[0],
+          tier: 3,
+        });
+      }
+    }
+  }
+
+  const networkRows = Array.from(byReferredUserId.values());
+  return {
+    tier1: networkRows.filter((r) => r.tier === 1).map((r) => ({ id: r.id, name: r.name, email: r.email, date: r.date })),
+    tier2: networkRows.filter((r) => r.tier === 2).map((r) => ({ id: r.id, name: r.name, email: r.email, date: r.date })),
+    tier3: networkRows.filter((r) => r.tier === 3).map((r) => ({ id: r.id, name: r.name, email: r.email, date: r.date })),
+  };
+}
+
+async function getReferralEarningsSummary(userId: number) {
+  const db = getDb();
+  const rows = await db.query.referralEarnings.findMany({
+    where: eq(referralEarnings.referrerUserId, userId),
+  });
+
+  return {
+    total: rows.reduce((sum, row) => sum + Number(row.commissionAmount), 0),
+    tier1: rows.filter((row) => row.tier === 1).reduce((sum, row) => sum + Number(row.commissionAmount), 0),
+    tier2: rows.filter((row) => row.tier === 2).reduce((sum, row) => sum + Number(row.commissionAmount), 0),
+    tier3: rows.filter((row) => row.tier === 3).reduce((sum, row) => sum + Number(row.commissionAmount), 0),
+  };
+}
+
 export const referralRouter = createRouter({
   // Create referral relationships when a new user registers with a referral code.
   // This creates up to 3 tier records following the chain:
@@ -108,207 +247,36 @@ export const referralRouter = createRouter({
 
   // List all referrals grouped by tier (for the current user)
   myNetwork: authedQuery.query(async ({ ctx }) => {
-    const db = getDb();
-    const currentProfile = await db.query.profiles.findFirst({
-      where: eq(profiles.userId, ctx.user.id),
-    });
-
-    const allMyReferrals = await db.query.referrals.findMany({
-      where: eq(referrals.referrerUserId, ctx.user.id),
-      with: {
-        referred: true,
-      },
-    });
-
-    const byReferredUserId = new Map<number, {
-      id: number;
-      referredUserId: number;
-      name: string;
-      email: string;
-      date: string;
-      tier: 1 | 2 | 3;
-      source: "relation" | "profile";
-    }>();
-
-    for (const r of allMyReferrals) {
-      byReferredUserId.set(r.referredUserId, {
-        id: r.id,
-        referredUserId: r.referredUserId,
-        name: r.referred?.name || "Kullanici",
-        email: r.referred?.email || "",
-        date: r.createdAt.toISOString().split("T")[0],
-        tier: r.tier as 1 | 2 | 3,
-        source: "relation",
-      });
-    }
-
-    if (currentProfile?.referralCode) {
-      const directRows = await db
-        .select({
-          userId: profiles.userId,
-          referralCode: profiles.referralCode,
-          createdAt: profiles.createdAt,
-          name: users.name,
-          email: users.email,
-        })
-        .from(profiles)
-        .leftJoin(users, eq(profiles.userId, users.id))
-        .where(eq(profiles.referredBy, currentProfile.referralCode));
-
-      for (const row of directRows) {
-        if (!byReferredUserId.has(row.userId)) {
-          byReferredUserId.set(row.userId, {
-            id: row.userId,
-            referredUserId: row.userId,
-            name: row.name || "Kullanici",
-            email: row.email || "",
-            date: row.createdAt.toISOString().split("T")[0],
-            tier: 1,
-            source: "profile",
-          });
-        }
-      }
-
-      const tier1Codes = directRows.map((row) => row.referralCode).filter(Boolean);
-      const tier2Rows = tier1Codes.length > 0 ? await db
-        .select({
-          userId: profiles.userId,
-          referralCode: profiles.referralCode,
-          createdAt: profiles.createdAt,
-          name: users.name,
-          email: users.email,
-        })
-        .from(profiles)
-        .leftJoin(users, eq(profiles.userId, users.id))
-        .where(inArray(profiles.referredBy, tier1Codes)) : [];
-
-      for (const row of tier2Rows) {
-        if (!byReferredUserId.has(row.userId)) {
-          byReferredUserId.set(row.userId, {
-            id: row.userId,
-            referredUserId: row.userId,
-            name: row.name || "Kullanici",
-            email: row.email || "",
-            date: row.createdAt.toISOString().split("T")[0],
-            tier: 2,
-            source: "profile",
-          });
-        }
-      }
-
-      const tier2Codes = tier2Rows.map((row) => row.referralCode).filter(Boolean);
-      const tier3Rows = tier2Codes.length > 0 ? await db
-        .select({
-          userId: profiles.userId,
-          createdAt: profiles.createdAt,
-          name: users.name,
-          email: users.email,
-        })
-        .from(profiles)
-        .leftJoin(users, eq(profiles.userId, users.id))
-        .where(inArray(profiles.referredBy, tier2Codes)) : [];
-
-      for (const row of tier3Rows) {
-        if (!byReferredUserId.has(row.userId)) {
-          byReferredUserId.set(row.userId, {
-            id: row.userId,
-            referredUserId: row.userId,
-            name: row.name || "Kullanici",
-            email: row.email || "",
-            date: row.createdAt.toISOString().split("T")[0],
-            tier: 3,
-            source: "profile",
-          });
-        }
-      }
-    }
-
-    const networkRows = Array.from(byReferredUserId.values());
-    const byTier = {
-      tier1: networkRows.filter(r => r.tier === 1).map(r => ({
-        id: r.id,
-        name: r.name,
-        email: r.email,
-        date: r.date,
-      })),
-      tier2: networkRows.filter(r => r.tier === 2).map(r => ({
-        id: r.id,
-        name: r.name,
-        email: r.email,
-        date: r.date,
-      })),
-      tier3: networkRows.filter(r => r.tier === 3).map(r => ({
-        id: r.id,
-        name: r.name,
-        email: r.email,
-        date: r.date,
-      })),
-    };
-
-    return byTier;
+    return getReferralNetwork(ctx.user.id);
   }),
 
   // Count active referrals per tier
   count: authedQuery.query(async ({ ctx }) => {
-    const db = getDb();
-    const allReferrals = await db.query.referrals.findMany({
-      where: eq(referrals.referrerUserId, ctx.user.id),
-    });
-    const tier1 = new Set<number>();
-    const tier2 = new Set<number>();
-    const tier3 = new Set<number>();
-
-    for (const referral of allReferrals) {
-      if (referral.tier === 1) tier1.add(referral.referredUserId);
-      if (referral.tier === 2) tier2.add(referral.referredUserId);
-      if (referral.tier === 3) tier3.add(referral.referredUserId);
-    }
-
-    const currentProfile = await db.query.profiles.findFirst({
-      where: eq(profiles.userId, ctx.user.id),
-    });
-    if (currentProfile?.referralCode) {
-      const directRows = await db
-        .select({ userId: profiles.userId, referralCode: profiles.referralCode })
-        .from(profiles)
-        .where(eq(profiles.referredBy, currentProfile.referralCode));
-      for (const row of directRows) tier1.add(row.userId);
-
-      const tier1Codes = directRows.map((row) => row.referralCode).filter(Boolean);
-      const tier2Rows = tier1Codes.length > 0 ? await db
-        .select({ userId: profiles.userId, referralCode: profiles.referralCode })
-        .from(profiles)
-        .where(inArray(profiles.referredBy, tier1Codes)) : [];
-      for (const row of tier2Rows) tier2.add(row.userId);
-
-      const tier2Codes = tier2Rows.map((row) => row.referralCode).filter(Boolean);
-      const tier3Rows = tier2Codes.length > 0 ? await db
-        .select({ userId: profiles.userId })
-        .from(profiles)
-        .where(inArray(profiles.referredBy, tier2Codes)) : [];
-      for (const row of tier3Rows) tier3.add(row.userId);
-    }
-
+    const network = await getReferralNetwork(ctx.user.id);
     return {
-      tier1: tier1.size,
-      tier2: tier2.size,
-      tier3: tier3.size,
-      total: tier1.size + tier2.size + tier3.size,
+      tier1: network.tier1.length,
+      tier2: network.tier2.length,
+      tier3: network.tier3.length,
+      total: network.tier1.length + network.tier2.length + network.tier3.length,
     };
   }),
 
   earningsSummary: authedQuery.query(async ({ ctx }) => {
-    const db = getDb();
-    const rows = await db.query.referralEarnings.findMany({
-      where: eq(referralEarnings.referrerUserId, ctx.user.id),
-    });
+    return getReferralEarningsSummary(ctx.user.id);
+  }),
 
-    return {
-      total: rows.reduce((sum, row) => sum + Number(row.commissionAmount), 0),
-      tier1: rows.filter((row) => row.tier === 1).reduce((sum, row) => sum + Number(row.commissionAmount), 0),
-      tier2: rows.filter((row) => row.tier === 2).reduce((sum, row) => sum + Number(row.commissionAmount), 0),
-      tier3: rows.filter((row) => row.tier === 3).reduce((sum, row) => sum + Number(row.commissionAmount), 0),
+  overview: authedQuery.query(async ({ ctx }) => {
+    const [network, earningsSummary] = await Promise.all([
+      getReferralNetwork(ctx.user.id),
+      getReferralEarningsSummary(ctx.user.id),
+    ]);
+    const counts = {
+      tier1: network.tier1.length,
+      tier2: network.tier2.length,
+      tier3: network.tier3.length,
+      total: network.tier1.length + network.tier2.length + network.tier3.length,
     };
+    return { network, counts, earningsSummary };
   }),
 
   earningsList: authedQuery.query(async ({ ctx }) => {

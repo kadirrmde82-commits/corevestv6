@@ -11,27 +11,27 @@ export default function Referral() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState('');
+  const utils = trpc.useUtils();
 
   const { data: profile } = trpc.profile.me.useQuery(undefined, {
     staleTime: 1000 * 10,
     refetchInterval: 1000 * 10,
     retry: false,
   });
-  const { data: network } = trpc.referral.myNetwork.useQuery(undefined, {
-    staleTime: 1000 * 15,
-    refetchInterval: 1000 * 15,
+  const { data: overview, refetch: refetchOverview } = trpc.referral.overview.useQuery(undefined, {
+    staleTime: 0,
+    refetchInterval: 5000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     retry: false,
   });
-  const { data: counts } = trpc.referral.count.useQuery(undefined, {
-    staleTime: 1000 * 15,
-    refetchInterval: 1000 * 15,
-    retry: false,
-  });
-  const { data: earningsSummary } = trpc.referral.earningsSummary.useQuery(undefined, {
-    staleTime: 1000 * 15,
-    refetchInterval: 1000 * 15,
-    retry: false,
-  });
+
+  useEffect(() => {
+    refetchOverview();
+    utils.referral.count.invalidate();
+    utils.referral.myNetwork.invalidate();
+    utils.referral.earningsSummary.invalidate();
+  }, [refetchOverview, utils]);
 
   const myCode = profile?.referralCode || 'CV-----';
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
@@ -49,6 +49,9 @@ export default function Referral() {
     }).then(setQrDataUrl).catch(() => setQrDataUrl(''));
   }, [referralLink]);
 
+  const network = overview?.network;
+  const counts = overview?.counts;
+  const earningsSummary = overview?.earningsSummary;
   const tier1 = network?.tier1 || [];
   const tier2 = network?.tier2 || [];
   const tier3 = network?.tier3 || [];

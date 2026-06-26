@@ -58,6 +58,7 @@ export default function Layout({ children }: LayoutProps) {
         utils.click.history.invalidate(),
         utils.referral.count.invalidate(),
         utils.referral.earningsList.invalidate(),
+        utils.referral.overview.invalidate(),
       ]);
     } catch {
       // Silent refresh: users should not see refresh errors during background updates.
