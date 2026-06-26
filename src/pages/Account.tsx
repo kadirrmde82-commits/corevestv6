@@ -14,6 +14,7 @@ type ActionView = 'main' | 'deposit' | 'withdraw' | 'support' | 'history';
 type HistoryTab = 'deposits' | 'withdrawals' | 'clicks' | 'bonuses' | 'referrals';
 const MIN_WITHDRAWAL_AMOUNT = 50;
 const MAX_WITHDRAWAL_AMOUNT = 20000;
+const WALLET_ADDRESS_CACHE_KEY = 'corevest_wallet_addresses_cache';
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -36,38 +37,54 @@ export default function Account() {
     refetchInterval: 1000 * 10,
     retry: false,
   });
-  const { data: walletAddresses = [] } = trpc.walletAddress.list.useQuery(undefined, {
-    staleTime: 1000 * 60,
+  const cachedWalletAddresses = (() => {
+    try {
+      const raw = localStorage.getItem(WALLET_ADDRESS_CACHE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  })();
+  const { data: walletAddressesData = cachedWalletAddresses } = trpc.walletAddress.list.useQuery(undefined, {
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+    enabled: view === 'deposit',
   });
   const { data: deposits = [] } = trpc.deposit.list.useQuery(undefined, {
     staleTime: 1000 * 10,
     refetchInterval: 1000 * 10,
     retry: false,
+    enabled: view === 'history' && historyTab === 'deposits',
   });
   const { data: withdrawals = [] } = trpc.withdrawal.list.useQuery(undefined, {
     staleTime: 1000 * 10,
     refetchInterval: 1000 * 10,
     retry: false,
+    enabled: view === 'withdraw' || (view === 'history' && historyTab === 'withdrawals'),
   });
   const { data: tickets = [] } = trpc.ticket.list.useQuery(undefined, {
     staleTime: 1000 * 10,
     refetchInterval: 1000 * 10,
     retry: false,
+    enabled: view === 'support',
   });
   const { data: wheelHistory = [] } = trpc.wheel.list.useQuery(undefined, {
     staleTime: 1000 * 10,
     refetchInterval: 1000 * 10,
     retry: false,
+    enabled: view === 'history' && historyTab === 'bonuses',
   });
   const { data: referralEarnings = [] } = trpc.referral.earningsList.useQuery(undefined, {
     staleTime: 1000 * 10,
     refetchInterval: 1000 * 10,
     retry: false,
+    enabled: view === 'history' && historyTab === 'referrals',
   });
   const { data: clickEarnings = [] } = trpc.click.history.useQuery(undefined, {
     staleTime: 1000 * 10,
     refetchInterval: 1000 * 10,
     retry: false,
+    enabled: view === 'history' && historyTab === 'clicks',
   });
 
   useEffect(() => {
@@ -129,6 +146,12 @@ export default function Account() {
   };
 
   const utils = trpc.useUtils();
+
+  useEffect(() => {
+    if (Array.isArray(walletAddressesData) && walletAddressesData.length > 0) {
+      localStorage.setItem(WALLET_ADDRESS_CACHE_KEY, JSON.stringify(walletAddressesData));
+    }
+  }, [walletAddressesData]);
 
   // Deposit mutations
   const depositMutation = trpc.deposit.create.useMutation({
@@ -373,6 +396,7 @@ export default function Account() {
 
   const currentTicket = tickets.find((t: any) => t.id === activeTicket);
 
+  const walletAddresses = Array.isArray(walletAddressesData) ? walletAddressesData : [];
   const selectedCrypto = walletAddresses.find((c: any) => c.key === depositCrypto) || walletAddresses[0] || { key: 'trc20', label: 'USDT (TRC20)', address: '', color: '#FF060A' };
   const currentPublicId = String((profile as any)?.publicId ?? (profile as any)?.userId ?? '');
 
@@ -935,9 +959,9 @@ export default function Account() {
           <h2 className="text-base font-bold text-white mb-4">{t('accountExtra.transactions')}</h2>
           <div className="grid gap-2">
             {[
-              { key: 'deposit', label: t('accountExtra.depositMoney'), icon: ArrowDownLeft, color: '#10b981', onClick: () => setView('deposit') },
-              { key: 'withdraw', label: t('accountExtra.withdrawMoney'), icon: ArrowUpRight, color: '#FFD700', onClick: () => setView('withdraw') },
-              { key: 'history', label: t('accountExtra.financialHistory'), icon: Receipt, color: '#8b5cf6', onClick: () => setView('history') },
+              { key: 'deposit', label: t('accountExtra.depositMoney'), icon: ArrowDownLeft, color: '#10b981', onClick: () => { utils.walletAddress.list.prefetch(); setView('deposit'); } },
+              { key: 'withdraw', label: t('accountExtra.withdrawMoney'), icon: ArrowUpRight, color: '#FFD700', onClick: () => { utils.withdrawal.canWithdraw.prefetch(); setView('withdraw'); } },
+              { key: 'history', label: t('accountExtra.financialHistory'), icon: Receipt, color: '#8b5cf6', onClick: () => { utils.withdrawal.list.prefetch(); setView('history'); } },
               { key: 'support', label: t('accountExtra.support'), icon: Headphones, color: '#35d7ff', onClick: () => setView('support') },
               { key: 'logout', label: t('accountExtra.logout'), icon: LogOut, color: '#ef4444', onClick: () => setShowLogout(true) },
             ].map((action) => {

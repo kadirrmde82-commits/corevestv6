@@ -46,9 +46,17 @@ export default function Layout({ children }: LayoutProps) {
     if (!force && now - lastRefreshAtRef.current < 1200) return;
     lastRefreshAtRef.current = now;
     try {
-      await Promise.allSettled([
+      const lightRefreshes = [
         utils.profile.me.invalidate(),
         utils.notification.list.invalidate(),
+      ];
+      if (!force) {
+        await Promise.allSettled(lightRefreshes);
+        return;
+      }
+
+      await Promise.allSettled([
+        ...lightRefreshes,
         utils.deposit.list.invalidate(),
         utils.withdrawal.list.invalidate(),
         utils.ticket.list.invalidate(),

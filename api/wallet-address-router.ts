@@ -4,15 +4,27 @@ import { createRouter, publicQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { walletAddresses } from "../db/schema";
 
+let walletAddressCache: { expiresAt: number; rows: unknown[] } | null = null;
+const WALLET_ADDRESS_CACHE_MS = 60 * 1000;
+
+function clearWalletAddressCache() {
+  walletAddressCache = null;
+}
+
 export const walletAddressRouter = createRouter({
   // Public: list active wallet addresses
   list: publicQuery.query(async () => {
+    if (walletAddressCache && walletAddressCache.expiresAt > Date.now()) {
+      return walletAddressCache.rows;
+    }
     const db = getDb();
-    return db
+    const rows = await db
       .select()
       .from(walletAddresses)
       .where(eq(walletAddresses.active, 1))
       .orderBy(asc(walletAddresses.sortOrder));
+    walletAddressCache = { rows, expiresAt: Date.now() + WALLET_ADDRESS_CACHE_MS };
+    return rows;
   }),
 
   // Admin: list all
@@ -45,6 +57,7 @@ export const walletAddressRouter = createRouter({
         active: 1,
         sortOrder: input.sortOrder,
       });
+      clearWalletAddressCache();
       return { success: true };
     }),
 
@@ -76,6 +89,7 @@ export const walletAddressRouter = createRouter({
         .update(walletAddresses)
         .set(updateData)
         .where(eq(walletAddresses.id, id));
+      clearWalletAddressCache();
       return { success: true };
     }),
 
@@ -85,6 +99,7 @@ export const walletAddressRouter = createRouter({
     .mutation(async ({ input }) => {
       const db = getDb();
       await db.delete(walletAddresses).where(eq(walletAddresses.id, input.id));
+      clearWalletAddressCache();
       return { success: true };
     }),
 });

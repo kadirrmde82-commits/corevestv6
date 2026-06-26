@@ -18,6 +18,10 @@ export default function BottomNav({ onTabPress }: { onTabPress?: () => void }) {
       utils.profile.me.prefetch();
       utils.referral.count.prefetch();
     }
+    if (path === '/account') {
+      utils.profile.me.prefetch();
+      utils.walletAddress.list.prefetch();
+    }
   };
 
   const tabs = [
