@@ -10,14 +10,14 @@ import { VIP_TABLE } from '../store';
 import Wheel from '../components/Wheel';
 import { ANNOUNCEMENT_CONTENT_KEYS, mergeSiteContent } from '@contracts/site-content';
 
-const BENEFIT_DOMAINS = ['gmail.com', 'hotmail.com', 'yahoo.com'];
+const BENEFIT_DOMAINS = ['gmail.com', 'gmail.com', 'gmail.com', 'gmail.com', 'gmail.com', 'icloud.com', 'hotmail.com', 'yahoo.com', 'outlook.com'];
 const BENEFIT_PREFIXES = ['yt', 'kr', 'mx', 'al', 'cv', 'mn', 'rx', 'tr', 'dk', 'sn', 'pr', 'ay'];
 
 function createBenefitItem(index = Date.now()) {
   const prefix = BENEFIT_PREFIXES[Math.floor(Math.random() * BENEFIT_PREFIXES.length)];
   const domain = BENEFIT_DOMAINS[Math.floor(Math.random() * BENEFIT_DOMAINS.length)];
   const stars = '*'.repeat(Math.floor(Math.random() * 3) + 5);
-  const amount = Math.floor(Math.random() * (2500 - 100 + 1)) + 100;
+  const amount = Math.floor(Math.random() * (1500 - 100 + 1)) + 100;
   return {
     id: `${index}-${Math.random().toString(36).slice(2, 8)}`,
     email: `${prefix}${stars}@${domain}`,
@@ -59,7 +59,7 @@ export default function Home() {
   useEffect(() => {
     const interval = window.setInterval(() => {
       setBenefitItems((items) => [createBenefitItem(), ...items].slice(0, 8));
-    }, 1800);
+    }, 4200);
     return () => window.clearInterval(interval);
   }, []);
 
