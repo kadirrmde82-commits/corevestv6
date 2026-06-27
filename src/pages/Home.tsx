@@ -25,6 +25,10 @@ function createBenefitItem(index = Date.now()) {
   };
 }
 
+function getBenefitRefreshDelay() {
+  return (Math.floor(Math.random() * (120 - 60 + 1)) + 60) * 1000;
+}
+
 export default function Home() {
   const { t } = useTranslation();
   const [showAnnouncement, setShowAnnouncement] = useState(true);
@@ -57,10 +61,13 @@ export default function Home() {
   }, [announcementSeenKey]);
 
   useEffect(() => {
-    const interval = window.setInterval(() => {
+    let timeout: number;
+    const scheduleNextItem = () => {
       setBenefitItems((items) => [createBenefitItem(), ...items].slice(0, 8));
-    }, 4200);
-    return () => window.clearInterval(interval);
+      timeout = window.setTimeout(scheduleNextItem, getBenefitRefreshDelay());
+    };
+    timeout = window.setTimeout(scheduleNextItem, getBenefitRefreshDelay());
+    return () => window.clearTimeout(timeout);
   }, []);
 
   const dismissAnnouncement = () => {
