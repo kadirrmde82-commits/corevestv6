@@ -14,6 +14,7 @@ type ActionView = 'main' | 'deposit' | 'withdraw' | 'support' | 'history';
 type HistoryTab = 'deposits' | 'withdrawals' | 'clicks' | 'bonuses' | 'referrals';
 const MIN_WITHDRAWAL_AMOUNT = 50;
 const MAX_WITHDRAWAL_AMOUNT = 20000;
+const MIN_DEPOSIT_AMOUNT = 50;
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -395,7 +396,12 @@ export default function Account() {
     const targetPublicId = Number(depositTargetId || currentPublicId);
     const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
 
-    if (!amountValue || amountValue <= 0) {
+    if (!amountValue || amountValue < MIN_DEPOSIT_AMOUNT) {
+      setDepositError('Minimum yatırım tutarı 50$ olmalıdır.');
+      return;
+    }
+
+    if (!amountValue || amountValue < MIN_DEPOSIT_AMOUNT) {
       setDepositError('Lütfen geçerli bir yatırım tutarı yazın.');
       return;
     }
@@ -537,8 +543,8 @@ export default function Account() {
 
               {/* Deposit Amount */}
               <div className="glass-card">
-                <label className="label-text block mb-2">{t('accountExtra.deposit.amount')} ($)</label>
-                <input type="number" value={depositAmount} onChange={(e) => { setDepositAmount(e.target.value); setDepositError(''); }} placeholder={t('accountExtra.deposit.amountExample')} className="glass-input" style={{ minHeight: '46px' }} />
+                <label className="label-text block mb-2">{t('accountExtra.deposit.amount')} ($) <span className="text-[10px] font-normal" style={{ color: '#5a6a7a' }}>(Min: 50$)</span></label>
+                <input type="number" value={depositAmount} onChange={(e) => { setDepositAmount(e.target.value); setDepositError(''); }} placeholder="Minimum 50" min={MIN_DEPOSIT_AMOUNT} className="glass-input" style={{ minHeight: '46px' }} />
               </div>
 
               {/* Wallet Address */}

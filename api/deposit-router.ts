@@ -13,7 +13,7 @@ export const depositRouter = createRouter({
   create: authedQuery
     .input(
       z.object({
-        amount: z.number().positive(),
+        amount: z.number().min(50, "Minimum yatırım tutarı 50$ olmalıdır."),
         email: z.string().email().min(1),
         cryptoType: z.enum(["trc20", "sol", "trx", "eth"]),
         targetPublicId: z.number().int().positive().optional(),

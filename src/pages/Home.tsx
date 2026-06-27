@@ -10,9 +10,25 @@ import { VIP_TABLE } from '../store';
 import Wheel from '../components/Wheel';
 import { ANNOUNCEMENT_CONTENT_KEYS, mergeSiteContent } from '@contracts/site-content';
 
+const BENEFIT_DOMAINS = ['gmail.com', 'hotmail.com', 'yahoo.com'];
+const BENEFIT_PREFIXES = ['yt', 'kr', 'mx', 'al', 'cv', 'mn', 'rx', 'tr', 'dk', 'sn', 'pr', 'ay'];
+
+function createBenefitItem(index = Date.now()) {
+  const prefix = BENEFIT_PREFIXES[Math.floor(Math.random() * BENEFIT_PREFIXES.length)];
+  const domain = BENEFIT_DOMAINS[Math.floor(Math.random() * BENEFIT_DOMAINS.length)];
+  const stars = '*'.repeat(Math.floor(Math.random() * 3) + 5);
+  const amount = Math.floor(Math.random() * (2500 - 100 + 1)) + 100;
+  return {
+    id: `${index}-${Math.random().toString(36).slice(2, 8)}`,
+    email: `${prefix}${stars}@${domain}`,
+    amount,
+  };
+}
+
 export default function Home() {
   const { t } = useTranslation();
   const [showAnnouncement, setShowAnnouncement] = useState(true);
+  const [benefitItems, setBenefitItems] = useState(() => Array.from({ length: 8 }, (_, index) => createBenefitItem(index)));
 
   // Fetch market prices from API
   const { data: marketCoins = [] } = trpc.marketPrice.list.useQuery(undefined, {
@@ -39,6 +55,13 @@ export default function Home() {
   useEffect(() => {
     setShowAnnouncement(localStorage.getItem(announcementSeenKey) !== 'true');
   }, [announcementSeenKey]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setBenefitItems((items) => [createBenefitItem(), ...items].slice(0, 8));
+    }, 1800);
+    return () => window.clearInterval(interval);
+  }, []);
 
   const dismissAnnouncement = () => {
     setShowAnnouncement(false);
@@ -276,6 +299,35 @@ export default function Home() {
 
         {/* Wheel of Fortune */}
         <Wheel />
+
+        {/* Benefit List */}
+        <div className="glass-card overflow-hidden" style={{ border: '1px solid rgba(16,185,129,0.18)', background: 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(255,255,255,0.03))' }}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-base font-extrabold text-white">FAYDA LİSTESİ</h2>
+              <p className="text-xs" style={{ color: '#8fa5b8' }}>Son yatırım bildirimleri</p>
+            </div>
+            <div className="status-badge text-[10px]">
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              CANLI
+            </div>
+          </div>
+          <div className="grid gap-2" style={{ maxHeight: '250px', overflow: 'hidden' }}>
+            {benefitItems.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 animate-fade-in"
+                style={{
+                  background: 'rgba(255,255,255,0.035)',
+                  border: '1px solid rgba(248,251,255,0.06)',
+                }}
+              >
+                <span className="text-sm font-bold truncate" style={{ color: '#c8d6e5' }}>{item.email}</span>
+                <span className="text-sm font-extrabold shrink-0" style={{ color: '#10b981' }}>+${item.amount}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Market Prices */}
         <div className="glass-card">
