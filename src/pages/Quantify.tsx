@@ -47,12 +47,12 @@ export default function Quantify() {
   });
   const { data: clickStatus } = trpc.click.status.useQuery(undefined, {
     staleTime: 1000 * 20,
-    refetchInterval: 1000 * 30,
+    refetchInterval: 1000 * 15,
     retry: false,
   });
   const { data: referralCount } = trpc.referral.count.useQuery(undefined, {
     staleTime: 1000 * 60,
-    refetchInterval: 1000 * 60,
+    refetchInterval: 1000 * 30,
     retry: false,
   });
 

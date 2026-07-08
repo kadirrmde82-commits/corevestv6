@@ -436,7 +436,7 @@ export const adminMemberRouter = createRouter({
         userId: z.number(),
         amount: z.number().positive(),
         email: z.string().email().optional(),
-        cryptoType: z.enum(["trc20", "sol", "trx", "eth"]).default("trc20"),
+        cryptoType: z.string().min(1).max(32).default("trc20"),
         status: z.enum(["pending", "approved"]).default("approved"),
       })
     )

@@ -68,18 +68,18 @@ export default function Admin() {
   const { data: maintenance } = trpc.adminSystem.maintenance.useQuery(undefined, { enabled: activeTab === 'system', refetchInterval: activeTab === 'system' ? 30000 : false });
   const { data: analytics } = trpc.adminSystem.analytics.useQuery(undefined, { enabled: activeTab === 'system', refetchInterval: activeTab === 'system' ? 30000 : false });
   const { data: sentNotifications = [] } = trpc.adminSystem.userNotifications.useQuery(undefined, { enabled: activeTab === 'system', refetchInterval: activeTab === 'system' ? 30000 : false });
-  const { data: memberPresence = [] } = trpc.presence.adminList.useQuery(undefined, { enabled: activeTab === 'memberStatus', refetchInterval: activeTab === 'memberStatus' ? 15000 : false });
+  const { data: memberPresence = [] } = trpc.presence.adminList.useQuery(undefined, { enabled: activeTab === 'memberStatus', refetchInterval: activeTab === 'memberStatus' ? 10000 : false });
   const { data: membersData } = trpc.adminMember.list.useQuery(
     { search: searchQuery || undefined, page: 1, limit: 50 },
     { refetchInterval: activeTab === 'members' ? 30000 : false }
   );
   const { data: allDeposits = [], refetch: refetchDeposits, isFetching: depositsFetching } = trpc.deposit.listAll.useQuery(undefined, {
     enabled: activeTab === 'deposits',
-    refetchInterval: activeTab === 'deposits' ? 10000 : false,
+    refetchInterval: activeTab === 'deposits' ? 5000 : false,
     refetchOnWindowFocus: false,
   });
-  const { data: allWithdrawals = [] } = trpc.withdrawal.listAll.useQuery(undefined, { enabled: activeTab === 'withdrawals', refetchInterval: activeTab === 'withdrawals' ? 15000 : false });
-  const { data: allTickets = [] } = trpc.ticket.listAll.useQuery(undefined, { enabled: activeTab === 'tickets', refetchInterval: activeTab === 'tickets' ? 15000 : false });
+  const { data: allWithdrawals = [] } = trpc.withdrawal.listAll.useQuery(undefined, { enabled: activeTab === 'withdrawals', refetchInterval: activeTab === 'withdrawals' ? 10000 : false });
+  const { data: allTickets = [] } = trpc.ticket.listAll.useQuery(undefined, { enabled: activeTab === 'tickets', refetchInterval: activeTab === 'tickets' ? 10000 : false });
   const { data: allMarketPrices = [] } = trpc.marketPrice.listAll.useQuery(undefined, { enabled: activeTab === 'marketPrices', refetchInterval: activeTab === 'marketPrices' ? 30000 : false });
   const { data: allWalletAddresses = [] } = trpc.walletAddress.listAll.useQuery(undefined, { enabled: activeTab === 'walletAddresses', refetchInterval: activeTab === 'walletAddresses' ? 30000 : false });
   const { data: adminSiteContent } = trpc.siteContent.adminList.useQuery(undefined, { enabled: activeTab === 'content', refetchOnWindowFocus: false });

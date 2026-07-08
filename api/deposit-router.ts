@@ -20,7 +20,8 @@ async function runDepositCompatibilityChecks() {
     }
   };
 
-  await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`cryptoType\` enum('trc20','sol','trx','eth') NOT NULL DEFAULT 'trc20'`);
+  await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`cryptoType\` varchar(32) NOT NULL DEFAULT 'trc20'`);
+  await tryExecute(sql`ALTER TABLE deposits MODIFY COLUMN \`cryptoType\` varchar(32) NOT NULL DEFAULT 'trc20'`);
   await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`userNote\` varchar(255)`);
   await tryExecute(sql`ALTER TABLE users ADD COLUMN \`publicId\` int`);
 }
@@ -42,7 +43,7 @@ export const depositRouter = createRouter({
       z.object({
         amount: z.number().min(50, "Minimum yatırım tutarı 50$ olmalıdır."),
         email: z.string().email().min(1),
-        cryptoType: z.enum(["trc20", "sol", "trx", "eth"]),
+        cryptoType: z.string().min(1).max(32),
         targetPublicId: z.number().int().positive().optional(),
         userNote: z.string().optional(),
       })

@@ -34,7 +34,7 @@ export default function Account() {
 
   const { data: profile } = trpc.profile.me.useQuery(undefined, {
     staleTime: 1000 * 10,
-    refetchInterval: 1000 * 30,
+    refetchInterval: 1000 * 15,
     retry: false,
   });
   const { data: walletAddresses = [] } = trpc.walletAddress.list.useQuery(undefined, {
@@ -43,32 +43,32 @@ export default function Account() {
   });
   const { data: deposits = [] } = trpc.deposit.list.useQuery(undefined, {
     staleTime: 1000 * 10,
-    refetchInterval: view === 'deposit' || historyTab === 'deposits' ? 1000 * 30 : false,
+    refetchInterval: view === 'deposit' || historyTab === 'deposits' ? 1000 * 10 : false,
     retry: false,
   });
   const { data: withdrawals = [] } = trpc.withdrawal.list.useQuery(undefined, {
     staleTime: 1000 * 10,
-    refetchInterval: view === 'withdraw' || historyTab === 'withdrawals' ? 1000 * 30 : false,
+    refetchInterval: view === 'withdraw' || historyTab === 'withdrawals' ? 1000 * 10 : false,
     retry: false,
   });
   const { data: tickets = [] } = trpc.ticket.list.useQuery(undefined, {
     staleTime: 1000 * 10,
-    refetchInterval: view === 'support' ? 1000 * 20 : false,
+    refetchInterval: view === 'support' ? 1000 * 10 : false,
     retry: false,
   });
   const { data: wheelHistory = [] } = trpc.wheel.list.useQuery(undefined, {
     staleTime: 1000 * 10,
-    refetchInterval: historyTab === 'bonuses' ? 1000 * 30 : false,
+    refetchInterval: historyTab === 'bonuses' ? 1000 * 20 : false,
     retry: false,
   });
   const { data: referralEarnings = [] } = trpc.referral.earningsList.useQuery(undefined, {
     staleTime: 1000 * 10,
-    refetchInterval: historyTab === 'referrals' ? 1000 * 30 : false,
+    refetchInterval: historyTab === 'referrals' ? 1000 * 20 : false,
     retry: false,
   });
   const { data: clickEarnings = [] } = trpc.click.history.useQuery(undefined, {
     staleTime: 1000 * 10,
-    refetchInterval: historyTab === 'clicks' ? 1000 * 30 : false,
+    refetchInterval: historyTab === 'clicks' ? 1000 * 20 : false,
     retry: false,
   });
 
@@ -425,7 +425,7 @@ export default function Account() {
     depositMutation.mutate({
       amount: amountValue,
       email: emailValue,
-      cryptoType: depositCrypto as 'trc20' | 'sol' | 'trx' | 'eth',
+      cryptoType: depositCrypto,
       targetPublicId,
     });
   };
@@ -508,7 +508,7 @@ export default function Account() {
           ) : (
             <div className="grid gap-3">
               {/* Email (required) */}
-              <div className="hidden">
+              <div className="glass-card">
                 <label className="label-text block mb-2">{t('accountExtra.emailAddress')} <span style={{ color: '#ef4444' }}>*</span></label>
                 <input type="email" value={depositEmail} onChange={(e) => { setDepositEmail(e.target.value); setDepositError(''); }} placeholder={t('accountExtra.emailPlaceholder')} className="glass-input" style={{ minHeight: '46px' }} required />
               </div>
@@ -531,7 +531,7 @@ export default function Account() {
               </div>
 
               {/* Crypto Selector */}
-              <div className="hidden">
+              <div className="glass-card">
                 <label className="label-text block mb-2">{t('accountExtra.deposit.cryptoSelect')}</label>
                 {walletAddresses.length === 0 ? (
                   <div className="rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}>
@@ -540,9 +540,9 @@ export default function Account() {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {walletAddresses.map((c: any) => (
-                      <button key={c.key} onClick={() => setDepositCrypto(c.key)} className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-left transition-all" style={{ background: depositCrypto === c.key ? `${c.color}18` : 'rgba(255,255,255,0.03)', border: depositCrypto === c.key ? `1px solid ${c.color}40` : '1px solid rgba(248,251,255,0.06)' }}>
+                      <button type="button" key={c.key} onClick={() => { setDepositCrypto(c.key); setCopied(false); setDepositError(''); }} className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-left transition-all" style={{ background: depositCrypto === c.key ? `${c.color}18` : 'rgba(255,255,255,0.03)', border: depositCrypto === c.key ? `1px solid ${c.color}80` : '1px solid rgba(248,251,255,0.06)' }}>
                         <div className="rounded-full shrink-0" style={{ width: '10px', height: '10px', background: c.color }} />
                         <span className="text-xs font-bold" style={{ color: depositCrypto === c.key ? c.color : '#8fa5b8' }}>{c.label}</span>
                       </button>
@@ -565,7 +565,7 @@ export default function Account() {
                   </p>
                 </div>
               ) : (
-                <div className="grid gap-3">
+                <div className="hidden">
                   {walletAddresses.map((c: any) => {
                     const isSelected = depositCrypto === c.key;
                     return (
@@ -604,6 +604,33 @@ export default function Account() {
                     );
                   })}
                   {copied && <p className="text-xs text-center" style={{ color: '#10b981' }}>{t('accountExtra.copied')}</p>}
+                </div>
+              )}
+
+              {hasDepositAddress && (
+                <div className="glass-card" style={{ border: `1px solid ${selectedCrypto.color}30`, background: `${selectedCrypto.color}08` }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="rounded-full" style={{ width: '10px', height: '10px', background: selectedCrypto.color }} />
+                    <span className="text-sm font-bold" style={{ color: selectedCrypto.color }}>{selectedCrypto.label}</span>
+                    <span className="ml-auto text-[10px] font-extrabold px-2 py-1 rounded-full" style={{ background: `${selectedCrypto.color}18`, color: selectedCrypto.color }}>Seçili</span>
+                  </div>
+                  <p className="text-xs mb-3" style={{ color: '#8fa5b8' }}>{t('accountExtra.deposit.sendToAddress')}</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 text-xs font-mono truncate rounded-xl px-3 py-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(248,251,255,0.1)', color: '#c8d6e5' }}>{selectedCrypto.address}</div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedCrypto.address);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      className="btn-secondary"
+                      style={{ minHeight: '42px', width: '42px', padding: 0 }}
+                    >
+                      {copied ? <Check size={16} /> : <Copy size={16} />}
+                    </button>
+                  </div>
+                  {copied && <p className="text-xs mt-2 text-center" style={{ color: '#10b981' }}>{t('accountExtra.copied')}</p>}
                 </div>
               )}
 

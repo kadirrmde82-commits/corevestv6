@@ -73,7 +73,7 @@ export const deposits = mysqlTable("deposits", {
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
   txid: varchar("txid", { length: 64 }).notNull(),
   email: varchar("email", { length: 320 }).notNull(),
-  cryptoType: mysqlEnum("cryptoType", ["trc20", "sol", "trx", "eth"]).default("trc20").notNull(),
+  cryptoType: varchar("cryptoType", { length: 32 }).default("trc20").notNull(),
   userNote: varchar("userNote", { length: 255 }),
   status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

@@ -20,7 +20,7 @@ export default function Referral() {
   });
   const { data: overview, refetch: refetchOverview } = trpc.referral.overview.useQuery(undefined, {
     staleTime: 1000 * 30,
-    refetchInterval: 1000 * 30,
+    refetchInterval: 1000 * 15,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
     retry: false,

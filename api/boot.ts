@@ -71,7 +71,8 @@ async function ensureSystemTables() {
   };
   await ensureVipBonusesTable();
   await ensureWalletAddressesTable();
-  await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`cryptoType\` enum('trc20','sol','trx','eth') NOT NULL DEFAULT 'trc20'`);
+  await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`cryptoType\` varchar(32) NOT NULL DEFAULT 'trc20'`);
+  await tryExecute(sql`ALTER TABLE deposits MODIFY COLUMN \`cryptoType\` varchar(32) NOT NULL DEFAULT 'trc20'`);
   await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`userNote\` varchar(255)`);
   await tryExecute(sql`ALTER TABLE users ADD COLUMN \`publicId\` int`);
   await db.execute(sql`
