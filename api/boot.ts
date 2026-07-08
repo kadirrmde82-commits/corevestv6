@@ -226,6 +226,8 @@ app.get("/api/site-assets/:key", async (c) => {
   });
 });
 
+app.get("/api/health", (c) => c.json({ ok: true, service: "corevest", ts: Date.now() }));
+
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
 export default app;
