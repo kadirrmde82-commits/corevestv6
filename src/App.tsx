@@ -37,8 +37,10 @@ function AdminRoute({ children }: { children: ReactNode }) {
 
 export default function App() {
   const isAdmin = localStorage.getItem('corevest_role') === 'admin';
+  const hasToken = Boolean(localStorage.getItem('corevest_token'));
   const { data: maintenance } = trpc.adminSystem.publicMaintenance.useQuery(undefined, {
-    refetchInterval: 30000,
+    enabled: hasToken,
+    refetchInterval: hasToken ? 60000 : false,
     retry: false,
   });
 

@@ -36,14 +36,14 @@ export default function Home() {
 
   // Fetch market prices from API
   const { data: marketCoins = [] } = trpc.marketPrice.list.useQuery(undefined, {
-    staleTime: 1000 * 60,
-    refetchInterval: 1000 * 30,
+    staleTime: 1000 * 120,
+    refetchInterval: 1000 * 120,
   });
   const hasLiveMarketData = marketCoins.some((coin: { live?: boolean }) => coin.live);
   const hasSavedMarketData = marketCoins.some((coin: { source?: string }) => coin.source === 'cached');
   const { data: siteContentData } = trpc.siteContent.public.useQuery(undefined, {
-    staleTime: 1000 * 30,
-    refetchInterval: 1000 * 30,
+    staleTime: 1000 * 120,
+    refetchInterval: 1000 * 120,
     retry: false,
   });
   const siteContent = mergeSiteContent(siteContentData);
@@ -77,8 +77,8 @@ export default function Home() {
 
   // Fetch profile from tRPC
   const { data: profile } = trpc.profile.me.useQuery(undefined, {
-    staleTime: 1000 * 10,
-    refetchInterval: 1000 * 10,
+    staleTime: 1000 * 30,
+    refetchInterval: 1000 * 60,
     retry: false,
   });
 

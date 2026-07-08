@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gte } from "drizzle-orm";
 import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { clickEarnings, deposits, profiles, referralEarnings, vipBonuses, wheelSpins } from "@db/schema";
@@ -18,21 +18,29 @@ function turkeyDateKey(date: Date) {
   }).format(date);
 }
 
-function yesterdayTurkeyKey() {
-  return turkeyDateKey(new Date(Date.now() - 24 * 60 * 60 * 1000));
+function startOfYesterdayTurkey() {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Istanbul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const yesterdayKey = formatter.format(new Date(Date.now() - 24 * 60 * 60 * 1000));
+  return new Date(`${yesterdayKey}T00:00:00+03:00`);
 }
 
-async function getEarningsSummary(userId: number) {
+async function getRecentEarningsSummary(userId: number, totalEarned: number) {
   const db = getDb();
+  const since = startOfYesterdayTurkey();
   const [clickRows, wheelRows, vipRows, referralRows] = await Promise.all([
-    db.query.clickEarnings.findMany({ where: eq(clickEarnings.userId, userId) }),
-    db.query.wheelSpins.findMany({ where: eq(wheelSpins.userId, userId) }),
-    db.query.vipBonuses.findMany({ where: eq(vipBonuses.userId, userId) }),
-    db.query.referralEarnings.findMany({ where: eq(referralEarnings.referrerUserId, userId) }),
+    db.query.clickEarnings.findMany({ where: and(eq(clickEarnings.userId, userId), gte(clickEarnings.createdAt, since)) }),
+    db.query.wheelSpins.findMany({ where: and(eq(wheelSpins.userId, userId), gte(wheelSpins.createdAt, since)) }),
+    db.query.vipBonuses.findMany({ where: and(eq(vipBonuses.userId, userId), gte(vipBonuses.createdAt, since)) }),
+    db.query.referralEarnings.findMany({ where: and(eq(referralEarnings.referrerUserId, userId), gte(referralEarnings.createdAt, since)) }),
   ]);
 
   const todayKey = turkeyDateKey(new Date());
-  const yesterdayKey = yesterdayTurkeyKey();
+  const yesterdayKey = turkeyDateKey(new Date(Date.now() - 24 * 60 * 60 * 1000));
   const entries = [
     ...clickRows.map((row) => ({ amount: Number(row.amount), createdAt: row.createdAt })),
     ...wheelRows.map((row) => ({ amount: Number(row.prize), createdAt: row.createdAt })),
@@ -45,10 +53,9 @@ async function getEarningsSummary(userId: number) {
       const key = turkeyDateKey(entry.createdAt);
       if (key === todayKey) summary.today += entry.amount;
       if (key === yesterdayKey) summary.yesterday += entry.amount;
-      summary.total += entry.amount;
       return summary;
     },
-    { today: 0, yesterday: 0, total: 0 }
+    { today: 0, yesterday: 0, total: totalEarned }
   );
 }
 
@@ -82,7 +89,7 @@ export const profileRouter = createRouter({
     }
 
     const [earningsSummary, approvedInvestment] = await Promise.all([
-      getEarningsSummary(ctx.user.id),
+      getRecentEarningsSummary(ctx.user.id, Number(profile.totalEarned || 0)),
       getApprovedInvestmentTotal(ctx.user.id),
     ]);
     const effectiveInvestment = Math.max(Number(profile.investment || 0), approvedInvestment);

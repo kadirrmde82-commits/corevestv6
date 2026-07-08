@@ -14,15 +14,15 @@ export default function Referral() {
   const utils = trpc.useUtils();
 
   const { data: profile } = trpc.profile.me.useQuery(undefined, {
-    staleTime: 1000 * 10,
-    refetchInterval: 1000 * 10,
+    staleTime: 1000 * 30,
+    refetchInterval: 1000 * 60,
     retry: false,
   });
   const { data: overview, refetch: refetchOverview } = trpc.referral.overview.useQuery(undefined, {
-    staleTime: 0,
-    refetchInterval: 5000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 30,
+    refetchInterval: 1000 * 30,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
     retry: false,
   });
 
