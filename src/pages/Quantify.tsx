@@ -99,6 +99,10 @@ export default function Quantify() {
   const balanceCapReached = clickStatus?.balanceCapReached || false;
   const balanceCap = clickStatus?.balanceCap || 0;
   const investment = Number(profile?.investment || 0);
+  const blockedReason = (clickStatus as any)?.blockedReason || '';
+  const blockedReasonCode = (clickStatus as any)?.blockedReasonCode || '';
+  const minimumInvestment = Number((clickStatus as any)?.minimumInvestment || 50);
+  const showEligibilityWarning = !canClick && !balanceCapReached && blockedReason && blockedReasonCode !== 'cooldown';
   const earningsSummary = (profile as any)?.earningsSummary ?? { today: 0, yesterday: 0, total: Number((profile as any)?.totalEarned || 0) };
   const totalBalance = Number((profile as any)?.balance || 0);
 
@@ -189,10 +193,15 @@ export default function Quantify() {
         </div>
 
         <div className="glass-card text-center py-8" style={{ background: canClick ? 'radial-gradient(circle at center, rgba(255,215,0,0.12), rgba(3,8,16,0.6))' : currentVipLevel === 0 ? 'rgba(3, 8, 16, 0.4)' : 'rgba(3, 8, 16, 0.52)', borderColor: canClick ? 'rgba(255,215,0,0.35)' : 'rgba(248,251,255,0.08)' }}>
-          {currentVipLevel === 0 ? (
+          {showEligibilityWarning || currentVipLevel === 0 ? (
             <>
               <div className="mx-auto mb-4 grid place-items-center rounded-full" style={{ width: '72px', height: '72px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(248,251,255,0.06)' }}><MousePointerClick size={32} style={{ color: '#3a4a5a' }} /></div>
-              <p className="text-sm font-medium mb-3" style={{ color: '#5a6a7a' }}>{t('quantifyExtra.upgradeVip')}</p>
+              <p className="text-sm font-bold mb-2 text-white">{blockedReason || t('quantifyExtra.upgradeVip')}</p>
+              <p className="text-xs mb-3" style={{ color: '#8fa5b8' }}>
+                Mevcut onaylı yatırımınız: <strong style={{ color: '#FFD700' }}>${investment.toLocaleString()}</strong>
+                {' · '}
+                Minimum: <strong style={{ color: '#FFD700' }}>${minimumInvestment.toLocaleString()}</strong>
+              </p>
               <div className="p-3 rounded-xl" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}>
                 <p className="text-xs" style={{ color: '#10b981' }}>{t('quantifyExtra.welcomeBonus')}</p>
               </div>

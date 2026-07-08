@@ -3,7 +3,7 @@ import { desc, eq } from "drizzle-orm";
 import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { clickEarnings, profiles, referrals, referralEarnings } from "@db/schema";
-import { capAmount, getRandomDailyRate, getVipInfo, getVipLevel } from "./vip-config";
+import { VIP_TABLE, capAmount, getRandomDailyRate, getVipInfo, getVipLevel } from "./vip-config";
 import { getQualifiedTier1ReferralCount } from "./referral-qualification";
 
 export const REFERRAL_COMMISSIONS = {
@@ -65,6 +65,18 @@ async function getTier1ReferralCount(userId: number) {
   return getQualifiedTier1ReferralCount(userId);
 }
 
+function normalizeVipLevel(level: unknown): number {
+  const numericLevel = Number(level || 0);
+  if (!Number.isFinite(numericLevel)) return 0;
+  return Math.max(0, Math.min(6, Math.floor(numericLevel)));
+}
+
+function getEffectiveVipLevel(investment: number, activeRefs: number, storedVipLevel: unknown): number {
+  const automaticVipLevel = getVipLevel(investment, activeRefs);
+  const manualVipLevel = normalizeVipLevel(storedVipLevel);
+  return Math.max(automaticVipLevel, manualVipLevel);
+}
+
 export const clickRouter = createRouter({
   history: authedQuery.query(async ({ ctx }) => {
     const db = getDb();
@@ -104,22 +116,44 @@ export const clickRouter = createRouter({
         balanceCapReached: false,
         investment: 0,
         activeRefs: 0,
+        blockedReasonCode: "no_profile",
+        blockedReason: "Profil bulunamadı. Lütfen tekrar giriş yapın.",
       };
     }
 
     const activeRefs = await getTier1ReferralCount(ctx.user.id);
     const investment = Number(profile.investment);
     const balance = Number(profile.balance);
-    const vipLevel = getVipLevel(investment, activeRefs);
+    const vipLevel = getEffectiveVipLevel(investment, activeRefs, profile.vipLevel);
     const vipInfo = getVipInfo(vipLevel);
     const dailyEarningMin = (investment * vipInfo.rateMin) / 100;
     const dailyEarningMax = (investment * vipInfo.rateMax) / 100;
     const lastClick = profile.lastClickAt;
+    const vipOneMinInvestment = VIP_TABLE[1]?.min ?? 50;
+    const hasMinimumInvestment = investment >= vipOneMinInvestment;
     const balanceCapReached = vipInfo.balanceCap > 0 && balance >= vipInfo.balanceCap;
+    const timeRemaining = getTimeRemaining(lastClick);
+    const cooldownActive = !canClick(lastClick);
+
+    let blockedReasonCode: "none" | "minimum_investment" | "vip_required" | "balance_cap" | "cooldown" = "none";
+    let blockedReason = "";
+    if (!hasMinimumInvestment) {
+      blockedReasonCode = "minimum_investment";
+      blockedReason = `Tıklama yapabilmek için en az ${vipOneMinInvestment}$ onaylı yatırım gerekir.`;
+    } else if (vipLevel <= 0) {
+      blockedReasonCode = "vip_required";
+      blockedReason = "Tıklama yapabilmek için VIP 1 veya üzeri seviyede olmalısınız.";
+    } else if (balanceCapReached) {
+      blockedReasonCode = "balance_cap";
+      blockedReason = "VIP bakiye limitinize ulaştığınız için tıklama yapılamaz.";
+    } else if (cooldownActive) {
+      blockedReasonCode = "cooldown";
+      blockedReason = "Bugünkü tıklamanızı yaptınız. Bir sonraki tıklama için bekleyin.";
+    }
 
     return {
-      canClick: canClick(lastClick) && vipLevel > 0 && !balanceCapReached,
-      timeRemaining: getTimeRemaining(lastClick),
+      canClick: !blockedReason && hasMinimumInvestment && canClick(lastClick) && vipLevel > 0 && !balanceCapReached,
+      timeRemaining,
       vipLevel,
       dailyRate: vipInfo.rate,
       dailyRateMin: vipInfo.rateMin,
@@ -133,6 +167,9 @@ export const clickRouter = createRouter({
       lastClickAt: lastClick,
       consecutiveClicks: profile.consecutiveClicks,
       activeRefs,
+      blockedReasonCode,
+      blockedReason,
+      minimumInvestment: vipOneMinInvestment,
     };
   }),
 
@@ -146,12 +183,15 @@ export const clickRouter = createRouter({
       if (!profile) throw new Error("Profile not found");
 
       const activeRefs = await getTier1ReferralCount(ctx.user.id);
-      const vipLevel = getVipLevel(Number(profile.investment), activeRefs);
-      if (vipLevel === 0) throw new Error("Must have active investment and enough referrals to click");
-      if (!canClick(profile.lastClickAt)) throw new Error("Cannot click yet");
+      const investment = Number(profile.investment);
+      const vipOneMinInvestment = VIP_TABLE[1]?.min ?? 50;
+      const vipLevel = getEffectiveVipLevel(investment, activeRefs, profile.vipLevel);
+      if (investment < vipOneMinInvestment) throw new Error(`Tıklama için minimum ${vipOneMinInvestment}$ onaylı yatırım gerekir`);
+      if (vipLevel === 0) throw new Error("Tıklama yapabilmek için VIP 1 veya üzeri seviyede olmalısınız");
+      if (!canClick(profile.lastClickAt)) throw new Error("Bugünkü tıklamanızı yaptınız. Lütfen sonraki tıklama saatini bekleyin");
 
       const dailyRate = getRandomDailyRate(vipLevel);
-      const calculatedEarning = (Number(profile.investment) * dailyRate) / 100;
+      const calculatedEarning = (investment * dailyRate) / 100;
       const actualEarning = capAmount(Number(profile.balance), calculatedEarning, vipLevel);
       if (actualEarning <= 0) throw new Error("VIP balance limit reached");
 
