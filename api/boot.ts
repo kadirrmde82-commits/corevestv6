@@ -7,7 +7,7 @@ import { createContext } from "./context";
 import { env } from "./lib/env";
 import { ensureAdminAccount } from "./bootstrap";
 import { verifyLocalToken } from "./local-auth";
-import { getDb } from "./queries/connection";
+import { getDb, getDbPool } from "./queries/connection";
 import { siteAssets, siteContent, users } from "@db/schema";
 import { eq, sql } from "drizzle-orm";
 
@@ -254,9 +254,9 @@ app.get("/api/health", (c) => c.json({ ok: true, service: "corevest", ts: Date.n
 app.get("/api/db-health", async (c) => {
   const startedAt = Date.now();
   try {
-    const db = getDb();
+    getDb();
     await Promise.race([
-      db.execute(sql`SELECT 1`),
+      getDbPool().promise().query("SELECT 1"),
       new Promise((_, reject) => setTimeout(() => reject(new Error("Database healthcheck timed out after 5s")), 5_000)),
     ]);
     return c.json({ ok: true, service: "corevest-db", ms: Date.now() - startedAt, source: env.databaseUrlSource, host: env.databaseHost, ts: Date.now() });
