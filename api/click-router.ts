@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { clickEarnings, profiles, referrals, referralEarnings } from "@db/schema";
+import { clickEarnings, deposits, profiles, referrals, referralEarnings } from "@db/schema";
 import { VIP_TABLE, capAmount, getRandomDailyRate, getVipInfo, getVipLevel } from "./vip-config";
 import { getQualifiedTier1ReferralCount } from "./referral-qualification";
 
@@ -65,6 +65,14 @@ async function getTier1ReferralCount(userId: number) {
   return getQualifiedTier1ReferralCount(userId);
 }
 
+async function getApprovedInvestmentTotal(userId: number): Promise<number> {
+  const db = getDb();
+  const approvedDeposits = await db.query.deposits.findMany({
+    where: and(eq(deposits.userId, userId), eq(deposits.status, "approved")),
+  });
+  return approvedDeposits.reduce((sum, deposit) => sum + Number(deposit.amount || 0), 0);
+}
+
 function normalizeVipLevel(level: unknown): number {
   const numericLevel = Number(level || 0);
   if (!Number.isFinite(numericLevel)) return 0;
@@ -122,7 +130,8 @@ export const clickRouter = createRouter({
     }
 
     const activeRefs = await getTier1ReferralCount(ctx.user.id);
-    const investment = Number(profile.investment);
+    const approvedInvestment = await getApprovedInvestmentTotal(ctx.user.id);
+    const investment = Math.max(Number(profile.investment), approvedInvestment);
     const balance = Number(profile.balance);
     const vipLevel = getEffectiveVipLevel(investment, activeRefs, profile.vipLevel);
     const vipInfo = getVipInfo(vipLevel);
@@ -183,7 +192,8 @@ export const clickRouter = createRouter({
       if (!profile) throw new Error("Profile not found");
 
       const activeRefs = await getTier1ReferralCount(ctx.user.id);
-      const investment = Number(profile.investment);
+      const approvedInvestment = await getApprovedInvestmentTotal(ctx.user.id);
+      const investment = Math.max(Number(profile.investment), approvedInvestment);
       const vipOneMinInvestment = VIP_TABLE[1]?.min ?? 50;
       const vipLevel = getEffectiveVipLevel(investment, activeRefs, profile.vipLevel);
       if (investment < vipOneMinInvestment) throw new Error(`Tıklama için minimum ${vipOneMinInvestment}$ onaylı yatırım gerekir`);

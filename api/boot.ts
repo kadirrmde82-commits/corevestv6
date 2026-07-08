@@ -41,6 +41,25 @@ async function ensureVipBonusesTable() {
   `);
 }
 
+async function ensureWalletAddressesTable() {
+  const db = getDb();
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS wallet_addresses (
+      \`id\` bigint unsigned NOT NULL AUTO_INCREMENT,
+      \`key\` varchar(16) NOT NULL,
+      \`label\` varchar(64) NOT NULL,
+      \`address\` varchar(128) NOT NULL,
+      \`color\` varchar(16) NOT NULL,
+      \`active\` int NOT NULL DEFAULT 1,
+      \`sortOrder\` int NOT NULL DEFAULT 0,
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`id\`),
+      UNIQUE KEY \`wallet_addresses_key_unique\` (\`key\`)
+    )
+  `);
+}
+
 async function ensureSystemTables() {
   const db = getDb();
   const tryExecute = async (query: ReturnType<typeof sql>) => {
@@ -51,6 +70,10 @@ async function ensureSystemTables() {
     }
   };
   await ensureVipBonusesTable();
+  await ensureWalletAddressesTable();
+  await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`cryptoType\` enum('trc20','sol','trx','eth') NOT NULL DEFAULT 'trc20'`);
+  await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`userNote\` varchar(255)`);
+  await tryExecute(sql`ALTER TABLE users ADD COLUMN \`publicId\` int`);
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS admin_activity_logs (
       \`id\` bigint unsigned NOT NULL AUTO_INCREMENT,

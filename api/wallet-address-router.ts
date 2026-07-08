@@ -3,10 +3,31 @@ import { eq, asc } from "drizzle-orm";
 import { createRouter, publicQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { walletAddresses } from "../db/schema";
+import { sql } from "drizzle-orm";
+
+async function ensureWalletAddressesTable() {
+  const db = getDb();
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS wallet_addresses (
+      \`id\` bigint unsigned NOT NULL AUTO_INCREMENT,
+      \`key\` varchar(16) NOT NULL,
+      \`label\` varchar(64) NOT NULL,
+      \`address\` varchar(128) NOT NULL,
+      \`color\` varchar(16) NOT NULL,
+      \`active\` int NOT NULL DEFAULT 1,
+      \`sortOrder\` int NOT NULL DEFAULT 0,
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`id\`),
+      UNIQUE KEY \`wallet_addresses_key_unique\` (\`key\`)
+    )
+  `);
+}
 
 export const walletAddressRouter = createRouter({
   // Public: list active wallet addresses
   list: publicQuery.query(async () => {
+    await ensureWalletAddressesTable();
     const db = getDb();
     return db
       .select()
@@ -17,6 +38,7 @@ export const walletAddressRouter = createRouter({
 
   // Admin: list all
   listAll: adminQuery.query(async () => {
+    await ensureWalletAddressesTable();
     const db = getDb();
     return db
       .select()
@@ -36,6 +58,7 @@ export const walletAddressRouter = createRouter({
       })
     )
     .mutation(async ({ input }) => {
+      await ensureWalletAddressesTable();
       const db = getDb();
       await db.insert(walletAddresses).values({
         key: input.key.toLowerCase(),
@@ -62,6 +85,7 @@ export const walletAddressRouter = createRouter({
       })
     )
     .mutation(async ({ input }) => {
+      await ensureWalletAddressesTable();
       const db = getDb();
       const { id, ...data } = input;
       const updateData: Record<string, any> = {};
@@ -83,6 +107,7 @@ export const walletAddressRouter = createRouter({
   delete: adminQuery
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
+      await ensureWalletAddressesTable();
       const db = getDb();
       await db.delete(walletAddresses).where(eq(walletAddresses.id, input.id));
       return { success: true };

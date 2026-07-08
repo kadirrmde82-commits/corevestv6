@@ -39,6 +39,7 @@ export default function Account() {
   });
   const { data: walletAddresses = [] } = trpc.walletAddress.list.useQuery(undefined, {
     staleTime: 1000 * 60,
+    retry: 2,
   });
   const { data: deposits = [] } = trpc.deposit.list.useQuery(undefined, {
     staleTime: 1000 * 10,
@@ -375,6 +376,7 @@ export default function Account() {
   const currentTicket = tickets.find((t: any) => t.id === activeTicket);
 
   const selectedCrypto = walletAddresses.find((c: any) => c.key === depositCrypto) || walletAddresses[0] || { key: 'trc20', label: 'USDT (TRC20)', address: '', color: '#FF060A' };
+  const hasDepositAddress = Boolean(selectedCrypto?.address);
   const currentPublicId = String((profile as any)?.publicId ?? (profile as any)?.userId ?? '');
 
   useEffect(() => {
@@ -384,6 +386,7 @@ export default function Account() {
   }, [currentPublicId, depositTargetId]);
 
   const handleCopyAddress = () => {
+    if (!selectedCrypto.address) return;
     navigator.clipboard.writeText(selectedCrypto.address);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -411,6 +414,10 @@ export default function Account() {
     }
     if (!Number.isInteger(targetPublicId) || targetPublicId <= 0) {
       setDepositError('Üye ID hatalı. Lütfen Hesabım bölümündeki ID formatında tekrar yazın.');
+      return;
+    }
+    if (!hasDepositAddress) {
+      setDepositError('YatÄ±rÄ±m adresi bulunamadÄ±. LÃ¼tfen daha sonra tekrar deneyin veya destek ile iletiÅŸime geÃ§in.');
       return;
     }
     if (depositMutation.isPending) return;
@@ -528,7 +535,11 @@ export default function Account() {
               <div className="glass-card">
                 <label className="label-text block mb-2">{t('accountExtra.deposit.cryptoSelect')}</label>
                 {walletAddresses.length === 0 ? (
-                  <p className="text-xs" style={{ color: '#5a6a7a' }}>{t('accountExtra.deposit.walletsLoading')}</p>
+                  <div className="rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}>
+                    <p className="text-xs font-bold" style={{ color: '#ef4444' }}>
+                      YatÄ±rÄ±m adresi bulunamadÄ±. Admin panelinden CÃ¼zdan Adresleri bÃ¶lÃ¼mÃ¼ne en az 1 aktif adres eklenmelidir.
+                    </p>
+                  </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
                     {walletAddresses.map((c: any) => (
@@ -575,7 +586,7 @@ export default function Account() {
                 </div>
               )}
 
-              <button onClick={handleDeposit} className="btn-primary" disabled={!depositAmount || !depositEmail.trim() || !depositTargetId || depositMutation.isPending} style={{ opacity: (!depositAmount || !depositEmail.trim() || !depositTargetId || depositMutation.isPending) ? 0.4 : 1 }}>
+              <button onClick={handleDeposit} className="btn-primary" disabled={!depositAmount || !depositEmail.trim() || !depositTargetId || !hasDepositAddress || depositMutation.isPending} style={{ opacity: (!depositAmount || !depositEmail.trim() || !depositTargetId || !hasDepositAddress || depositMutation.isPending) ? 0.4 : 1 }}>
                 {depositMutation.isPending ? t('accountExtra.deposit.sending') : t('accountExtra.deposit.confirm')}
               </button>
             </div>
