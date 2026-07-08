@@ -259,9 +259,9 @@ app.get("/api/db-health", async (c) => {
       db.execute(sql`SELECT 1`),
       new Promise((_, reject) => setTimeout(() => reject(new Error("Database healthcheck timed out after 5s")), 5_000)),
     ]);
-    return c.json({ ok: true, service: "corevest-db", ms: Date.now() - startedAt, ts: Date.now() });
+    return c.json({ ok: true, service: "corevest-db", ms: Date.now() - startedAt, source: env.databaseUrlSource, host: env.databaseHost, ts: Date.now() });
   } catch (error) {
-    return c.json({ ok: false, service: "corevest-db", ms: Date.now() - startedAt, error: errorMessage(error) }, 500);
+    return c.json({ ok: false, service: "corevest-db", ms: Date.now() - startedAt, source: env.databaseUrlSource, host: env.databaseHost, error: errorMessage(error) }, 500);
   }
 });
 
