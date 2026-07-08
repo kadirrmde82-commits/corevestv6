@@ -251,6 +251,17 @@ app.get("/api/site-assets/:key", async (c) => {
 
 app.get("/api/health", (c) => c.json({ ok: true, service: "corevest", ts: Date.now() }));
 
+app.get("/api/db-health", async (c) => {
+  const startedAt = Date.now();
+  try {
+    const db = getDb();
+    await db.execute(sql`SELECT 1`);
+    return c.json({ ok: true, service: "corevest-db", ms: Date.now() - startedAt, ts: Date.now() });
+  } catch (error) {
+    return c.json({ ok: false, service: "corevest-db", ms: Date.now() - startedAt, error: errorMessage(error) }, 500);
+  }
+});
+
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
 export default app;

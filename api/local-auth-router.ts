@@ -197,16 +197,15 @@ export const localAuthRouter = createRouter({
         });
       }
 
-      // Update last sign in
-      await db
-        .update(users)
-        .set({ lastSignInAt: new Date() })
-        .where(eq(users.id, user.id));
-
       const ipAddress = ipFromRequest(ctx.req);
       const userAgent = ctx.req.headers.get("user-agent") || null;
       void (async () => {
         try {
+          await db
+            .update(users)
+            .set({ lastSignInAt: new Date() })
+            .where(eq(users.id, user.id));
+
           const geo = await getGeoFromRequest(ctx.req, ipAddress);
           await db.insert(userLoginEvents).values({
             userId: user.id,
