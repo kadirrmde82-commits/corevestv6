@@ -5,7 +5,9 @@ import { getDb } from "./queries/connection";
 import { walletAddresses } from "../db/schema";
 import { sql } from "drizzle-orm";
 
-async function ensureWalletAddressesTable() {
+let walletAddressesTablePromise: Promise<void> | null = null;
+
+async function runWalletAddressesTableCheck() {
   const db = getDb();
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS wallet_addresses (
@@ -22,6 +24,16 @@ async function ensureWalletAddressesTable() {
       UNIQUE KEY \`wallet_addresses_key_unique\` (\`key\`)
     )
   `);
+}
+
+async function ensureWalletAddressesTable() {
+  if (!walletAddressesTablePromise) {
+    walletAddressesTablePromise = runWalletAddressesTableCheck().catch((error) => {
+      walletAddressesTablePromise = null;
+      throw error;
+    });
+  }
+  return walletAddressesTablePromise;
 }
 
 export const walletAddressRouter = createRouter({

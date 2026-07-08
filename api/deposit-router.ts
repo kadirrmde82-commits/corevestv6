@@ -8,7 +8,9 @@ import { capAmount, getVipInfo, getVipLevel } from "./vip-config";
 import { logAdminActivity } from "./admin-system-router";
 import { getQualifiedTier1ReferralCount } from "./referral-qualification";
 
-async function ensureDepositCompatibility() {
+let depositCompatibilityPromise: Promise<void> | null = null;
+
+async function runDepositCompatibilityChecks() {
   const db = getDb();
   const tryExecute = async (query: ReturnType<typeof sql>) => {
     try {
@@ -21,6 +23,16 @@ async function ensureDepositCompatibility() {
   await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`cryptoType\` enum('trc20','sol','trx','eth') NOT NULL DEFAULT 'trc20'`);
   await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`userNote\` varchar(255)`);
   await tryExecute(sql`ALTER TABLE users ADD COLUMN \`publicId\` int`);
+}
+
+async function ensureDepositCompatibility() {
+  if (!depositCompatibilityPromise) {
+    depositCompatibilityPromise = runDepositCompatibilityChecks().catch((error) => {
+      depositCompatibilityPromise = null;
+      throw error;
+    });
+  }
+  return depositCompatibilityPromise;
 }
 
 export const depositRouter = createRouter({

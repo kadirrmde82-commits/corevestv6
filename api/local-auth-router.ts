@@ -202,15 +202,22 @@ export const localAuthRouter = createRouter({
         .where(eq(users.id, user.id));
 
       const ipAddress = ipFromRequest(ctx.req);
-      const geo = await getGeoFromRequest(ctx.req, ipAddress);
-      await db.insert(userLoginEvents).values({
-        userId: user.id,
-        ipAddress,
-        country: geo.country,
-        city: geo.city,
-        userAgent: ctx.req.headers.get("user-agent") || null,
-        success: 1,
-      });
+      const userAgent = ctx.req.headers.get("user-agent") || null;
+      void (async () => {
+        try {
+          const geo = await getGeoFromRequest(ctx.req, ipAddress);
+          await db.insert(userLoginEvents).values({
+            userId: user.id,
+            ipAddress,
+            country: geo.country,
+            city: geo.city,
+            userAgent,
+            success: 1,
+          });
+        } catch (error) {
+          console.warn("Login event could not be saved", error);
+        }
+      })();
 
       const token = await signLocalToken(user.id);
 

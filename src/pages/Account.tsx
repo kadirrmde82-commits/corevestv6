@@ -34,7 +34,7 @@ export default function Account() {
 
   const { data: profile } = trpc.profile.me.useQuery(undefined, {
     staleTime: 1000 * 10,
-    refetchInterval: 1000 * 10,
+    refetchInterval: 1000 * 30,
     retry: false,
   });
   const { data: walletAddresses = [] } = trpc.walletAddress.list.useQuery(undefined, {
@@ -43,32 +43,32 @@ export default function Account() {
   });
   const { data: deposits = [] } = trpc.deposit.list.useQuery(undefined, {
     staleTime: 1000 * 10,
-    refetchInterval: 1000 * 10,
+    refetchInterval: view === 'deposit' || historyTab === 'deposits' ? 1000 * 30 : false,
     retry: false,
   });
   const { data: withdrawals = [] } = trpc.withdrawal.list.useQuery(undefined, {
     staleTime: 1000 * 10,
-    refetchInterval: 1000 * 10,
+    refetchInterval: view === 'withdraw' || historyTab === 'withdrawals' ? 1000 * 30 : false,
     retry: false,
   });
   const { data: tickets = [] } = trpc.ticket.list.useQuery(undefined, {
     staleTime: 1000 * 10,
-    refetchInterval: 1000 * 10,
+    refetchInterval: view === 'support' ? 1000 * 20 : false,
     retry: false,
   });
   const { data: wheelHistory = [] } = trpc.wheel.list.useQuery(undefined, {
     staleTime: 1000 * 10,
-    refetchInterval: 1000 * 10,
+    refetchInterval: historyTab === 'bonuses' ? 1000 * 30 : false,
     retry: false,
   });
   const { data: referralEarnings = [] } = trpc.referral.earningsList.useQuery(undefined, {
     staleTime: 1000 * 10,
-    refetchInterval: 1000 * 10,
+    refetchInterval: historyTab === 'referrals' ? 1000 * 30 : false,
     retry: false,
   });
   const { data: clickEarnings = [] } = trpc.click.history.useQuery(undefined, {
     staleTime: 1000 * 10,
-    refetchInterval: 1000 * 10,
+    refetchInterval: historyTab === 'clicks' ? 1000 * 30 : false,
     retry: false,
   });
 
