@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { clickEarnings, profiles, referralEarnings, vipBonuses, wheelSpins } from "@db/schema";
+import { clickEarnings, deposits, profiles, referralEarnings, vipBonuses, wheelSpins } from "@db/schema";
 
 // Generate unique referral code
 function generateReferralCode(): string {
@@ -52,6 +52,14 @@ async function getEarningsSummary(userId: number) {
   );
 }
 
+async function getApprovedInvestmentTotal(userId: number) {
+  const db = getDb();
+  const approvedDeposits = await db.query.deposits.findMany({
+    where: and(eq(deposits.userId, userId), eq(deposits.status, "approved")),
+  });
+  return approvedDeposits.reduce((sum, deposit) => sum + Number(deposit.amount || 0), 0);
+}
+
 export const profileRouter = createRouter({
   // Get current user's profile + user id
   me: authedQuery.query(async ({ ctx }) => {
@@ -73,8 +81,12 @@ export const profileRouter = createRouter({
       return { ...newProfile!, userId: ctx.user.id, publicId: ctx.user.publicId, email: ctx.user.email, earningsSummary: { today: 0, yesterday: 0, total: 0 } };
     }
 
-    const earningsSummary = await getEarningsSummary(ctx.user.id);
-    return { ...profile, userId: ctx.user.id, publicId: ctx.user.publicId, email: ctx.user.email, earningsSummary };
+    const [earningsSummary, approvedInvestment] = await Promise.all([
+      getEarningsSummary(ctx.user.id),
+      getApprovedInvestmentTotal(ctx.user.id),
+    ]);
+    const effectiveInvestment = Math.max(Number(profile.investment || 0), approvedInvestment);
+    return { ...profile, investment: String(effectiveInvestment), userId: ctx.user.id, publicId: ctx.user.publicId, email: ctx.user.email, earningsSummary };
   }),
 
   // Update profile (balance, investment, etc.)

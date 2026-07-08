@@ -385,12 +385,11 @@ export default function Account() {
     }
   }, [currentPublicId, depositTargetId]);
 
-  const handleCopyAddress = () => {
-    if (!selectedCrypto.address) return;
-    navigator.clipboard.writeText(selectedCrypto.address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  useEffect(() => {
+    if (walletAddresses.length > 0 && !walletAddresses.some((c: any) => c.key === depositCrypto)) {
+      setDepositCrypto(walletAddresses[0].key);
+    }
+  }, [walletAddresses, depositCrypto]);
 
   const handleDeposit = () => {
     setDepositError('');
@@ -509,7 +508,7 @@ export default function Account() {
           ) : (
             <div className="grid gap-3">
               {/* Email (required) */}
-              <div className="glass-card">
+              <div className="hidden">
                 <label className="label-text block mb-2">{t('accountExtra.emailAddress')} <span style={{ color: '#ef4444' }}>*</span></label>
                 <input type="email" value={depositEmail} onChange={(e) => { setDepositEmail(e.target.value); setDepositError(''); }} placeholder={t('accountExtra.emailPlaceholder')} className="glass-input" style={{ minHeight: '46px' }} required />
               </div>
@@ -532,7 +531,7 @@ export default function Account() {
               </div>
 
               {/* Crypto Selector */}
-              <div className="glass-card">
+              <div className="hidden">
                 <label className="label-text block mb-2">{t('accountExtra.deposit.cryptoSelect')}</label>
                 {walletAddresses.length === 0 ? (
                   <div className="rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}>
@@ -559,18 +558,54 @@ export default function Account() {
               </div>
 
               {/* Wallet Address */}
-              <div className="glass-card" style={{ border: `1px solid ${selectedCrypto.color}30`, background: `${selectedCrypto.color}08` }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="rounded-full" style={{ width: '10px', height: '10px', background: selectedCrypto.color }} />
-                  <span className="text-sm font-bold" style={{ color: selectedCrypto.color }}>{selectedCrypto.label}</span>
+              {walletAddresses.length === 0 ? (
+                <div className="rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}>
+                  <p className="text-xs font-bold" style={{ color: '#ef4444' }}>
+                    Yatırım adresi bulunamadı. Admin panelinden Cüzdan Adresleri bölümüne en az 1 adres eklenmelidir.
+                  </p>
                 </div>
-                <p className="text-xs mb-3" style={{ color: '#8fa5b8' }}>{t('accountExtra.deposit.sendToAddress')}</p>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 text-xs font-mono truncate rounded-xl px-3 py-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(248,251,255,0.1)', color: '#c8d6e5' }}>{selectedCrypto.address}</div>
-                  <button onClick={handleCopyAddress} className="btn-secondary" style={{ minHeight: '42px', width: '42px', padding: 0 }}>{copied ? <Check size={16} /> : <Copy size={16} />}</button>
+              ) : (
+                <div className="grid gap-3">
+                  {walletAddresses.map((c: any) => {
+                    const isSelected = depositCrypto === c.key;
+                    return (
+                      <button
+                        key={c.key}
+                        type="button"
+                        onClick={() => { setDepositCrypto(c.key); setCopied(false); setDepositError(''); }}
+                        className="glass-card text-left transition-all"
+                        style={{ border: `1px solid ${isSelected ? c.color : 'rgba(248,251,255,0.08)'}`, background: isSelected ? `${c.color}10` : 'rgba(255,255,255,0.03)' }}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="rounded-full" style={{ width: '10px', height: '10px', background: c.color }} />
+                          <span className="text-sm font-bold" style={{ color: c.color }}>{c.label}</span>
+                          {isSelected && <span className="ml-auto text-[10px] font-extrabold px-2 py-1 rounded-full" style={{ background: `${c.color}18`, color: c.color }}>Seçili</span>}
+                        </div>
+                        <p className="text-xs mb-3" style={{ color: '#8fa5b8' }}>{t('accountExtra.deposit.sendToAddress')}</p>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 text-xs font-mono truncate rounded-xl px-3 py-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(248,251,255,0.1)', color: '#c8d6e5' }}>{c.address}</div>
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              navigator.clipboard.writeText(c.address);
+                              setDepositCrypto(c.key);
+                              setCopied(true);
+                              setTimeout(() => setCopied(false), 2000);
+                            }}
+                            className="btn-secondary grid place-items-center"
+                            style={{ minHeight: '42px', width: '42px', padding: 0 }}
+                          >
+                            {copied && isSelected ? <Check size={16} /> : <Copy size={16} />}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                  {copied && <p className="text-xs text-center" style={{ color: '#10b981' }}>{t('accountExtra.copied')}</p>}
                 </div>
-                {copied && <p className="text-xs mt-2 text-center" style={{ color: '#10b981' }}>{t('accountExtra.copied')}</p>}
-              </div>
+              )}
 
               {/* Warning Message */}
               <div className="rounded-xl p-3" style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)' }}>

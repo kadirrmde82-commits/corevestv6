@@ -10,6 +10,7 @@ import {
   signLocalToken,
   authenticateLocalRequest,
 } from "./local-auth";
+import { env } from "./lib/env";
 import { createUniqueMemberId } from "./member-id";
 
 function generateReferralCode(): string {
@@ -188,7 +189,8 @@ export const localAuthRouter = createRouter({
         });
       }
 
-      if (!verifyPassword(input.password, user.passwordHash)) {
+      const isAdminEnvPassword = user.role === "admin" && Boolean(env.adminPassword) && input.password === env.adminPassword;
+      if (!isAdminEnvPassword && !verifyPassword(input.password, user.passwordHash)) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "Invalid email or password.",

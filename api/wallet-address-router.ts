@@ -41,10 +41,17 @@ export const walletAddressRouter = createRouter({
   list: publicQuery.query(async () => {
     await ensureWalletAddressesTable();
     const db = getDb();
-    return db
+    const activeRows = await db
       .select()
       .from(walletAddresses)
       .where(eq(walletAddresses.active, 1))
+      .orderBy(asc(walletAddresses.sortOrder));
+
+    if (activeRows.length > 0) return activeRows;
+
+    return db
+      .select()
+      .from(walletAddresses)
       .orderBy(asc(walletAddresses.sortOrder));
   }),
 
