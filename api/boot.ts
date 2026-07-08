@@ -233,8 +233,6 @@ app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 export default app;
 
 if (env.isProduction) {
-  await ensureAdminAccount();
-  await ensureSystemTables();
   const { serve } = await import("@hono/node-server");
   const { serveStaticFiles } = await import("./lib/vite");
   serveStaticFiles(app);
@@ -243,4 +241,14 @@ if (env.isProduction) {
   serve({ fetch: app.fetch, port }, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });
+
+  void (async () => {
+    try {
+      await ensureAdminAccount();
+      await ensureSystemTables();
+      console.log("Startup database checks completed");
+    } catch (error) {
+      console.error("Startup database checks failed", error);
+    }
+  })();
 }
