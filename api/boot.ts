@@ -244,7 +244,11 @@ if (env.isProduction) {
 
   void (async () => {
     try {
-      await ensureAdminAccount();
+      if (env.adminPassword) {
+        await ensureAdminAccount();
+      } else {
+        console.error("ADMIN_PASSWORD is not configured; skipping admin bootstrap");
+      }
       await ensureSystemTables();
       console.log("Startup database checks completed");
     } catch (error) {
