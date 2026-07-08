@@ -9,7 +9,7 @@ function optional(name: string, fallback = ""): string {
 }
 
 function databaseUrl(): string {
-  const value = process.env.DATABASE_URL || process.env.MYSQL_URL;
+  const value = process.env.MYSQL_URL || process.env.DATABASE_URL;
   if (!value && process.env.NODE_ENV === "production") {
     console.error("Missing environment variable: DATABASE_URL or MYSQL_URL");
   }

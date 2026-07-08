@@ -255,7 +255,10 @@ app.get("/api/db-health", async (c) => {
   const startedAt = Date.now();
   try {
     const db = getDb();
-    await db.execute(sql`SELECT 1`);
+    await Promise.race([
+      db.execute(sql`SELECT 1`),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Database healthcheck timed out after 5s")), 5_000)),
+    ]);
     return c.json({ ok: true, service: "corevest-db", ms: Date.now() - startedAt, ts: Date.now() });
   } catch (error) {
     return c.json({ ok: false, service: "corevest-db", ms: Date.now() - startedAt, error: errorMessage(error) }, 500);
