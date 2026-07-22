@@ -16,7 +16,6 @@ export default function BottomNav({ onTabPress }: { onTabPress?: () => void }) {
     if (path === '/quantify') {
       utils.click.status.prefetch();
       utils.profile.me.prefetch();
-      utils.referral.count.prefetch();
     }
   };
 

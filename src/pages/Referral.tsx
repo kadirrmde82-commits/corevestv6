@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Copy, Check, Users, DollarSign, Link2, UserPlus, QrCode, Download, Share2 } from 'lucide-react';
 import * as QRCode from 'qrcode';
@@ -11,31 +11,25 @@ export default function Referral() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState('');
-  const utils = trpc.useUtils();
 
   const { data: profile } = trpc.profile.me.useQuery(undefined, {
-    staleTime: 1000 * 30,
-    refetchInterval: 1000 * 60,
+    staleTime: 1000 * 10,
+    refetchInterval: 1000 * 30,
     retry: false,
   });
-  const { data: overview, refetch: refetchOverview } = trpc.referral.overview.useQuery(undefined, {
-    staleTime: 1000 * 30,
-    refetchInterval: 1000 * 15,
+  const { data: overview } = trpc.referral.overview.useQuery(undefined, {
+    staleTime: 1000 * 5,
+    refetchInterval: 1000 * 10,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
     retry: false,
   });
 
-  useEffect(() => {
-    refetchOverview();
-    utils.referral.count.invalidate();
-    utils.referral.myNetwork.invalidate();
-    utils.referral.earningsSummary.invalidate();
-  }, [refetchOverview, utils]);
-
   const myCode = profile?.referralCode || 'CV-----';
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const referralLink = `${baseUrl}/#/register?ref=${myCode}`;
+  const referralLink = useMemo(() => {
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${baseUrl}/#/register?ref=${myCode}`;
+  }, [myCode]);
 
   useEffect(() => {
     QRCode.toDataURL(referralLink, {

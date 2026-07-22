@@ -26,7 +26,7 @@ function createBenefitItem(index = Date.now()) {
 }
 
 function getBenefitRefreshDelay() {
-  return (Math.floor(Math.random() * (120 - 60 + 1)) + 60) * 1000;
+  return (Math.floor(Math.random() * (40 - 30 + 1)) + 30) * 1000;
 }
 
 export default function Home() {

@@ -56,7 +56,6 @@ export default function Layout({ children }: LayoutProps) {
         utils.wheel.list.invalidate(),
         utils.click.status.invalidate(),
         utils.click.history.invalidate(),
-        utils.referral.count.invalidate(),
         utils.referral.earningsList.invalidate(),
         utils.referral.overview.invalidate(),
       ]);

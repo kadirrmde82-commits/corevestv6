@@ -33,6 +33,7 @@ export default function Quantify() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedVipLevel, setSelectedVipLevel] = useState<number | null>(null);
   const [isProcessingTrade, setIsProcessingTrade] = useState(false);
+  const [isCompletingTrade, setIsCompletingTrade] = useState(false);
   const [processingSecondsLeft, setProcessingSecondsLeft] = useState(0);
   const [lastClickEarned, setLastClickEarned] = useState(0);
   const processingTimeoutRef = useRef<number | null>(null);
@@ -50,12 +51,6 @@ export default function Quantify() {
     refetchInterval: 1000 * 15,
     retry: false,
   });
-  const { data: referralCount } = trpc.referral.count.useQuery(undefined, {
-    staleTime: 1000 * 60,
-    refetchInterval: 1000 * 30,
-    retry: false,
-  });
-
   const clearProcessingTimers = useCallback(() => {
     if (processingTimeoutRef.current) window.clearTimeout(processingTimeoutRef.current);
     if (processingIntervalRef.current) window.clearInterval(processingIntervalRef.current);
@@ -69,10 +64,10 @@ export default function Quantify() {
       utils.profile.me.invalidate();
       utils.click.status.invalidate();
       utils.click.history.invalidate();
-      utils.referral.count.invalidate();
       utils.referral.earningsList.invalidate();
       utils.referral.overview.invalidate();
       setIsProcessingTrade(false);
+      setIsCompletingTrade(false);
       setProcessingSecondsLeft(0);
       setLastClickEarned(Number(result.earned || 0));
       setShowSuccess(true);
@@ -82,6 +77,7 @@ export default function Quantify() {
       clearProcessingTimers();
       utils.click.status.invalidate();
       setIsProcessingTrade(false);
+      setIsCompletingTrade(false);
       setProcessingSecondsLeft(0);
       alert(error.message || t('quantifyExtra.processingError'));
     },
@@ -94,7 +90,7 @@ export default function Quantify() {
   const dailyEarning = clickStatus?.dailyEarning || 0;
   const dailyEarningMin = clickStatus?.dailyEarningMin ?? dailyEarning;
   const dailyEarningMax = clickStatus?.dailyEarningMax ?? dailyEarning;
-  const activeRefs = clickStatus?.activeRefs ?? referralCount?.tier1 ?? 0;
+  const activeRefs = clickStatus?.activeRefs ?? 0;
   const canClick = clickStatus?.canClick || false;
   const balanceCapReached = clickStatus?.balanceCapReached || false;
   const balanceCap = clickStatus?.balanceCap || 0;
@@ -136,17 +132,19 @@ export default function Quantify() {
     const processingEndsAt = Date.now() + processingSeconds * 1000;
     setShowSuccess(false);
     setIsProcessingTrade(true);
+    setIsCompletingTrade(false);
     setProcessingSecondsLeft(processingSeconds);
 
     processingIntervalRef.current = window.setInterval(() => {
       const secondsLeft = Math.ceil((processingEndsAt - Date.now()) / 1000);
-      setProcessingSecondsLeft(Math.max(1, secondsLeft));
+      setProcessingSecondsLeft(Math.max(0, secondsLeft));
     }, 1000);
 
     processingTimeoutRef.current = window.setTimeout(() => {
       if (processingIntervalRef.current) window.clearInterval(processingIntervalRef.current);
       processingIntervalRef.current = null;
-      setProcessingSecondsLeft(1);
+      setProcessingSecondsLeft(0);
+      setIsCompletingTrade(true);
       clickMutation.mutate({});
     }, processingSeconds * 1000);
   }, [canClick, clearProcessingTimers, clickMutation, isProcessingTrade]);
@@ -224,7 +222,9 @@ export default function Quantify() {
                   <p className="text-sm font-extrabold" style={{ color: '#FFD700' }}>{t('quantifyExtra.processingTitle')}</p>
                   <p className="text-xs mt-1" style={{ color: '#8fa5b8' }}>{t('quantifyExtra.processingDescription')}</p>
                   <p className="text-xs font-bold mt-2" style={{ color: '#10b981' }}>
-                    {t('quantifyExtra.processingSecondsLeft', { seconds: processingSecondsLeft })}
+                    {isCompletingTrade
+                      ? t('quantifyExtra.processingCompleting', 'İşlem sonucu onaylanıyor...')
+                      : t('quantifyExtra.processingSecondsLeft', { seconds: processingSecondsLeft })}
                   </p>
                 </div>
               )}
