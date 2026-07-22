@@ -36,6 +36,7 @@ export default function Quantify() {
   const [isCompletingTrade, setIsCompletingTrade] = useState(false);
   const [processingSecondsLeft, setProcessingSecondsLeft] = useState(0);
   const [lastClickEarned, setLastClickEarned] = useState(0);
+  const [tradeError, setTradeError] = useState('');
   const processingTimeoutRef = useRef<number | null>(null);
   const processingIntervalRef = useRef<number | null>(null);
 
@@ -59,27 +60,42 @@ export default function Quantify() {
   }, []);
 
   const clickMutation = trpc.click.record.useMutation({
+    retry: (failureCount, error) => {
+      const message = error?.message?.toLowerCase?.() || '';
+      return failureCount < 2 && (message.includes('fetch') || message.includes('network') || message.includes('timeout'));
+    },
+    retryDelay: (attemptIndex) => Math.min(1200 * (attemptIndex + 1), 3000),
     onSuccess: (result) => {
       clearProcessingTimers();
-      utils.profile.me.invalidate();
-      utils.click.status.invalidate();
-      utils.click.history.invalidate();
-      utils.referral.earningsList.invalidate();
-      utils.referral.overview.invalidate();
+      Promise.allSettled([
+        utils.profile.me.invalidate(),
+        utils.click.status.invalidate(),
+        utils.click.history.invalidate(),
+        utils.referral.earningsList.invalidate(),
+        utils.referral.overview.invalidate(),
+      ]);
       setIsProcessingTrade(false);
       setIsCompletingTrade(false);
       setProcessingSecondsLeft(0);
+      setTradeError('');
       setLastClickEarned(Number(result.earned || 0));
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     },
     onError: (error) => {
       clearProcessingTimers();
-      utils.click.status.invalidate();
+      Promise.allSettled([
+        utils.profile.me.invalidate(),
+        utils.click.status.invalidate(),
+      ]);
       setIsProcessingTrade(false);
       setIsCompletingTrade(false);
       setProcessingSecondsLeft(0);
-      alert(error.message || t('quantifyExtra.processingError'));
+      const rawMessage = error.message || '';
+      const isFetchError = rawMessage.toLowerCase().includes('fetch') || rawMessage.toLowerCase().includes('network');
+      setTradeError(isFetchError
+        ? 'Bağlantı kısa süreli koptu. Lütfen birkaç saniye sonra tekrar deneyin.'
+        : rawMessage || t('quantifyExtra.processingError'));
     },
   });
 
@@ -131,6 +147,7 @@ export default function Quantify() {
     const processingSeconds = Math.floor(Math.random() * (PROCESSING_MAX_SECONDS - PROCESSING_MIN_SECONDS + 1)) + PROCESSING_MIN_SECONDS;
     const processingEndsAt = Date.now() + processingSeconds * 1000;
     setShowSuccess(false);
+    setTradeError('');
     setIsProcessingTrade(true);
     setIsCompletingTrade(false);
     setProcessingSecondsLeft(processingSeconds);
@@ -229,6 +246,11 @@ export default function Quantify() {
                 </div>
               )}
               {showSuccess && <p className="mt-3 text-sm font-semibold" style={{ color: '#10b981' }}>{t('quantifyExtra.processingSuccess')} +${(lastClickEarned || dailyEarning).toFixed(2)} {t('quantifyExtra.earned')}</p>}
+              {tradeError && (
+                <div className="mt-4 mx-auto rounded-2xl p-3" style={{ maxWidth: '340px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                  <p className="text-xs font-bold" style={{ color: '#ef4444' }}>{tradeError}</p>
+                </div>
+              )}
             </>
           ) : (
             <>

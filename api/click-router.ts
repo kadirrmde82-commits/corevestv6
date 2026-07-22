@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { clickEarnings, deposits, profiles, referrals, referralEarnings } from "@db/schema";
@@ -67,10 +67,11 @@ async function getTier1ReferralCount(userId: number) {
 
 async function getApprovedInvestmentTotal(userId: number): Promise<number> {
   const db = getDb();
-  const approvedDeposits = await db.query.deposits.findMany({
-    where: and(eq(deposits.userId, userId), eq(deposits.status, "approved")),
-  });
-  return approvedDeposits.reduce((sum, deposit) => sum + Number(deposit.amount || 0), 0);
+  const rows = await db
+    .select({ total: sql<string>`COALESCE(SUM(${deposits.amount}), 0)` })
+    .from(deposits)
+    .where(and(eq(deposits.userId, userId), eq(deposits.status, "approved")));
+  return Number(rows[0]?.total ?? 0);
 }
 
 function normalizeVipLevel(level: unknown): number {

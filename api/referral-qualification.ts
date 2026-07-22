@@ -1,22 +1,22 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { deposits, referrals } from "@db/schema";
 import { getDb } from "./queries/connection";
 
 export async function getQualifiedTier1ReferralCount(userId: number) {
   const db = getDb();
-  const directReferrals = await db.query.referrals.findMany({
-    where: and(eq(referrals.referrerUserId, userId), eq(referrals.tier, 1)),
-    orderBy: [desc(referrals.createdAt)],
-  });
+  const qualifiedRows = await db
+    .select({
+      referredUserId: referrals.referredUserId,
+      totalApproved: sql<string>`COALESCE(SUM(${deposits.amount}), 0)`,
+    })
+    .from(referrals)
+    .innerJoin(
+      deposits,
+      and(eq(deposits.userId, referrals.referredUserId), eq(deposits.status, "approved"))
+    )
+    .where(and(eq(referrals.referrerUserId, userId), eq(referrals.tier, 1)))
+    .groupBy(referrals.referredUserId)
+    .having(sql`COALESCE(SUM(${deposits.amount}), 0) >= 100`);
 
-  let qualifiedCount = 0;
-  for (const referral of directReferrals) {
-    const approvedDeposits = await db.query.deposits.findMany({
-      where: and(eq(deposits.userId, referral.referredUserId), eq(deposits.status, "approved")),
-    });
-    const totalApproved = approvedDeposits.reduce((sum, deposit) => sum + Number(deposit.amount), 0);
-    if (totalApproved >= 100) qualifiedCount += 1;
-  }
-
-  return qualifiedCount;
+  return qualifiedRows.length;
 }
