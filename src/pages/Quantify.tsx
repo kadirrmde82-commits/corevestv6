@@ -36,6 +36,8 @@ export default function Quantify() {
   const [processingSecondsLeft, setProcessingSecondsLeft] = useState(0);
   const [lastClickEarned, setLastClickEarned] = useState(0);
   const [tradeError, setTradeError] = useState('');
+  const [localClickLocked, setLocalClickLocked] = useState(false);
+  const [localClickUnlockAt, setLocalClickUnlockAt] = useState(0);
   const processingTimeoutRef = useRef<number | null>(null);
   const processingIntervalRef = useRef<number | null>(null);
   const finishSuccessTimeoutRef = useRef<number | null>(null);
@@ -76,6 +78,8 @@ export default function Quantify() {
     setProcessingSecondsLeft(0);
     setTradeError('');
     setLastClickEarned(Number(result.earned || 0));
+    setLocalClickLocked(true);
+    setLocalClickUnlockAt(Date.now() + getTimeRemainingTR().total);
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
   }, [clearProcessingTimers, utils]);
@@ -121,13 +125,14 @@ export default function Quantify() {
   const dailyEarningMax = clickStatus?.dailyEarningMax ?? dailyEarning;
   const activeRefs = clickStatus?.activeRefs ?? 0;
   const canClick = clickStatus?.canClick || false;
+  const canClickNow = canClick && !localClickLocked;
   const balanceCapReached = clickStatus?.balanceCapReached || false;
   const balanceCap = clickStatus?.balanceCap || 0;
   const investment = Number(profile?.investment || 0);
   const blockedReason = (clickStatus as any)?.blockedReason || '';
   const blockedReasonCode = (clickStatus as any)?.blockedReasonCode || '';
   const minimumInvestment = Number((clickStatus as any)?.minimumInvestment || 50);
-  const showEligibilityWarning = !canClick && !balanceCapReached && blockedReason && blockedReasonCode !== 'cooldown';
+  const showEligibilityWarning = !canClickNow && !localClickLocked && !balanceCapReached && blockedReason && blockedReasonCode !== 'cooldown';
   const earningsSummary = (profile as any)?.earningsSummary ?? { today: 0, yesterday: 0, total: Number((profile as any)?.totalEarned || 0) };
   const totalBalance = Number((profile as any)?.balance || 0);
 
@@ -147,13 +152,20 @@ export default function Quantify() {
   }, []);
 
   useEffect(() => {
+    if (clickStatus?.canClick && (!localClickUnlockAt || Date.now() >= localClickUnlockAt)) {
+      setLocalClickLocked(false);
+      setLocalClickUnlockAt(0);
+    }
+  }, [clickStatus?.canClick, clickStatus?.lastClickAt, localClickUnlockAt]);
+
+  useEffect(() => {
     return () => {
       clearProcessingTimers();
     };
   }, [clearProcessingTimers]);
 
   const handleClick = useCallback(() => {
-    if (!canClick || isProcessingTrade || clickMutation.isPending) return;
+    if (!canClickNow || isProcessingTrade || clickMutation.isPending) return;
 
     clearProcessingTimers();
 
@@ -179,7 +191,7 @@ export default function Quantify() {
     }, processingSeconds * 1000);
 
     clickMutation.mutate({});
-  }, [canClick, clearProcessingTimers, clickMutation, isProcessingTrade]);
+  }, [canClickNow, clearProcessingTimers, clickMutation, isProcessingTrade]);
 
   if (!profile) return null;
 
@@ -222,7 +234,7 @@ export default function Quantify() {
           </div>
         </div>
 
-        <div className="glass-card text-center py-8" style={{ background: canClick ? 'radial-gradient(circle at center, rgba(255,215,0,0.12), rgba(3,8,16,0.6))' : currentVipLevel === 0 ? 'rgba(3, 8, 16, 0.4)' : 'rgba(3, 8, 16, 0.52)', borderColor: canClick ? 'rgba(255,215,0,0.35)' : 'rgba(248,251,255,0.08)' }}>
+        <div className="glass-card text-center py-8" style={{ background: canClickNow ? 'radial-gradient(circle at center, rgba(255,215,0,0.12), rgba(3,8,16,0.6))' : currentVipLevel === 0 ? 'rgba(3, 8, 16, 0.4)' : 'rgba(3, 8, 16, 0.52)', borderColor: canClickNow ? 'rgba(255,215,0,0.35)' : 'rgba(248,251,255,0.08)' }}>
           {showEligibilityWarning || currentVipLevel === 0 ? (
             <>
               <div className="mx-auto mb-4 grid place-items-center rounded-full" style={{ width: '72px', height: '72px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(248,251,255,0.06)' }}><MousePointerClick size={32} style={{ color: '#3a4a5a' }} /></div>
@@ -242,7 +254,7 @@ export default function Quantify() {
               <p className="text-sm font-bold mb-2 text-white">{t('quantifyExtra.balanceCapReached')}</p>
               <p className="text-xs" style={{ color: '#8fa5b8' }}>{t('quantifyExtra.balanceCapReachedDesc', { amount: Number(balanceCap).toLocaleString() })}</p>
             </>
-          ) : canClick ? (
+          ) : canClickNow ? (
             <>
               <div className="mx-auto mb-4 grid place-items-center rounded-full animate-glow" style={{ width: '72px', height: '72px', background: 'linear-gradient(135deg, #FFD700, #FFA500)' }}><MousePointerClick size={32} color="#04070d" /></div>
               <p className="text-sm mb-3" style={{ color: '#8fa5b8' }}>{t('quantifyExtra.dailyEarning')} <strong style={{ color: '#FFD700' }}>${dailyEarningMin.toFixed(2)} - ${dailyEarningMax.toFixed(2)}</strong> (%{dailyRateMin.toFixed(2)} - %{dailyRateMax.toFixed(2)})</p>
