@@ -8,8 +8,7 @@ import Layout from '../components/Layout';
 import { trpc } from '@/providers/trpc';
 import { VIP_TABLE } from '../store';
 
-const PROCESSING_MIN_SECONDS = 10;
-const PROCESSING_MAX_SECONDS = 20;
+const PROCESSING_SECONDS = 10;
 
 function getTimeRemainingTR(): { hours: number; minutes: number; seconds: number; total: number } {
   const now = Date.now();
@@ -39,6 +38,8 @@ export default function Quantify() {
   const [tradeError, setTradeError] = useState('');
   const processingTimeoutRef = useRef<number | null>(null);
   const processingIntervalRef = useRef<number | null>(null);
+  const finishSuccessTimeoutRef = useRef<number | null>(null);
+  const processingEndsAtRef = useRef(0);
 
   const utils = trpc.useUtils();
 
@@ -55,9 +56,29 @@ export default function Quantify() {
   const clearProcessingTimers = useCallback(() => {
     if (processingTimeoutRef.current) window.clearTimeout(processingTimeoutRef.current);
     if (processingIntervalRef.current) window.clearInterval(processingIntervalRef.current);
+    if (finishSuccessTimeoutRef.current) window.clearTimeout(finishSuccessTimeoutRef.current);
     processingTimeoutRef.current = null;
     processingIntervalRef.current = null;
+    finishSuccessTimeoutRef.current = null;
   }, []);
+
+  const finishTradeSuccess = useCallback((result: { earned?: number }) => {
+    clearProcessingTimers();
+    Promise.allSettled([
+      utils.profile.me.invalidate(),
+      utils.click.status.invalidate(),
+      utils.click.history.invalidate(),
+      utils.referral.earningsList.invalidate(),
+      utils.referral.overview.invalidate(),
+    ]);
+    setIsProcessingTrade(false);
+    setIsCompletingTrade(false);
+    setProcessingSecondsLeft(0);
+    setTradeError('');
+    setLastClickEarned(Number(result.earned || 0));
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+  }, [clearProcessingTimers, utils]);
 
   const clickMutation = trpc.click.record.useMutation({
     retry: (failureCount, error) => {
@@ -66,21 +87,13 @@ export default function Quantify() {
     },
     retryDelay: (attemptIndex) => Math.min(1200 * (attemptIndex + 1), 3000),
     onSuccess: (result) => {
-      clearProcessingTimers();
-      Promise.allSettled([
-        utils.profile.me.invalidate(),
-        utils.click.status.invalidate(),
-        utils.click.history.invalidate(),
-        utils.referral.earningsList.invalidate(),
-        utils.referral.overview.invalidate(),
-      ]);
-      setIsProcessingTrade(false);
-      setIsCompletingTrade(false);
-      setProcessingSecondsLeft(0);
-      setTradeError('');
-      setLastClickEarned(Number(result.earned || 0));
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      const remainingMs = Math.max(0, processingEndsAtRef.current - Date.now());
+      if (remainingMs > 150) {
+        if (finishSuccessTimeoutRef.current) window.clearTimeout(finishSuccessTimeoutRef.current);
+        finishSuccessTimeoutRef.current = window.setTimeout(() => finishTradeSuccess(result), remainingMs);
+        return;
+      }
+      finishTradeSuccess(result);
     },
     onError: (error) => {
       clearProcessingTimers();
@@ -144,8 +157,9 @@ export default function Quantify() {
 
     clearProcessingTimers();
 
-    const processingSeconds = Math.floor(Math.random() * (PROCESSING_MAX_SECONDS - PROCESSING_MIN_SECONDS + 1)) + PROCESSING_MIN_SECONDS;
+    const processingSeconds = PROCESSING_SECONDS;
     const processingEndsAt = Date.now() + processingSeconds * 1000;
+    processingEndsAtRef.current = processingEndsAt;
     setShowSuccess(false);
     setTradeError('');
     setIsProcessingTrade(true);
@@ -162,8 +176,9 @@ export default function Quantify() {
       processingIntervalRef.current = null;
       setProcessingSecondsLeft(0);
       setIsCompletingTrade(true);
-      clickMutation.mutate({});
     }, processingSeconds * 1000);
+
+    clickMutation.mutate({});
   }, [canClick, clearProcessingTimers, clickMutation, isProcessingTrade]);
 
   if (!profile) return null;
