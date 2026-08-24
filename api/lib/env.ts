@@ -42,4 +42,5 @@ export const env = {
   databaseHost: databaseHost(),
   adminEmail: process.env.ADMIN_EMAIL ?? "admin@corevest.com",
   adminPassword: optional("ADMIN_PASSWORD"),
+  discordWebhookUrl: process.env.DISCORD_WEBHOOK_URL?.trim() ?? "",
 };
