@@ -59,7 +59,10 @@ export default function Admin() {
 
   // Data queries
   const utils = trpc.useUtils();
-  const { data: stats } = trpc.adminMember.stats.useQuery(undefined, { refetchInterval: 30000 });
+  const { data: stats } = trpc.adminMember.stats.useQuery(undefined, {
+    enabled: activeTab === 'members',
+    refetchInterval: activeTab === 'members' ? 30000 : false,
+  });
   const { data: memberReports = [] } = trpc.adminMember.exportData.useQuery(undefined, { enabled: activeTab === 'memberData', refetchInterval: activeTab === 'memberData' ? 30000 : false });
   const { data: systemOverview } = trpc.adminSystem.overview.useQuery(undefined, { enabled: activeTab === 'system', refetchInterval: activeTab === 'system' ? 30000 : false });
   const { data: withdrawalRisks = [] } = trpc.adminSystem.withdrawalRisks.useQuery(undefined, { enabled: activeTab === 'system', refetchInterval: activeTab === 'system' ? 30000 : false });
