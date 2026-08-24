@@ -3,6 +3,7 @@ import { eq, desc, and, gte } from "drizzle-orm";
 import { createRouter, authedQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { tickets, ticketMessages } from "@db/schema";
+import { notifyNewTicket, queueDiscordNotification } from "./discord";
 
 const TURKEY_TIME_FORMAT: Intl.DateTimeFormatOptions = {
   hour: "2-digit",
@@ -41,6 +42,13 @@ export const ticketRouter = createRouter({
         sender: "user",
         text: input.subject,
       });
+
+      queueDiscordNotification("ticket", () => notifyNewTicket({
+        ticketId,
+        publicUserId: ctx.user.publicId,
+        email: ctx.user.email,
+        subject: input.subject,
+      }));
 
       return { id: ticketId };
     }),

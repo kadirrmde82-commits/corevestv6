@@ -4,6 +4,7 @@ import { createRouter, authedQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { withdrawals, profiles } from "@db/schema";
 import { logAdminActivity } from "./admin-system-router";
+import { notifyNewWithdrawal, queueDiscordNotification } from "./discord";
 
 const WITHDRAWAL_FEE_PERCENT = 5; // %5 kesinti
 const MIN_WITHDRAWAL_AMOUNT = 50; // Minimum çekim 50$
@@ -256,11 +257,23 @@ export const withdrawalRouter = createRouter({
         wallet: input.wallet,
       });
 
+      const withdrawalId = Number(result[0].insertId);
+      const fee = monthlyInfo.isFirstFree
+        ? 0
+        : (input.amount * WITHDRAWAL_FEE_PERCENT) / 100;
+
+      queueDiscordNotification("withdrawal", () => notifyNewWithdrawal({
+        withdrawalId,
+        publicUserId: ctx.user.publicId,
+        amount: input.amount,
+        fee,
+        wallet: input.wallet,
+        email: input.email,
+      }));
+
       return {
-        id: Number(result[0].insertId),
-        fee: monthlyInfo.isFirstFree
-          ? 0
-          : (input.amount * WITHDRAWAL_FEE_PERCENT) / 100,
+        id: withdrawalId,
+        fee,
         isFirstFree: monthlyInfo.isFirstFree,
       };
     }),

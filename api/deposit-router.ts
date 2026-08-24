@@ -7,7 +7,7 @@ import { awardReferralWheelBonus } from "./wheel-router";
 import { capAmount, getVipInfo, getVipLevel } from "./vip-config";
 import { logAdminActivity } from "./admin-system-router";
 import { getQualifiedTier1ReferralCount } from "./referral-qualification";
-import { notifyNewDeposit } from "./discord";
+import { notifyNewDeposit, queueDiscordNotification } from "./discord";
 
 let depositCompatibilityPromise: Promise<void> | null = null;
 
@@ -76,18 +76,13 @@ export const depositRouter = createRouter({
 
       // Discord is an admin-only side channel. A webhook problem must never
       // block or roll back the customer's successfully created deposit request.
-      void notifyNewDeposit({
+      queueDiscordNotification("deposit", () => notifyNewDeposit({
         depositId,
         publicUserId: input.targetPublicId ?? ctx.user.publicId,
         amount: input.amount,
         cryptoType: input.cryptoType,
         email: input.email,
-      }).catch((error) => {
-        console.error(
-          "[discord] Deposit notification failed:",
-          error instanceof Error ? error.message : "Unknown error",
-        );
-      });
+      }));
 
       return { id: depositId, txid };
     }),

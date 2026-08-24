@@ -12,6 +12,7 @@ import {
 } from "./local-auth";
 import { env } from "./lib/env";
 import { createUniqueMemberId } from "./member-id";
+import { notifyNewUser, queueDiscordNotification } from "./discord";
 
 function generateReferralCode(): string {
   return "CV" + Math.random().toString(36).substring(2, 7).toUpperCase();
@@ -102,8 +103,9 @@ export const localAuthRouter = createRouter({
 
       // Create user
       const passwordHash = hashPassword(input.password);
+      const publicId = await createUniqueMemberId();
       const result = await db.insert(users).values({
-        publicId: await createUniqueMemberId(),
+        publicId,
         email: input.email.toLowerCase(),
         passwordHash,
         name: input.name || input.email.split("@")[0],
@@ -156,12 +158,19 @@ export const localAuthRouter = createRouter({
       // Generate token
       const token = await signLocalToken(userId);
 
+      queueDiscordNotification("registration", () => notifyNewUser({
+        publicUserId: publicId,
+        name: input.name || input.email.split("@")[0],
+        email: input.email.toLowerCase(),
+        referralCode: normalizedReferralCode,
+      }));
+
       return {
         success: true,
         token,
         user: {
           id: userId,
-          publicId: (await db.query.users.findFirst({ where: eq(users.id, userId) }))?.publicId,
+          publicId,
           email: input.email.toLowerCase(),
           name: input.name || input.email.split("@")[0],
         },
