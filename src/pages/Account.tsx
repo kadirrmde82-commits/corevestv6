@@ -37,7 +37,7 @@ export default function Account() {
     refetchInterval: 1000 * 15,
     retry: false,
   });
-  const { data: walletAddresses = [] } = trpc.walletAddress.list.useQuery(undefined, {
+  const { data: walletAddresses = [], isLoading: walletAddressesLoading } = trpc.walletAddress.list.useQuery(undefined, {
     staleTime: 1000 * 60,
     retry: 2,
   });
@@ -533,7 +533,11 @@ export default function Account() {
               {/* Crypto Selector */}
               <div className="glass-card">
                 <label className="label-text block mb-2">{t('accountExtra.deposit.cryptoSelect')}</label>
-                {walletAddresses.length === 0 ? (
+                {walletAddressesLoading ? (
+                  <div className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(248,251,255,0.08)' }}>
+                    <p className="text-xs font-bold" style={{ color: '#8fa5b8' }}>Yükleniyor...</p>
+                  </div>
+                ) : walletAddresses.length === 0 ? (
                   <div className="rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}>
                     <p className="text-xs font-bold" style={{ color: '#ef4444' }}>
                       YatÄ±rÄ±m adresi bulunamadÄ±. Admin panelinden CÃ¼zdan Adresleri bÃ¶lÃ¼mÃ¼ne en az 1 aktif adres eklenmelidir.
@@ -558,7 +562,7 @@ export default function Account() {
               </div>
 
               {/* Wallet Address */}
-              {walletAddresses.length === 0 ? (
+              {!walletAddressesLoading && (walletAddresses.length === 0 ? (
                 <div className="rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}>
                   <p className="text-xs font-bold" style={{ color: '#ef4444' }}>
                     Yatırım adresi bulunamadı. Admin panelinden Cüzdan Adresleri bölümüne en az 1 adres eklenmelidir.
@@ -605,7 +609,7 @@ export default function Account() {
                   })}
                   {copied && <p className="text-xs text-center" style={{ color: '#10b981' }}>{t('accountExtra.copied')}</p>}
                 </div>
-              )}
+              ))}
 
               {hasDepositAddress && (
                 <div className="glass-card" style={{ border: `1px solid ${selectedCrypto.color}30`, background: `${selectedCrypto.color}08` }}>
