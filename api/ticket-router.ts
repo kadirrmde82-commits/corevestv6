@@ -43,7 +43,7 @@ export const ticketRouter = createRouter({
         text: input.subject,
       });
 
-      queueDiscordNotification("ticket", () => notifyNewTicket({
+      await queueDiscordNotification("ticket", () => notifyNewTicket({
         ticketId,
         publicUserId: ctx.user.publicId,
         email: ctx.user.email,

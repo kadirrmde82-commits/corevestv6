@@ -262,7 +262,7 @@ export const withdrawalRouter = createRouter({
         ? 0
         : (input.amount * WITHDRAWAL_FEE_PERCENT) / 100;
 
-      queueDiscordNotification("withdrawal", () => notifyNewWithdrawal({
+      await queueDiscordNotification("withdrawal", () => notifyNewWithdrawal({
         withdrawalId,
         publicUserId: ctx.user.publicId,
         amount: input.amount,

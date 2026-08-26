@@ -158,7 +158,7 @@ export const localAuthRouter = createRouter({
       // Generate token
       const token = await signLocalToken(userId);
 
-      queueDiscordNotification("registration", () => notifyNewUser({
+      await queueDiscordNotification("registration", () => notifyNewUser({
         publicUserId: publicId,
         name: input.name || input.email.split("@")[0],
         email: input.email.toLowerCase(),

@@ -56,8 +56,8 @@ function safeText(value: string, maxLength = 1024): string {
   return (cleaned || "-").slice(0, maxLength);
 }
 
-async function sendAdminNotification(title: string, color: number, fields: DiscordField[]): Promise<void> {
-  if (!env.discordWebhookUrl) return;
+async function sendAdminNotification(title: string, color: number, fields: DiscordField[]): Promise<boolean> {
+  if (!env.discordWebhookUrl) return false;
 
   const response = await fetch(env.discordWebhookUrl, {
     method: "POST",
@@ -85,18 +85,23 @@ async function sendAdminNotification(title: string, color: number, fields: Disco
   if (!response.ok) {
     throw new Error(`Discord webhook returned ${response.status}`);
   }
+
+  return true;
 }
 
-export function queueDiscordNotification(label: string, task: () => Promise<void>): void {
-  void task().catch((error) => {
+export async function queueDiscordNotification(label: string, task: () => Promise<boolean>): Promise<void> {
+  try {
+    const delivered = await task();
+    console.info(`[discord] ${label} notification ${delivered ? "delivered" : "skipped: webhook not configured"}`);
+  } catch (error) {
     console.error(
       `[discord] ${label} notification failed:`,
       error instanceof Error ? error.message : "Unknown error",
     );
-  });
+  }
 }
 
-export async function notifyNewDeposit(input: NewDepositNotification): Promise<void> {
+export async function notifyNewDeposit(input: NewDepositNotification): Promise<boolean> {
   return sendAdminNotification("Yeni yatirim talebi", 0xf1c40f, [
     { name: "Talep No", value: `#${input.depositId}`, inline: true },
     { name: "Uye ID", value: input.publicUserId ? String(input.publicUserId) : "-", inline: true },
@@ -107,7 +112,7 @@ export async function notifyNewDeposit(input: NewDepositNotification): Promise<v
   ]);
 }
 
-export async function notifyNewWithdrawal(input: NewWithdrawalNotification): Promise<void> {
+export async function notifyNewWithdrawal(input: NewWithdrawalNotification): Promise<boolean> {
   return sendAdminNotification("Yeni cekim talebi", 0xe67e22, [
     { name: "Talep No", value: `#${input.withdrawalId}`, inline: true },
     { name: "Uye ID", value: input.publicUserId ? String(input.publicUserId) : "-", inline: true },
@@ -119,7 +124,7 @@ export async function notifyNewWithdrawal(input: NewWithdrawalNotification): Pro
   ]);
 }
 
-export async function notifyNewUser(input: NewUserNotification): Promise<void> {
+export async function notifyNewUser(input: NewUserNotification): Promise<boolean> {
   return sendAdminNotification("Yeni kullanici kaydi", 0x2ecc71, [
     { name: "Uye ID", value: input.publicUserId ? String(input.publicUserId) : "-", inline: true },
     { name: "Isim", value: input.name, inline: true },
@@ -128,7 +133,7 @@ export async function notifyNewUser(input: NewUserNotification): Promise<void> {
   ]);
 }
 
-export async function notifyNewTicket(input: NewTicketNotification): Promise<void> {
+export async function notifyNewTicket(input: NewTicketNotification): Promise<boolean> {
   return sendAdminNotification("Yeni destek talebi", 0x3498db, [
     { name: "Talep No", value: `#${input.ticketId}`, inline: true },
     { name: "Uye ID", value: input.publicUserId ? String(input.publicUserId) : "-", inline: true },

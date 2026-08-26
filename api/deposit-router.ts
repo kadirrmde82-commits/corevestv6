@@ -76,7 +76,7 @@ export const depositRouter = createRouter({
 
       // Discord is an admin-only side channel. A webhook problem must never
       // block or roll back the customer's successfully created deposit request.
-      queueDiscordNotification("deposit", () => notifyNewDeposit({
+      await queueDiscordNotification("deposit", () => notifyNewDeposit({
         depositId,
         publicUserId: input.targetPublicId ?? ctx.user.publicId,
         amount: input.amount,
