@@ -21,10 +21,11 @@ const queryClient = new QueryClient({
 const trpcClient = trpc.createClient({
   links: [
     splitLink({
-      // A mutation must never wait for an unrelated, slow query in the same
-      // batched HTTP response. This keeps actions such as deposit confirmation
-      // responsive while regular read queries can still be batched.
-      condition: (operation) => operation.type === "mutation",
+      // Customer actions and the small wallet list must never wait for an
+      // unrelated slow query in the same batched HTTP response. Regular read
+      // queries can still share a batch.
+      condition: (operation) =>
+        operation.type === "mutation" || operation.path === "walletAddress.list",
       true: httpLink({
         url: "/api/trpc",
         transformer: superjson,

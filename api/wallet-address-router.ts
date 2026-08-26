@@ -6,6 +6,14 @@ import { walletAddresses } from "../db/schema";
 import { sql } from "drizzle-orm";
 
 let walletAddressesTablePromise: Promise<void> | null = null;
+let publicWalletAddressCache: Array<typeof walletAddresses.$inferSelect> | null = null;
+let publicWalletAddressCacheExpiresAt = 0;
+const PUBLIC_WALLET_CACHE_MS = 30_000;
+
+function clearPublicWalletAddressCache() {
+  publicWalletAddressCache = null;
+  publicWalletAddressCacheExpiresAt = 0;
+}
 
 async function runWalletAddressesTableCheck() {
   const db = getDb();
@@ -39,7 +47,12 @@ async function ensureWalletAddressesTable() {
 export const walletAddressRouter = createRouter({
   // Public: list active wallet addresses
   list: publicQuery.query(async () => {
-    await ensureWalletAddressesTable();
+    if (publicWalletAddressCache && Date.now() < publicWalletAddressCacheExpiresAt) {
+      return publicWalletAddressCache;
+    }
+
+    // The table is created during awaited application startup. Avoid repeating
+    // a schema check on the first customer request after every deployment.
     const db = getDb();
     const activeRows = await db
       .select()
@@ -47,12 +60,19 @@ export const walletAddressRouter = createRouter({
       .where(eq(walletAddresses.active, 1))
       .orderBy(asc(walletAddresses.sortOrder));
 
-    if (activeRows.length > 0) return activeRows;
+    if (activeRows.length > 0) {
+      publicWalletAddressCache = activeRows;
+      publicWalletAddressCacheExpiresAt = Date.now() + PUBLIC_WALLET_CACHE_MS;
+      return activeRows;
+    }
 
-    return db
+    const allRows = await db
       .select()
       .from(walletAddresses)
       .orderBy(asc(walletAddresses.sortOrder));
+    publicWalletAddressCache = allRows;
+    publicWalletAddressCacheExpiresAt = Date.now() + PUBLIC_WALLET_CACHE_MS;
+    return allRows;
   }),
 
   // Admin: list all
@@ -87,6 +107,7 @@ export const walletAddressRouter = createRouter({
         active: 1,
         sortOrder: input.sortOrder,
       });
+      clearPublicWalletAddressCache();
       return { success: true };
     }),
 
@@ -119,6 +140,7 @@ export const walletAddressRouter = createRouter({
         .update(walletAddresses)
         .set(updateData)
         .where(eq(walletAddresses.id, id));
+      clearPublicWalletAddressCache();
       return { success: true };
     }),
 
@@ -129,6 +151,7 @@ export const walletAddressRouter = createRouter({
       await ensureWalletAddressesTable();
       const db = getDb();
       await db.delete(walletAddresses).where(eq(walletAddresses.id, input.id));
+      clearPublicWalletAddressCache();
       return { success: true };
     }),
 });

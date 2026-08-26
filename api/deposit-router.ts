@@ -22,6 +22,7 @@ export const depositRouter = createRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const startedAt = Date.now();
       const db = getDb();
       let targetUserId = ctx.user.id;
 
@@ -56,6 +57,7 @@ export const depositRouter = createRouter({
         email: input.email,
       }));
 
+      console.info(`[deposit] request completed: id=${depositId} durationMs=${Date.now() - startedAt}`);
       return { id: depositId, txid };
     }),
 

@@ -41,8 +41,12 @@ export default function Account() {
     retry: false,
   });
   const { data: walletAddresses = [], isLoading: walletAddressesLoading } = trpc.walletAddress.list.useQuery(undefined, {
-    enabled: view === 'deposit',
-    staleTime: 1000 * 60,
+    // This list is small and changes rarely. Load it while the account page is
+    // already open so the deposit view never has to wait after the user taps it.
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     retry: 2,
   });
   const { data: deposits = [] } = trpc.deposit.list.useQuery(undefined, {
