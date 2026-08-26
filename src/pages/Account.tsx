@@ -165,7 +165,7 @@ export default function Account() {
         createdAt: new Date(),
       } as any, ...(current ?? [])]);
 
-      return { previousDeposits, tempId };
+      return { previousDeposits, tempId, submittedAt: Date.now() };
     },
     onSuccess: (result, _variables, context) => {
       if (context?.tempId) {
@@ -175,8 +175,42 @@ export default function Account() {
       }
       setDepositStatus('checking');
     },
-    onError: (error, _variables, context) => {
+    onError: async (error, variables, context) => {
+      const isNetworkError = /load failed|failed to fetch|network request failed/i.test(error.message || '');
+      const ownPublicId = Number((profile as any)?.publicId ?? (profile as any)?.userId ?? 0);
+      const isOwnDeposit = !variables.targetPublicId || variables.targetPublicId === ownPublicId;
+
+      // iOS Safari can lose the HTTP response after Railway has already saved
+      // the request. Reconcile before showing an error so a second tap cannot
+      // accidentally create a duplicate deposit.
+      if (isNetworkError && isOwnDeposit) {
+        try {
+          const serverDeposits = await utils.deposit.list.fetch();
+          const submittedAt = context?.submittedAt ?? Date.now();
+          const savedDeposit = serverDeposits.find((item: any) =>
+            Number(item.amount) === Number(variables.amount)
+            && item.email === variables.email
+            && item.cryptoType === variables.cryptoType
+            && new Date(item.createdAt).getTime() >= submittedAt - 5000
+          );
+          if (savedDeposit) {
+            setDepositStatus('checking');
+            setDepositError('');
+            return;
+          }
+        } catch {
+          // Fall through to the existing connection error below.
+        }
+      }
+
       if (context?.previousDeposits) utils.deposit.list.setData(undefined, context.previousDeposits);
+      if (isNetworkError) {
+        const message = 'Baglanti kesildi. Talep sunucuya ulasmis olabilir; tekrar gondermeden once admin panelini kontrol edin.';
+        setDepositStatus('idle');
+        setDepositError(message);
+        alert(message);
+        return;
+      }
       setDepositStatus('idle');
       setDepositError(error.message || 'Hatalı bilgi girdiniz. Lütfen bilgileri kontrol edip tekrar deneyin.');
       alert(error.message || 'Yatırım talebi gönderilemedi. Lütfen tekrar deneyin.');
