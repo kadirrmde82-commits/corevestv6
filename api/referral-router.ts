@@ -19,16 +19,18 @@ type ReferralNetwork = {
 
 async function getReferralNetwork(userId: number): Promise<ReferralNetwork> {
   const db = getDb();
-  const currentProfile = await db.query.profiles.findFirst({
-    where: eq(profiles.userId, userId),
-  });
-
-  const allMyReferrals = await db.query.referrals.findMany({
-    where: eq(referrals.referrerUserId, userId),
-    with: {
-      referred: true,
-    },
-  });
+  const allMyReferrals = await db
+    .select({
+      id: referrals.id,
+      referredUserId: referrals.referredUserId,
+      tier: referrals.tier,
+      createdAt: referrals.createdAt,
+      name: users.name,
+      email: users.email,
+    })
+    .from(referrals)
+    .leftJoin(users, eq(referrals.referredUserId, users.id))
+    .where(eq(referrals.referrerUserId, userId));
 
   const byReferredUserId = new Map<number, ReferralPerson & { referredUserId: number; tier: 1 | 2 | 3 }>();
 
@@ -36,12 +38,23 @@ async function getReferralNetwork(userId: number): Promise<ReferralNetwork> {
     byReferredUserId.set(r.referredUserId, {
       id: r.id,
       referredUserId: r.referredUserId,
-      name: r.referred?.name || "Kullanici",
-      email: r.referred?.email || "",
+      name: r.name || "Kullanici",
+      email: r.email || "",
       date: r.createdAt.toISOString().split("T")[0],
       tier: r.tier as 1 | 2 | 3,
     });
   }
+
+  // Every current registration writes its complete 3-tier chain to referrals.
+  // Return that authoritative result after one joined query. The profile walk
+  // below remains only as a compatibility fallback for old installations.
+  if (allMyReferrals.length > 0) {
+    return groupReferralRows(Array.from(byReferredUserId.values()));
+  }
+
+  const currentProfile = await db.query.profiles.findFirst({
+    where: eq(profiles.userId, userId),
+  });
 
   if (currentProfile?.referralCode) {
     const directRows = await db
@@ -121,7 +134,12 @@ async function getReferralNetwork(userId: number): Promise<ReferralNetwork> {
     }
   }
 
-  const networkRows = Array.from(byReferredUserId.values());
+  return groupReferralRows(Array.from(byReferredUserId.values()));
+}
+
+function groupReferralRows(
+  networkRows: Array<ReferralPerson & { referredUserId: number; tier: 1 | 2 | 3 }>,
+): ReferralNetwork {
   return {
     tier1: networkRows.filter((r) => r.tier === 1).map((r) => ({ id: r.id, name: r.name, email: r.email, date: r.date })),
     tier2: networkRows.filter((r) => r.tier === 2).map((r) => ({ id: r.id, name: r.name, email: r.email, date: r.date })),
