@@ -151,7 +151,6 @@ export default function Account() {
         createdAt: new Date(),
       } as any, ...(current ?? [])]);
 
-      setDepositStatus('checking');
       return { previousDeposits, tempId };
     },
     onSuccess: (result, _variables, context) => {
@@ -160,6 +159,7 @@ export default function Account() {
           item.id === context.tempId ? { ...item, id: result.id, txid: result.txid } : item
         )));
       }
+      setDepositStatus('checking');
     },
     onError: (error, _variables, context) => {
       if (context?.previousDeposits) utils.deposit.list.setData(undefined, context.previousDeposits);
@@ -421,7 +421,6 @@ export default function Account() {
     }
     if (depositMutation.isPending) return;
 
-    setDepositStatus('checking');
     depositMutation.mutate({
       amount: amountValue,
       email: emailValue,

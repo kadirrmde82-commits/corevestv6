@@ -79,7 +79,10 @@ export default function Admin() {
   const { data: allDeposits = [], refetch: refetchDeposits, isFetching: depositsFetching } = trpc.deposit.listAll.useQuery(undefined, {
     enabled: activeTab === 'deposits',
     refetchInterval: activeTab === 'deposits' ? 5000 : false,
-    refetchOnWindowFocus: false,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
   const { data: allWithdrawals = [] } = trpc.withdrawal.listAll.useQuery(undefined, { enabled: activeTab === 'withdrawals', refetchInterval: activeTab === 'withdrawals' ? 10000 : false });
   const { data: allTickets = [] } = trpc.ticket.listAll.useQuery(undefined, { enabled: activeTab === 'tickets', refetchInterval: activeTab === 'tickets' ? 10000 : false });

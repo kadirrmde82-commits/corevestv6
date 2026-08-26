@@ -73,6 +73,7 @@ export const depositRouter = createRouter({
         userNote: input.userNote || null,
       });
       const depositId = Number(result[0].insertId);
+      console.info(`[deposit] request created: id=${depositId} userId=${targetUserId}`);
 
       // Discord is an admin-only side channel. A webhook problem must never
       // block or roll back the customer's successfully created deposit request.
