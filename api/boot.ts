@@ -284,22 +284,20 @@ if (env.isProduction) {
   const { serveStaticFiles } = await import("./lib/vite");
   serveStaticFiles(app);
 
+  try {
+    if (env.adminPassword) {
+      await ensureAdminAccount();
+    } else {
+      console.error("ADMIN_PASSWORD is not configured; skipping admin bootstrap");
+    }
+    await ensureSystemTables();
+    console.log("Startup database checks completed");
+  } catch (error) {
+    console.error("Startup database checks failed", error);
+  }
+
   const port = parseInt(process.env.PORT || "3000");
   serve({ fetch: app.fetch, port }, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });
-
-  void (async () => {
-    try {
-      if (env.adminPassword) {
-        await ensureAdminAccount();
-      } else {
-        console.error("ADMIN_PASSWORD is not configured; skipping admin bootstrap");
-      }
-      await ensureSystemTables();
-      console.log("Startup database checks completed");
-    } catch (error) {
-      console.error("Startup database checks failed", error);
-    }
-  })();
 }

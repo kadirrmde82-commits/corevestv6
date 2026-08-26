@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, eq, desc, sql } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { createRouter, authedQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { deposits, profiles, users, vipBonuses } from "@db/schema";
@@ -8,34 +8,6 @@ import { capAmount, getVipInfo, getVipLevel } from "./vip-config";
 import { logAdminActivity } from "./admin-system-router";
 import { getQualifiedTier1ReferralCount } from "./referral-qualification";
 import { notifyNewDeposit, queueDiscordNotification } from "./discord";
-
-let depositCompatibilityPromise: Promise<void> | null = null;
-
-async function runDepositCompatibilityChecks() {
-  const db = getDb();
-  const tryExecute = async (query: ReturnType<typeof sql>) => {
-    try {
-      await db.execute(query);
-    } catch {
-      // Already exists or the database version does not support the exact ALTER form.
-    }
-  };
-
-  await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`cryptoType\` varchar(32) NOT NULL DEFAULT 'trc20'`);
-  await tryExecute(sql`ALTER TABLE deposits MODIFY COLUMN \`cryptoType\` varchar(32) NOT NULL DEFAULT 'trc20'`);
-  await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`userNote\` varchar(255)`);
-  await tryExecute(sql`ALTER TABLE users ADD COLUMN \`publicId\` int`);
-}
-
-async function ensureDepositCompatibility() {
-  if (!depositCompatibilityPromise) {
-    depositCompatibilityPromise = runDepositCompatibilityChecks().catch((error) => {
-      depositCompatibilityPromise = null;
-      throw error;
-    });
-  }
-  return depositCompatibilityPromise;
-}
 
 export const depositRouter = createRouter({
   // Create a new deposit request
@@ -50,7 +22,6 @@ export const depositRouter = createRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await ensureDepositCompatibility();
       const db = getDb();
       let targetUserId = ctx.user.id;
 
@@ -90,7 +61,6 @@ export const depositRouter = createRouter({
 
   // List current user's deposits
   list: authedQuery.query(async ({ ctx }) => {
-    await ensureDepositCompatibility();
     const db = getDb();
     return db.query.deposits.findMany({
       where: eq(deposits.userId, ctx.user.id),
@@ -102,7 +72,6 @@ export const depositRouter = createRouter({
 
   // List all deposits (admin) - with user info
   listAll: adminQuery.query(async () => {
-    await ensureDepositCompatibility();
     const db = getDb();
     const rows = await db
       .select({
@@ -129,7 +98,6 @@ export const depositRouter = createRouter({
   approve: adminQuery
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await ensureDepositCompatibility();
       const db = getDb();
       const deposit = await db.query.deposits.findFirst({
         where: eq(deposits.id, input.id),
@@ -199,7 +167,6 @@ export const depositRouter = createRouter({
   reject: adminQuery
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await ensureDepositCompatibility();
       const db = getDb();
       await db
         .update(deposits)
