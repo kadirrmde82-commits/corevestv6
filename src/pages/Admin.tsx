@@ -74,7 +74,7 @@ export default function Admin() {
   const { data: memberPresence = [] } = trpc.presence.adminList.useQuery(undefined, { enabled: activeTab === 'memberStatus', refetchInterval: activeTab === 'memberStatus' ? 10000 : false });
   const { data: membersData } = trpc.adminMember.list.useQuery(
     { search: searchQuery || undefined, page: 1, limit: 50 },
-    { refetchInterval: activeTab === 'members' ? 30000 : false }
+    { enabled: activeTab === 'members', refetchInterval: activeTab === 'members' ? 30000 : false }
   );
   const { data: allDeposits = [], refetch: refetchDeposits, isFetching: depositsFetching } = trpc.deposit.listAll.useQuery(undefined, {
     enabled: activeTab === 'deposits',

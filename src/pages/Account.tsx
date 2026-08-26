@@ -31,6 +31,9 @@ export default function Account() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const [installMessage, setInstallMessage] = useState('');
+  const isHistoryView = view === 'history';
+  const depositsActive = isHistoryView && historyTab === 'deposits';
+  const withdrawalsActive = isHistoryView && historyTab === 'withdrawals';
 
   const { data: profile } = trpc.profile.me.useQuery(undefined, {
     staleTime: 1000 * 10,
@@ -38,37 +41,44 @@ export default function Account() {
     retry: false,
   });
   const { data: walletAddresses = [], isLoading: walletAddressesLoading } = trpc.walletAddress.list.useQuery(undefined, {
+    enabled: view === 'deposit',
     staleTime: 1000 * 60,
     retry: 2,
   });
   const { data: deposits = [] } = trpc.deposit.list.useQuery(undefined, {
+    enabled: depositsActive,
     staleTime: 1000 * 10,
-    refetchInterval: view === 'deposit' || historyTab === 'deposits' ? 1000 * 10 : false,
+    refetchInterval: depositsActive ? 1000 * 10 : false,
     retry: false,
   });
   const { data: withdrawals = [] } = trpc.withdrawal.list.useQuery(undefined, {
+    enabled: withdrawalsActive,
     staleTime: 1000 * 10,
-    refetchInterval: view === 'withdraw' || historyTab === 'withdrawals' ? 1000 * 10 : false,
+    refetchInterval: withdrawalsActive ? 1000 * 10 : false,
     retry: false,
   });
   const { data: tickets = [] } = trpc.ticket.list.useQuery(undefined, {
+    enabled: view === 'support',
     staleTime: 1000 * 10,
     refetchInterval: view === 'support' ? 1000 * 10 : false,
     retry: false,
   });
   const { data: wheelHistory = [] } = trpc.wheel.list.useQuery(undefined, {
+    enabled: isHistoryView && historyTab === 'bonuses',
     staleTime: 1000 * 10,
-    refetchInterval: historyTab === 'bonuses' ? 1000 * 20 : false,
+    refetchInterval: isHistoryView && historyTab === 'bonuses' ? 1000 * 20 : false,
     retry: false,
   });
   const { data: referralEarnings = [] } = trpc.referral.earningsList.useQuery(undefined, {
+    enabled: isHistoryView && historyTab === 'referrals',
     staleTime: 1000 * 10,
-    refetchInterval: historyTab === 'referrals' ? 1000 * 20 : false,
+    refetchInterval: isHistoryView && historyTab === 'referrals' ? 1000 * 20 : false,
     retry: false,
   });
   const { data: clickEarnings = [] } = trpc.click.history.useQuery(undefined, {
+    enabled: isHistoryView && historyTab === 'clicks',
     staleTime: 1000 * 10,
-    refetchInterval: historyTab === 'clicks' ? 1000 * 20 : false,
+    refetchInterval: isHistoryView && historyTab === 'clicks' ? 1000 * 20 : false,
     retry: false,
   });
 
