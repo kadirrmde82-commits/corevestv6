@@ -20,7 +20,12 @@ export const ANNOUNCEMENT_CONTENT_KEYS = {
   button: "announcement.button",
 } as const;
 
+export const WHEEL_CONTENT_KEYS = {
+  enabled: "feature.wheelEnabled",
+} as const;
+
 export const DEFAULT_SITE_CONTENT: Record<string, string> = {
+  [WHEEL_CONTENT_KEYS.enabled]: "false",
   [FAQ_CONTENT_KEYS.investmentQuestion]: "Nasıl Yatırım Yapılır?",
   [FAQ_CONTENT_KEYS.investmentAnswer]:
     'Hesabınız sayfasına giderek "Para Yatır" bölümünden yatırım yapabilirsiniz. Yatırım yapmak istediğiniz tutarı girin, ardından "Yatırımı Onayla" butonuna tıklayın. Yatırımınız admin onayından sonra hesabınıza yansır ve VIP seviyeniz otomatik olarak güncellenir. VIP seviyeniz arttıkça günlük tıklama başına kazancınız da artar. Yatırımlarınız AI algoritmalarımız tarafından yönetilerek en yüksek getiriyi elde etmeniz sağlanır.',

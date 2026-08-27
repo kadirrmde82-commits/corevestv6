@@ -1,8 +1,9 @@
 import { eq, count, and, desc } from "drizzle-orm";
 import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { deposits, profiles, wheelSpins, referrals, wheelReferralBonuses, vipBonuses } from "@db/schema";
+import { deposits, profiles, wheelSpins, referrals, wheelReferralBonuses, vipBonuses, siteContent } from "@db/schema";
 import { capAmount, getVipLevel } from "./vip-config";
+import { WHEEL_CONTENT_KEYS } from "@contracts/site-content";
 
 // Wheel prizes displayed on the wheel (user sees these)
 export const WHEEL_PRIZES = [
@@ -18,6 +19,14 @@ export const WHEEL_PRIZES = [
 
 // ALWAYS gives $10 regardless of what the wheel shows
 const ACTUAL_PRIZE = 10;
+
+async function isWheelEnabled(db: ReturnType<typeof getDb>) {
+  const setting = await db.query.siteContent.findFirst({
+    where: eq(siteContent.key, WHEEL_CONTENT_KEYS.enabled),
+    columns: { value: true },
+  });
+  return setting?.value === "true";
+}
 
 async function getOwnFirstDepositSpin(db: ReturnType<typeof getDb>, userId: number) {
   const approvedDeposits = await db.query.deposits.findMany({
@@ -80,12 +89,26 @@ export const wheelRouter = createRouter({
   // Get wheel status: available spins from own investment + referral bonuses
   status: authedQuery.query(async ({ ctx }) => {
     const db = getDb();
+    const enabled = await isWheelEnabled(db);
+    if (!enabled) {
+      return {
+        enabled: false,
+        availableSpins: 0,
+        totalSpins: 0,
+        investment: 0,
+        totalEarnedSpins: 0,
+        referralBonusSpins: 0,
+        ownSpins: 0,
+        prizes: WHEEL_PRIZES,
+      };
+    }
 
     const profile = await db.query.profiles.findFirst({
       where: eq(profiles.userId, ctx.user.id),
     });
     if (!profile) {
       return {
+        enabled: true,
         availableSpins: 0,
         totalSpins: 0,
         investment: 0,
@@ -118,6 +141,7 @@ export const wheelRouter = createRouter({
     const availableSpins = Math.max(0, totalEarnedSpins - totalSpinsUsed);
 
     return {
+      enabled: true,
       availableSpins,
       totalSpins: totalSpinsUsed,
       investment,
@@ -131,6 +155,9 @@ export const wheelRouter = createRouter({
   // Spin the wheel - ALWAYS awards $10
   spin: authedQuery.mutation(async ({ ctx }) => {
     const db = getDb();
+    if (!(await isWheelEnabled(db))) {
+      throw new Error("Çark şu anda aktif değil.");
+    }
 
     // 1. Get profile
     const profile = await db.query.profiles.findFirst({

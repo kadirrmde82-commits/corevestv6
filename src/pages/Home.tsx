@@ -8,7 +8,7 @@ import Layout from '../components/Layout';
 import { trpc } from '@/providers/trpc';
 import { VIP_TABLE } from '../store';
 import Wheel from '../components/Wheel';
-import { ANNOUNCEMENT_CONTENT_KEYS, mergeSiteContent } from '@contracts/site-content';
+import { ANNOUNCEMENT_CONTENT_KEYS, WHEEL_CONTENT_KEYS, mergeSiteContent } from '@contracts/site-content';
 
 const BENEFIT_DOMAINS = ['gmail.com', 'gmail.com', 'gmail.com', 'gmail.com', 'gmail.com', 'icloud.com', 'hotmail.com', 'yahoo.com', 'outlook.com'];
 const BENEFIT_PREFIXES = ['yt', 'kr', 'mx', 'al', 'cv', 'mn', 'rx', 'tr', 'dk', 'sn', 'pr', 'ay'];
@@ -52,6 +52,7 @@ export default function Home() {
     .map((rule) => rule.trim())
     .filter(Boolean);
   const announcementEnabled = siteContent[ANNOUNCEMENT_CONTENT_KEYS.enabled] !== 'false';
+  const wheelEnabled = siteContent[WHEEL_CONTENT_KEYS.enabled] === 'true';
   const announcementVersion = siteContent[ANNOUNCEMENT_CONTENT_KEYS.version] || 'v1';
   const announcementSeenKey = `corevest_announcement_seen_${announcementVersion}`;
   const announcementImageUrl = siteContent[ANNOUNCEMENT_CONTENT_KEYS.imageUrl]?.trim();
@@ -305,7 +306,7 @@ export default function Home() {
         </div>
 
         {/* Wheel of Fortune */}
-        <Wheel />
+        {wheelEnabled && <Wheel />}
 
         {/* Benefit List */}
         <div className="glass-card overflow-hidden" style={{ border: '1px solid rgba(16,185,129,0.18)', background: 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(255,255,255,0.03))' }}>

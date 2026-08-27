@@ -11,7 +11,7 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, Res
 import LanguageSelector from '../components/LanguageSelector';
 import { trpc } from '@/providers/trpc';
 import { VIP_TABLE } from '../store';
-import { ANNOUNCEMENT_CONTENT_KEYS, DEFAULT_SITE_CONTENT, FAQ_CONTENT_KEYS } from '@contracts/site-content';
+import { ANNOUNCEMENT_CONTENT_KEYS, DEFAULT_SITE_CONTENT, FAQ_CONTENT_KEYS, WHEEL_CONTENT_KEYS } from '@contracts/site-content';
 
 type AdminTab = 'members' | 'memberStatus' | 'memberData' | 'system' | 'deposits' | 'withdrawals' | 'tickets' | 'content' | 'marketPrices' | 'walletAddresses';
 
@@ -992,6 +992,29 @@ export default function Admin() {
         {/* ─── CONTENT TAB ─── */}
         {activeTab === 'content' && (
           <div className="grid gap-4">
+            <div className="glass-card">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2"><Gift size={18} style={{ color: '#FFD700' }} /> Çark Görünürlüğü</h2>
+                  <p className="text-xs mt-1" style={{ color: '#8fa5b8' }}>Pasif olduğunda çark ana sayfada görünmez ve çevrilemez. Mevcut haklar ile geçmiş kayıtları korunur.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={contentForm[WHEEL_CONTENT_KEYS.enabled] ?? 'false'}
+                    onChange={(e) => setContentValue(WHEEL_CONTENT_KEYS.enabled, e.target.value)}
+                    className="glass-input"
+                    style={{ minHeight: '40px', minWidth: '130px' }}
+                  >
+                    <option value="true">Aktif</option>
+                    <option value="false">Pasif</option>
+                  </select>
+                  <button onClick={saveSiteContent} className="btn-primary" style={{ minHeight: '40px', minWidth: '110px' }} disabled={updateSiteContent.isPending}>
+                    {updateSiteContent.isPending ? 'Kaydediliyor...' : 'Kaydet'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="glass-card">
               <div className="flex items-center justify-between gap-3 mb-4">
                 <div>
