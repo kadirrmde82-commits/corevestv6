@@ -47,6 +47,9 @@ export default function BottomNav({ onTabPress }: { onTabPress?: () => void }) {
             onClick={() => {
               onTabPress?.();
               warmTabData(tab.path);
+              if (tab.path === '/home') {
+                window.dispatchEvent(new Event('corevest:home-pressed'));
+              }
               navigate(tab.path);
             }}
             className="flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-2 transition-all min-w-[64px]"

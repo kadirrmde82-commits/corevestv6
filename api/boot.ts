@@ -74,6 +74,8 @@ async function ensureSystemTables() {
   await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`cryptoType\` varchar(32) NOT NULL DEFAULT 'trc20'`);
   await tryExecute(sql`ALTER TABLE deposits MODIFY COLUMN \`cryptoType\` varchar(32) NOT NULL DEFAULT 'trc20'`);
   await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`userNote\` varchar(255)`);
+  await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`promotionEligible\` int NOT NULL DEFAULT 0`);
+  await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`promotionApplied\` int NOT NULL DEFAULT 0`);
   await tryExecute(sql`ALTER TABLE users ADD COLUMN \`publicId\` int`);
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS admin_activity_logs (
@@ -127,6 +129,20 @@ async function ensureSystemTables() {
       \`amount\` decimal(12,2) NOT NULL,
       \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (\`id\`)
+    )
+  `);
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS promotion_bonuses (
+      \`id\` bigint unsigned NOT NULL AUTO_INCREMENT,
+      \`depositId\` bigint unsigned NOT NULL,
+      \`beneficiaryUserId\` bigint unsigned NOT NULL,
+      \`sourceUserId\` bigint unsigned NOT NULL,
+      \`referralEarningId\` bigint unsigned,
+      \`type\` enum('member','referrer') NOT NULL,
+      \`amount\` decimal(12,2) NOT NULL,
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`id\`),
+      UNIQUE KEY \`promotion_bonuses_deposit_type_unique\` (\`depositId\`, \`type\`)
     )
   `);
   await db.execute(sql`
@@ -291,6 +307,7 @@ if (env.isProduction) {
       console.error("ADMIN_PASSWORD is not configured; skipping admin bootstrap");
     }
     await ensureSystemTables();
+    await ensureDepositPromotionAnnouncement();
     console.log("Startup database checks completed");
   } catch (error) {
     console.error("Startup database checks failed", error);
@@ -300,4 +317,34 @@ if (env.isProduction) {
   serve({ fetch: app.fetch, port }, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });
+}
+
+async function ensureDepositPromotionAnnouncement() {
+  const db = getDb();
+  const markerKey = "promotion.depositBonus.v1.seeded";
+  const marker = await db.query.siteContent.findFirst({ where: eq(siteContent.key, markerKey) });
+  if (marker) return;
+
+  const values: Record<string, string> = {
+    "announcement.enabled": "true",
+    "announcement.version": "deposit-bonus-2026-08-28",
+    "announcement.imageUrl": "",
+    "announcement.title": "YENİ ETKİNLİK",
+    "announcement.subtitle": "Her yeni yatırımda tekrar bonus kazanma fırsatı",
+    "announcement.body": "Bu güncellemeden sonra oluşturulan uygun yatırım taleplerinin bonusları, admin onayından sonra otomatik olarak bakiyelere eklenir.",
+    "announcement.rules": "Her 100$ ve üzeri yeni yatırım talebinde üyeye 5$ bonus eklenir.\nReferans ile kayıt olan üyenin 100$ ve üzeri yeni yatırımında doğrudan referans sahibine 10$ bonus eklenir.\nEtkinliğe tekrar tekrar katılabilirsiniz. Eski yatırımlar etkinliğe dahil değildir.",
+    "announcement.note": "Bonuslar yalnızca bu etkinlik yayına girdikten sonra oluşturulan ve onaylanan yatırımlar için geçerlidir.",
+    "announcement.footer": "Yeni yatırımınızı yapın, bonusunuz otomatik eklensin.",
+    "announcement.button": "Tamam",
+  };
+
+  for (const [key, value] of Object.entries(values)) {
+    const existing = await db.query.siteContent.findFirst({ where: eq(siteContent.key, key) });
+    if (existing) {
+      await db.update(siteContent).set({ value }).where(eq(siteContent.key, key));
+    } else {
+      await db.insert(siteContent).values({ key, value });
+    }
+  }
+  await db.insert(siteContent).values({ key: markerKey, value: new Date().toISOString() });
 }

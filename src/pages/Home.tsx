@@ -53,13 +53,13 @@ export default function Home() {
     .filter(Boolean);
   const announcementEnabled = siteContent[ANNOUNCEMENT_CONTENT_KEYS.enabled] !== 'false';
   const wheelEnabled = siteContent[WHEEL_CONTENT_KEYS.enabled] === 'true';
-  const announcementVersion = siteContent[ANNOUNCEMENT_CONTENT_KEYS.version] || 'v1';
-  const announcementSeenKey = `corevest_announcement_seen_${announcementVersion}`;
   const announcementImageUrl = siteContent[ANNOUNCEMENT_CONTENT_KEYS.imageUrl]?.trim();
 
   useEffect(() => {
-    setShowAnnouncement(localStorage.getItem(announcementSeenKey) !== 'true');
-  }, [announcementSeenKey]);
+    const reopenAnnouncement = () => setShowAnnouncement(true);
+    window.addEventListener('corevest:home-pressed', reopenAnnouncement);
+    return () => window.removeEventListener('corevest:home-pressed', reopenAnnouncement);
+  }, []);
 
   useEffect(() => {
     let timeout: number;
@@ -73,7 +73,6 @@ export default function Home() {
 
   const dismissAnnouncement = () => {
     setShowAnnouncement(false);
-    localStorage.setItem(announcementSeenKey, 'true');
   };
 
   // Fetch profile from tRPC

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { and, eq, gte } from "drizzle-orm";
 import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { clickEarnings, deposits, profiles, referralEarnings, vipBonuses, wheelSpins } from "@db/schema";
+import { clickEarnings, deposits, profiles, promotionBonuses, referralEarnings, vipBonuses, wheelSpins } from "@db/schema";
 
 // Generate unique referral code
 function generateReferralCode(): string {
@@ -32,11 +32,18 @@ function startOfYesterdayTurkey() {
 async function getRecentEarningsSummary(userId: number, totalEarned: number) {
   const db = getDb();
   const since = startOfYesterdayTurkey();
-  const [clickRows, wheelRows, vipRows, referralRows] = await Promise.all([
+  const [clickRows, wheelRows, vipRows, referralRows, promotionRows] = await Promise.all([
     db.query.clickEarnings.findMany({ where: and(eq(clickEarnings.userId, userId), gte(clickEarnings.createdAt, since)) }),
     db.query.wheelSpins.findMany({ where: and(eq(wheelSpins.userId, userId), gte(wheelSpins.createdAt, since)) }),
     db.query.vipBonuses.findMany({ where: and(eq(vipBonuses.userId, userId), gte(vipBonuses.createdAt, since)) }),
     db.query.referralEarnings.findMany({ where: and(eq(referralEarnings.referrerUserId, userId), gte(referralEarnings.createdAt, since)) }),
+    db.query.promotionBonuses.findMany({
+      where: and(
+        eq(promotionBonuses.beneficiaryUserId, userId),
+        eq(promotionBonuses.type, "member"),
+        gte(promotionBonuses.createdAt, since),
+      ),
+    }),
   ]);
 
   const todayKey = turkeyDateKey(new Date());
@@ -46,6 +53,7 @@ async function getRecentEarningsSummary(userId: number, totalEarned: number) {
     ...wheelRows.map((row) => ({ amount: Number(row.prize), createdAt: row.createdAt })),
     ...vipRows.map((row) => ({ amount: Number(row.amount), createdAt: row.createdAt })),
     ...referralRows.map((row) => ({ amount: Number(row.commissionAmount), createdAt: row.createdAt })),
+    ...promotionRows.map((row) => ({ amount: Number(row.amount), createdAt: row.createdAt })),
   ];
 
   return entries.reduce(

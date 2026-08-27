@@ -76,11 +76,29 @@ export const deposits = mysqlTable("deposits", {
   cryptoType: varchar("cryptoType", { length: 32 }).default("trc20").notNull(),
   userNote: varchar("userNote", { length: 255 }),
   status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  promotionEligible: int("promotionEligible").default(0).notNull(),
+  promotionApplied: int("promotionApplied").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
 export type Deposit = typeof deposits.$inferSelect;
 export type InsertDeposit = typeof deposits.$inferInsert;
+
+// Tracks the new-deposit campaign payouts. Existing deposits receive
+// promotionEligible=0 during migration, so they can never earn this bonus.
+export const promotionBonuses = mysqlTable("promotion_bonuses", {
+  id: serial("id").primaryKey(),
+  depositId: bigint("depositId", { mode: "number", unsigned: true }).notNull(),
+  beneficiaryUserId: bigint("beneficiaryUserId", { mode: "number", unsigned: true }).notNull(),
+  sourceUserId: bigint("sourceUserId", { mode: "number", unsigned: true }).notNull(),
+  referralEarningId: bigint("referralEarningId", { mode: "number", unsigned: true }),
+  type: mysqlEnum("type", ["member", "referrer"]).notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PromotionBonus = typeof promotionBonuses.$inferSelect;
+export type InsertPromotionBonus = typeof promotionBonuses.$inferInsert;
 
 // ─── Withdrawals ───
 export const withdrawals = mysqlTable("withdrawals", {

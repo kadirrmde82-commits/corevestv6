@@ -6,6 +6,7 @@ import { hashPassword } from "./local-auth";
 import {
   users,
   profiles,
+  promotionBonuses,
   wheelSpins,
   wheelReferralBonuses,
   deposits,
@@ -516,6 +517,9 @@ export const adminMemberRouter = createRouter({
       const db = getDb();
       const deposit = await db.query.deposits.findFirst({ where: eq(deposits.id, input.depositId) });
       if (!deposit) throw new Error("Deposit not found");
+      const depositPromotionBonuses = await db.query.promotionBonuses.findMany({
+        where: eq(promotionBonuses.depositId, input.depositId),
+      });
 
       if (deposit.status === "approved") {
         const profile = await db.query.profiles.findFirst({ where: eq(profiles.userId, deposit.userId) });
@@ -535,6 +539,14 @@ export const adminMemberRouter = createRouter({
             .where(eq(profiles.userId, deposit.userId));
         }
       }
+
+      for (const bonus of depositPromotionBonuses) {
+        await deductMemberEarning(bonus.beneficiaryUserId, Number(bonus.amount), { deductTotalEarned: true });
+        if (bonus.referralEarningId) {
+          await db.delete(referralEarnings).where(eq(referralEarnings.id, bonus.referralEarningId));
+        }
+      }
+      await db.delete(promotionBonuses).where(eq(promotionBonuses.depositId, input.depositId));
 
       await db.delete(deposits).where(eq(deposits.id, input.depositId));
       await logAdminActivity({
@@ -749,6 +761,9 @@ export const adminMemberRouter = createRouter({
       await db.delete(tickets).where(eq(tickets.userId, uid));
 
       // 3. Deposits
+      await db
+        .delete(promotionBonuses)
+        .where(or(eq(promotionBonuses.beneficiaryUserId, uid), eq(promotionBonuses.sourceUserId, uid)));
       await db.delete(deposits).where(eq(deposits.userId, uid));
 
       // 4. Withdrawals

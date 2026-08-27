@@ -1,13 +1,124 @@
 import { z } from "zod";
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq, desc, sql } from "drizzle-orm";
 import { createRouter, authedQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { deposits, profiles, users, vipBonuses } from "@db/schema";
+import { deposits, profiles, users, vipBonuses, referrals, referralEarnings, promotionBonuses, type Deposit } from "@db/schema";
 import { awardReferralWheelBonus } from "./wheel-router";
 import { capAmount, getVipInfo, getVipLevel } from "./vip-config";
 import { logAdminActivity } from "./admin-system-router";
 import { getQualifiedTier1ReferralCount } from "./referral-qualification";
 import { notifyNewDeposit, queueDiscordNotification } from "./discord";
+import {
+  MEMBER_PROMOTION_BONUS,
+  REFERRER_PROMOTION_BONUS,
+  qualifiesForDepositPromotion,
+} from "./deposit-promotion";
+
+async function applyDepositPromotion(db: ReturnType<typeof getDb>, deposit: Deposit) {
+  if (!qualifiesForDepositPromotion({
+    amount: Number(deposit.amount),
+    promotionEligible: deposit.promotionEligible,
+    promotionApplied: deposit.promotionApplied,
+  })) {
+    return;
+  }
+
+  await db.transaction(async (tx) => {
+    const lockedRows = await tx
+      .select()
+      .from(deposits)
+      .where(eq(deposits.id, deposit.id))
+      .for("update");
+    const currentDeposit = lockedRows[0];
+    if (!currentDeposit || !qualifiesForDepositPromotion({
+      amount: Number(currentDeposit.amount),
+      promotionEligible: currentDeposit.promotionEligible,
+      promotionApplied: currentDeposit.promotionApplied,
+    })) return;
+
+    const memberProfile = await tx.query.profiles.findFirst({
+      where: eq(profiles.userId, currentDeposit.userId),
+      columns: { userId: true },
+    });
+    if (!memberProfile) throw new Error("Promotion member profile not found");
+
+    await tx
+      .update(profiles)
+      .set({
+        balance: sql`${profiles.balance} + ${MEMBER_PROMOTION_BONUS}`,
+        totalEarned: sql`${profiles.totalEarned} + ${MEMBER_PROMOTION_BONUS}`,
+      })
+      .where(eq(profiles.userId, currentDeposit.userId));
+    await tx.insert(promotionBonuses).values({
+      depositId: currentDeposit.id,
+      beneficiaryUserId: currentDeposit.userId,
+      sourceUserId: currentDeposit.userId,
+      type: "member",
+      amount: String(MEMBER_PROMOTION_BONUS),
+    });
+
+    const directReferral = await tx.query.referrals.findFirst({
+      where: and(eq(referrals.referredUserId, currentDeposit.userId), eq(referrals.tier, 1)),
+      columns: { referrerUserId: true },
+    });
+    let referrerUserId = directReferral?.referrerUserId;
+
+    // Compatibility fallback for older members whose profile has a referral
+    // code but who do not yet have a row in the referrals table.
+    if (!referrerUserId) {
+      const referredProfile = await tx.query.profiles.findFirst({
+        where: eq(profiles.userId, currentDeposit.userId),
+        columns: { referredBy: true },
+      });
+      if (referredProfile?.referredBy) {
+        const referrerProfileByCode = await tx.query.profiles.findFirst({
+          where: eq(profiles.referralCode, referredProfile.referredBy),
+          columns: { userId: true },
+        });
+        referrerUserId = referrerProfileByCode?.userId;
+      }
+    }
+
+    if (referrerUserId) {
+      const referrerProfile = await tx.query.profiles.findFirst({
+        where: eq(profiles.userId, referrerUserId),
+        columns: { userId: true },
+      });
+      if (!referrerProfile) referrerUserId = undefined;
+    }
+
+    if (referrerUserId) {
+      await tx
+        .update(profiles)
+        .set({
+          balance: sql`${profiles.balance} + ${REFERRER_PROMOTION_BONUS}`,
+          totalEarned: sql`${profiles.totalEarned} + ${REFERRER_PROMOTION_BONUS}`,
+        })
+        .where(eq(profiles.userId, referrerUserId));
+      const referralEarningResult = await tx.insert(referralEarnings).values({
+        referrerUserId,
+        referredUserId: currentDeposit.userId,
+        tier: 1,
+        clickEarning: String(currentDeposit.amount),
+        commissionRate: "0",
+        commissionAmount: String(REFERRER_PROMOTION_BONUS),
+      });
+      await tx.insert(promotionBonuses).values({
+        depositId: currentDeposit.id,
+        beneficiaryUserId: referrerUserId,
+        sourceUserId: currentDeposit.userId,
+        referralEarningId: Number(referralEarningResult[0].insertId),
+        type: "referrer",
+        amount: String(REFERRER_PROMOTION_BONUS),
+      });
+    }
+
+    await tx
+      .update(deposits)
+      .set({ promotionApplied: 1 })
+      .where(eq(deposits.id, currentDeposit.id));
+  });
+}
 
 export const depositRouter = createRouter({
   // Create a new deposit request
@@ -43,6 +154,7 @@ export const depositRouter = createRouter({
         email: input.email,
         cryptoType: input.cryptoType,
         userNote: input.userNote || null,
+        promotionEligible: 1,
       });
       const depositId = Number(result[0].insertId);
       console.info(`[deposit] request created: id=${depositId} userId=${targetUserId}`);
@@ -105,7 +217,10 @@ export const depositRouter = createRouter({
         where: eq(deposits.id, input.id),
       });
       if (!deposit) throw new Error("Deposit not found");
-      if (deposit.status === "approved") return { success: true };
+      if (deposit.status === "approved") {
+        await applyDepositPromotion(db, deposit);
+        return { success: true };
+      }
 
       // Update deposit status
       await db
@@ -155,6 +270,8 @@ export const depositRouter = createRouter({
             totalEarned: String(Number(userProfile.totalEarned) + (balanceAfterBonuses - Number(userProfile.balance) - depositAmount)),
           })
           .where(eq(profiles.userId, deposit.userId));
+
+        await applyDepositPromotion(db, deposit);
 
         // Award wheel bonus spins to tier-1 referrer if $100+ deposit
         await awardReferralWheelBonus(db, deposit.userId, depositAmount);
