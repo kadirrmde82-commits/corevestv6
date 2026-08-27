@@ -42,6 +42,7 @@ export default function Quantify() {
   const processingIntervalRef = useRef<number | null>(null);
   const finishSuccessTimeoutRef = useRef<number | null>(null);
   const processingEndsAtRef = useRef(0);
+  const clickAttemptStartedAtRef = useRef(0);
 
   const utils = trpc.useUtils();
 
@@ -50,8 +51,10 @@ export default function Quantify() {
     refetchInterval: 1000 * 60,
     retry: false,
   });
-  const { data: clickStatus } = trpc.click.status.useQuery(undefined, {
-    staleTime: 1000 * 20,
+  const { data: clickStatus, isFetchedAfterMount: isClickStatusFetchedAfterMount } = trpc.click.status.useQuery(undefined, {
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     refetchInterval: 1000 * 15,
     retry: false,
   });
@@ -84,22 +87,49 @@ export default function Quantify() {
     setTimeout(() => setShowSuccess(false), 3000);
   }, [clearProcessingTimers, utils]);
 
+  const scheduleTradeSuccess = useCallback((result: { earned?: number }) => {
+    const remainingMs = Math.max(0, processingEndsAtRef.current - Date.now());
+    if (remainingMs > 150) {
+      if (finishSuccessTimeoutRef.current) window.clearTimeout(finishSuccessTimeoutRef.current);
+      finishSuccessTimeoutRef.current = window.setTimeout(() => finishTradeSuccess(result), remainingMs);
+      return;
+    }
+    finishTradeSuccess(result);
+  }, [finishTradeSuccess]);
+
   const clickMutation = trpc.click.record.useMutation({
-    retry: (failureCount, error) => {
-      const message = error?.message?.toLowerCase?.() || '';
-      return failureCount < 2 && (message.includes('fetch') || message.includes('network') || message.includes('timeout'));
-    },
-    retryDelay: (attemptIndex) => Math.min(1200 * (attemptIndex + 1), 3000),
-    onSuccess: (result) => {
-      const remainingMs = Math.max(0, processingEndsAtRef.current - Date.now());
-      if (remainingMs > 150) {
-        if (finishSuccessTimeoutRef.current) window.clearTimeout(finishSuccessTimeoutRef.current);
-        finishSuccessTimeoutRef.current = window.setTimeout(() => finishTradeSuccess(result), remainingMs);
-        return;
+    // Kayıt sunucuda tamamlanıp yanıt yolda kaybolabilir. Aynı kazanç işlemini
+    // otomatik tekrarlamak yerine hata halinde sunucudaki sonucu doğruluyoruz.
+    retry: false,
+    onSuccess: scheduleTradeSuccess,
+    onError: async (error) => {
+      const rawMessage = error.message || '';
+      const normalizedMessage = rawMessage.toLocaleLowerCase('tr-TR');
+      const shouldReconcile = ['fetch', 'network', 'timeout', 'load failed', 'tıklama', 'tiklama']
+        .some((part) => normalizedMessage.includes(part));
+
+      if (shouldReconcile) {
+        try {
+          const [freshStatus, freshHistory] = await Promise.all([
+            utils.click.status.fetch(),
+            utils.click.history.fetch(),
+          ]);
+          const lastClickAt = freshStatus.lastClickAt ? new Date(freshStatus.lastClickAt).getTime() : 0;
+          const latestClick = freshHistory[0];
+          const latestHistoryAt = latestClick?.createdAt ? new Date(latestClick.createdAt).getTime() : 0;
+          const attemptWindowStart = clickAttemptStartedAtRef.current - 5000;
+          const completedThisAttempt = !freshStatus.canClick
+            && Math.max(lastClickAt, latestHistoryAt) >= attemptWindowStart;
+
+          if (completedThisAttempt) {
+            scheduleTradeSuccess({ earned: Number(latestClick?.amount || 0) });
+            return;
+          }
+        } catch {
+          // Doğrulama da ağ nedeniyle başarısız olursa güvenli uyarıya düşer.
+        }
       }
-      finishTradeSuccess(result);
-    },
-    onError: (error) => {
+
       clearProcessingTimers();
       Promise.allSettled([
         utils.profile.me.invalidate(),
@@ -108,10 +138,10 @@ export default function Quantify() {
       setIsProcessingTrade(false);
       setIsCompletingTrade(false);
       setProcessingSecondsLeft(0);
-      const rawMessage = error.message || '';
-      const isFetchError = rawMessage.toLowerCase().includes('fetch') || rawMessage.toLowerCase().includes('network');
+      const isFetchError = ['fetch', 'network', 'timeout', 'load failed']
+        .some((part) => normalizedMessage.includes(part));
       setTradeError(isFetchError
-        ? 'Bağlantı kısa süreli koptu. Lütfen birkaç saniye sonra tekrar deneyin.'
+        ? 'Bağlantı kısa süreli koptu. İşlem durumunu kontrol etmek için sayfayı yenileyin; doğrulamadan tekrar tıklamayın.'
         : rawMessage || t('quantifyExtra.processingError'));
     },
   });
@@ -170,7 +200,9 @@ export default function Quantify() {
     clearProcessingTimers();
 
     const processingSeconds = PROCESSING_SECONDS;
-    const processingEndsAt = Date.now() + processingSeconds * 1000;
+    const attemptStartedAt = Date.now();
+    const processingEndsAt = attemptStartedAt + processingSeconds * 1000;
+    clickAttemptStartedAtRef.current = attemptStartedAt;
     processingEndsAtRef.current = processingEndsAt;
     setShowSuccess(false);
     setTradeError('');
@@ -193,7 +225,9 @@ export default function Quantify() {
     clickMutation.mutate({});
   }, [canClickNow, clearProcessingTimers, clickMutation, isProcessingTrade]);
 
-  if (!profile) return null;
+  // Önbellekte kalmış eski `canClick: true` değeri yeniden girişte bir an bile
+  // gösterilmesin; Quantify ekranı güncel sunucu durumu geldikten sonra açılır.
+  if (!profile || !clickStatus || !isClickStatusFetchedAfterMount) return null;
 
   const selectedVip = selectedVipLevel !== null ? VIP_TABLE.find(vip => vip.level === selectedVipLevel) : null;
 
