@@ -16,6 +16,13 @@ const MIN_WITHDRAWAL_AMOUNT = 50;
 const MAX_WITHDRAWAL_AMOUNT = 20000;
 const MIN_DEPOSIT_AMOUNT = 50;
 
+function createDepositRequestId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `deposit-${Date.now()}-${Math.random().toString(36).slice(2, 14)}`;
+}
+
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
@@ -145,9 +152,11 @@ export default function Account() {
   };
 
   const utils = trpc.useUtils();
+  const depositRequestRef = useRef<{ id: string; fingerprint: string } | null>(null);
 
   // Deposit mutations
   const depositMutation = trpc.deposit.create.useMutation({
+    retry: false,
     onMutate: async (input) => {
       await utils.deposit.list.cancel();
       const previousDeposits = utils.deposit.list.getData();
@@ -173,47 +182,50 @@ export default function Account() {
           item.id === context.tempId ? { ...item, id: result.id, txid: result.txid } : item
         )));
       }
+      depositRequestRef.current = null;
       setDepositStatus('checking');
     },
     onError: async (error, variables, context) => {
-      const isNetworkError = /load failed|failed to fetch|network request failed/i.test(error.message || '');
-      const ownPublicId = Number((profile as any)?.publicId ?? (profile as any)?.userId ?? 0);
-      const isOwnDeposit = !variables.targetPublicId || variables.targetPublicId === ownPublicId;
+      const isNetworkError = /load failed|failed to fetch|network request failed|fetch|network|timeout/i.test(error.message || '');
 
-      // iOS Safari can lose the HTTP response after Railway has already saved
-      // the request. Reconcile before showing an error so a second tap cannot
-      // accidentally create a duplicate deposit.
-      if (isNetworkError && isOwnDeposit) {
-        try {
-          const serverDeposits = await utils.deposit.list.fetch();
-          const submittedAt = context?.submittedAt ?? Date.now();
-          const savedDeposit = serverDeposits.find((item: any) =>
-            Number(item.amount) === Number(variables.amount)
-            && item.email === variables.email
-            && item.cryptoType === variables.cryptoType
-            && new Date(item.createdAt).getTime() >= submittedAt - 5000
-          );
-          if (savedDeposit) {
-            setDepositStatus('checking');
-            setDepositError('');
-            return;
+      // iOS Safari yanıtı kaybetse bile hem kendi hesaba hem başka üye ID'sine
+      // yapılan yatırım, yalnızca bu isteğe ait tekil kimlikle doğrulanır.
+      if (isNetworkError && variables.clientRequestId) {
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          try {
+            if (attempt > 0) await new Promise((resolve) => window.setTimeout(resolve, attempt * 500));
+            const savedDeposit = await utils.deposit.requestStatus.fetch({
+              clientRequestId: variables.clientRequestId,
+            });
+            if (savedDeposit) {
+              if (context?.tempId) {
+                utils.deposit.list.setData(undefined, (current) => (current ?? []).map((item: any) => (
+                  item.id === context.tempId
+                    ? { ...item, id: savedDeposit.id, txid: savedDeposit.txid }
+                    : item
+                )));
+              }
+              depositRequestRef.current = null;
+              setDepositStatus('checking');
+              setDepositError('');
+              return;
+            }
+          } catch {
+            // Kısa aralıklarla yeniden doğrula; oluşturma isteğini tekrar gönderme.
           }
-        } catch {
-          // Fall through to the existing connection error below.
         }
       }
 
       if (context?.previousDeposits) utils.deposit.list.setData(undefined, context.previousDeposits);
       if (isNetworkError) {
-        const message = 'Baglanti kesildi. Talep sunucuya ulasmis olabilir; tekrar gondermeden once admin panelini kontrol edin.';
+        const message = 'Bağlantı kurulamadı. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.';
         setDepositStatus('idle');
         setDepositError(message);
-        alert(message);
         return;
       }
+      depositRequestRef.current = null;
       setDepositStatus('idle');
       setDepositError(error.message || 'Hatalı bilgi girdiniz. Lütfen bilgileri kontrol edip tekrar deneyin.');
-      alert(error.message || 'Yatırım talebi gönderilemedi. Lütfen tekrar deneyin.');
     },
     onSettled: () => {
       utils.deposit.list.invalidate();
@@ -464,16 +476,22 @@ export default function Account() {
       return;
     }
     if (!hasDepositAddress) {
-      setDepositError('YatÄ±rÄ±m adresi bulunamadÄ±. LÃ¼tfen daha sonra tekrar deneyin veya destek ile iletiÅŸime geÃ§in.');
+      setDepositError('Yatırım adresi şu anda kullanılamıyor. Lütfen kısa süre sonra tekrar deneyin.');
       return;
     }
     if (depositMutation.isPending) return;
+
+    const requestFingerprint = [amountValue, emailValue, depositCrypto, targetPublicId].join('|');
+    if (!depositRequestRef.current || depositRequestRef.current.fingerprint !== requestFingerprint) {
+      depositRequestRef.current = { id: createDepositRequestId(), fingerprint: requestFingerprint };
+    }
 
     depositMutation.mutate({
       amount: amountValue,
       email: emailValue,
       cryptoType: depositCrypto,
       targetPublicId,
+      clientRequestId: depositRequestRef.current.id,
     });
   };
 
@@ -587,7 +605,7 @@ export default function Account() {
                 ) : walletAddresses.length === 0 ? (
                   <div className="rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}>
                     <p className="text-xs font-bold" style={{ color: '#ef4444' }}>
-                      YatÄ±rÄ±m adresi bulunamadÄ±. Admin panelinden CÃ¼zdan Adresleri bÃ¶lÃ¼mÃ¼ne en az 1 aktif adres eklenmelidir.
+                      Yatırım adresi şu anda kullanılamıyor. Lütfen kısa süre sonra tekrar deneyin.
                     </p>
                   </div>
                 ) : (
@@ -612,7 +630,7 @@ export default function Account() {
               {!walletAddressesLoading && (walletAddresses.length === 0 ? (
                 <div className="rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}>
                   <p className="text-xs font-bold" style={{ color: '#ef4444' }}>
-                    Yatırım adresi bulunamadı. Admin panelinden Cüzdan Adresleri bölümüne en az 1 adres eklenmelidir.
+                    Yatırım adresi şu anda kullanılamıyor. Lütfen kısa süre sonra tekrar deneyin.
                   </p>
                 </div>
               ) : (

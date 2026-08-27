@@ -75,6 +75,8 @@ export const deposits = mysqlTable("deposits", {
   email: varchar("email", { length: 320 }).notNull(),
   cryptoType: varchar("cryptoType", { length: 32 }).default("trc20").notNull(),
   userNote: varchar("userNote", { length: 255 }),
+  clientRequestId: varchar("clientRequestId", { length: 64 }),
+  requestedByUserId: bigint("requestedByUserId", { mode: "number", unsigned: true }),
   status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
   promotionEligible: int("promotionEligible").default(0).notNull(),
   promotionApplied: int("promotionApplied").default(0).notNull(),

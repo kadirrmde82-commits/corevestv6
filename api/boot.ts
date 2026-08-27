@@ -74,6 +74,9 @@ async function ensureSystemTables() {
   await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`cryptoType\` varchar(32) NOT NULL DEFAULT 'trc20'`);
   await tryExecute(sql`ALTER TABLE deposits MODIFY COLUMN \`cryptoType\` varchar(32) NOT NULL DEFAULT 'trc20'`);
   await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`userNote\` varchar(255)`);
+  await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`clientRequestId\` varchar(64)`);
+  await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`requestedByUserId\` bigint unsigned`);
+  await tryExecute(sql`CREATE UNIQUE INDEX \`deposits_client_request_id_unique\` ON deposits (\`clientRequestId\`)`);
   await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`promotionEligible\` int NOT NULL DEFAULT 0`);
   await tryExecute(sql`ALTER TABLE deposits ADD COLUMN \`promotionApplied\` int NOT NULL DEFAULT 0`);
   await tryExecute(sql`ALTER TABLE users ADD COLUMN \`publicId\` int`);

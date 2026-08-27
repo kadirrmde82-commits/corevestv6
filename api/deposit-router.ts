@@ -128,6 +128,7 @@ export const depositRouter = createRouter({
         amount: z.number().min(50, "Minimum yatırım tutarı 50$ olmalıdır."),
         email: z.string().email().min(1),
         cryptoType: z.string().min(1).max(32),
+        clientRequestId: z.string().min(16).max(64).optional(),
         targetPublicId: z.number().int().positive().optional(),
         userNote: z.string().optional(),
       })
@@ -136,6 +137,18 @@ export const depositRouter = createRouter({
       const startedAt = Date.now();
       const db = getDb();
       let targetUserId = ctx.user.id;
+      const clientRequestId = input.clientRequestId ?? `legacy-${ctx.user.id}-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+
+      if (input.clientRequestId) {
+        const existingDeposit = await db.query.deposits.findFirst({
+          where: and(
+            eq(deposits.clientRequestId, input.clientRequestId),
+            eq(deposits.requestedByUserId, ctx.user.id),
+          ),
+          columns: { id: true, txid: true },
+        });
+        if (existingDeposit) return existingDeposit;
+      }
 
       if (input.targetPublicId && input.targetPublicId !== ctx.user.publicId) {
         const targetUser = await db.query.users.findFirst({
@@ -154,6 +167,8 @@ export const depositRouter = createRouter({
         email: input.email,
         cryptoType: input.cryptoType,
         userNote: input.userNote || null,
+        clientRequestId,
+        requestedByUserId: ctx.user.id,
         promotionEligible: 1,
       });
       const depositId = Number(result[0].insertId);
@@ -161,7 +176,7 @@ export const depositRouter = createRouter({
 
       // Discord is an admin-only side channel. A webhook problem must never
       // block or roll back the customer's successfully created deposit request.
-      await queueDiscordNotification("deposit", () => notifyNewDeposit({
+      void queueDiscordNotification("deposit", () => notifyNewDeposit({
         depositId,
         publicUserId: input.targetPublicId ?? ctx.user.publicId,
         amount: input.amount,
@@ -171,6 +186,23 @@ export const depositRouter = createRouter({
 
       console.info(`[deposit] request completed: id=${depositId} durationMs=${Date.now() - startedAt}`);
       return { id: depositId, txid };
+    }),
+
+  // A mobile browser can lose the HTTP response even though Railway already
+  // persisted the request. This lookup lets the client confirm that exact
+  // request without exposing another member's deposit history.
+  requestStatus: authedQuery
+    .input(z.object({ clientRequestId: z.string().min(16).max(64) }))
+    .query(async ({ ctx, input }) => {
+      const db = getDb();
+      const deposit = await db.query.deposits.findFirst({
+        where: and(
+          eq(deposits.clientRequestId, input.clientRequestId),
+          eq(deposits.requestedByUserId, ctx.user.id),
+        ),
+        columns: { id: true, txid: true, status: true, createdAt: true },
+      });
+      return deposit ?? null;
     }),
 
   // List current user's deposits
