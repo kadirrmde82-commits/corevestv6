@@ -156,7 +156,13 @@ export default function Account() {
 
   // Deposit mutations
   const depositMutation = trpc.deposit.create.useMutation({
-    retry: false,
+    // Repeating this exact request is safe: the server deduplicates it with
+    // clientRequestId and returns the already-created deposit.
+    retry: (failureCount, error) => (
+      failureCount < 4
+      && /load failed|failed to fetch|network request failed|fetch|network|timeout/i.test(error.message || '')
+    ),
+    retryDelay: (attemptIndex) => Math.min(400 * (attemptIndex + 1), 1600),
     onMutate: async (input) => {
       await utils.deposit.list.cancel();
       const previousDeposits = utils.deposit.list.getData();
