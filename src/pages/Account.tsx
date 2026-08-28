@@ -222,13 +222,16 @@ export default function Account() {
         }
       }
 
-      if (context?.previousDeposits) utils.deposit.list.setData(undefined, context.previousDeposits);
       if (isNetworkError) {
-        const message = 'Bağlantı kurulamadı. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.';
-        setDepositStatus('idle');
-        setDepositError(message);
+        // Railway kayıt isteğini çoktan tamamlamış olabilir. Dört güvenli
+        // tekrar ve üç durum kontrolünden sonra müşteriye yanlış bir bağlantı
+        // hatası göstermek yerine talebi bekleyen durumunda bırakıyoruz. Aynı
+        // clientRequestId sonraki denemelerde çift kayıt oluşmasını engeller.
+        setDepositStatus('checking');
+        setDepositError('');
         return;
       }
+      if (context?.previousDeposits) utils.deposit.list.setData(undefined, context.previousDeposits);
       depositRequestRef.current = null;
       setDepositStatus('idle');
       setDepositError(error.message || 'Hatalı bilgi girdiniz. Lütfen bilgileri kontrol edip tekrar deneyin.');

@@ -17,7 +17,6 @@ function authenticatedFetch(input: RequestInfo | URL, init?: RequestInit) {
     ...(init ?? {}),
     credentials: "include",
     cache: "no-store",
-    keepalive: true,
   });
 }
 
