@@ -109,24 +109,34 @@ export default function Quantify() {
         .some((part) => normalizedMessage.includes(part));
 
       if (shouldReconcile) {
-        try {
-          const [freshStatus, freshHistory] = await Promise.all([
-            utils.click.status.fetch(),
-            utils.click.history.fetch(),
-          ]);
-          const lastClickAt = freshStatus.lastClickAt ? new Date(freshStatus.lastClickAt).getTime() : 0;
-          const latestClick = freshHistory[0];
-          const latestHistoryAt = latestClick?.createdAt ? new Date(latestClick.createdAt).getTime() : 0;
-          const attemptWindowStart = clickAttemptStartedAtRef.current - 5000;
-          const completedThisAttempt = !freshStatus.canClick
-            && Math.max(lastClickAt, latestHistoryAt) >= attemptWindowStart;
-
-          if (completedThisAttempt) {
-            scheduleTradeSuccess({ earned: Number(latestClick?.amount || 0) });
-            return;
+        // A POST response can disappear on mobile even though Railway has
+        // committed the earning. Check the authoritative click status twice
+        // before showing an error; never resend the earning mutation here.
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          if (attempt > 0) {
+            await new Promise((resolve) => window.setTimeout(resolve, 1500));
           }
-        } catch {
-          // Doğrulama da ağ nedeniyle başarısız olursa güvenli uyarıya düşer.
+          try {
+            const freshStatus = await utils.click.status.fetch();
+            const lastClickAt = freshStatus.lastClickAt ? new Date(freshStatus.lastClickAt).getTime() : 0;
+            const attemptWindowStart = clickAttemptStartedAtRef.current - 5000;
+            const completedThisAttempt = !freshStatus.canClick && lastClickAt >= attemptWindowStart;
+
+            if (completedThisAttempt) {
+              let earned = 0;
+              try {
+                const freshHistory = await utils.click.history.fetch();
+                earned = Number(freshHistory[0]?.amount || 0);
+              } catch {
+                // Status alone proves completion; history is only needed to
+                // show the exact amount in the short success message.
+              }
+              scheduleTradeSuccess({ earned });
+              return;
+            }
+          } catch {
+            // A second bounded status request follows after a short pause.
+          }
         }
       }
 
@@ -141,7 +151,7 @@ export default function Quantify() {
       const isFetchError = ['fetch', 'network', 'timeout', 'timed out', 'abort', 'load failed']
         .some((part) => normalizedMessage.includes(part));
       setTradeError(isFetchError
-        ? 'Bağlantı kısa süreli koptu. İşlem durumunu kontrol etmek için sayfayı yenileyin; doğrulamadan tekrar tıklamayın.'
+        ? 'İşlem şu anda doğrulanamadı. Sayfayı yenilediğinizde güncel durum otomatik olarak gösterilecektir.'
         : rawMessage || t('quantifyExtra.processingError'));
     },
   });

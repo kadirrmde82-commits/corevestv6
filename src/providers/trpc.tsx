@@ -33,7 +33,13 @@ function customerActionFetch(input: RequestInfo | URL, init?: RequestInit): Prom
     const xhr = new XMLHttpRequest();
     xhr.open(init?.method || "GET", requestUrl, true);
     xhr.withCredentials = true;
-    xhr.timeout = 7000;
+    // A timeout is only the maximum wait; fast requests still resolve
+    // immediately. Mobile Safari can need longer than seven seconds to
+    // establish a POST after the radio changes state, so do not abort a valid
+    // money/earning action before it has had a chance to reach Railway.
+    const isCustomerMutation = requestUrl.includes("deposit.create")
+      || requestUrl.includes("click.record");
+    xhr.timeout = isCustomerMutation ? 20_000 : 10_000;
 
     const headers = new Headers(init?.headers);
     headers.forEach((value, key) => xhr.setRequestHeader(key, value));

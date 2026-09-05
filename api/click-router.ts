@@ -187,6 +187,7 @@ export const clickRouter = createRouter({
     .input(z.object({ earning: z.number().positive().optional() }).optional())
     .mutation(async ({ ctx }) => {
       const startedAt = Date.now();
+      console.info(`[click] request received: userId=${ctx.user.id}`);
       const db = getDb();
       const profile = await db.query.profiles.findFirst({
         where: eq(profiles.userId, ctx.user.id),
