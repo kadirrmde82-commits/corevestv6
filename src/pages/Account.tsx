@@ -52,7 +52,9 @@ export default function Account() {
     // already open so the deposit view never has to wait after the user taps it.
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
-    refetchOnMount: false,
+    // Usually already warm from App; if it is stale, refresh silently while
+    // keeping the previous list visible.
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
     retry: 2,
   });

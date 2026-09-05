@@ -43,6 +43,16 @@ export default function App() {
     refetchInterval: hasToken ? 60000 : false,
     retry: false,
   });
+  // Wallet addresses are small and used on the deposit screen. Warm them as
+  // soon as an authenticated session opens so Account can render them from
+  // memory immediately instead of starting the request after navigation.
+  trpc.walletAddress.list.useQuery(undefined, {
+    enabled: hasToken,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    retry: 2,
+  });
 
   if (maintenance?.enabled && !isAdmin) {
     return (

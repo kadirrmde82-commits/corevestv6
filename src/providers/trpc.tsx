@@ -95,7 +95,8 @@ const trpcClient = trpc.createClient({
         || operation.path === "deposit.requestStatus"
         || operation.path === "click.record"
         || operation.path === "click.status"
-        || operation.path === "click.history",
+        || operation.path === "click.history"
+        || operation.path === "walletAddress.list",
       // Deposit and Quantify use plain, single-operation responses over the
       // bounded XHR transport; unrelated API calls preserve their old path.
       true: httpLink({
@@ -105,10 +106,9 @@ const trpcClient = trpc.createClient({
         fetch: customerActionFetch,
       }),
       false: splitLink({
-        // Preserve the existing isolated transport for every other mutation
-        // and the wallet list; this fix must not alter unrelated flows.
-        condition: (operation) =>
-          operation.type === "mutation" || operation.path === "walletAddress.list",
+        // Preserve the existing isolated transport for every other mutation;
+        // this fix must not alter unrelated flows.
+        condition: (operation) => operation.type === "mutation",
         true: httpBatchLink({
           url: "/api/trpc",
           transformer: superjson,

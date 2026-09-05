@@ -8,7 +8,7 @@ import { sql } from "drizzle-orm";
 let walletAddressesTablePromise: Promise<void> | null = null;
 let publicWalletAddressCache: Array<typeof walletAddresses.$inferSelect> | null = null;
 let publicWalletAddressCacheExpiresAt = 0;
-const PUBLIC_WALLET_CACHE_MS = 30_000;
+const PUBLIC_WALLET_CACHE_MS = 5 * 60_000;
 
 function clearPublicWalletAddressCache() {
   publicWalletAddressCache = null;
