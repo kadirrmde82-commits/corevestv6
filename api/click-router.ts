@@ -186,6 +186,7 @@ export const clickRouter = createRouter({
   record: authedQuery
     .input(z.object({ earning: z.number().positive().optional() }).optional())
     .mutation(async ({ ctx }) => {
+      const startedAt = Date.now();
       const db = getDb();
       const profile = await db.query.profiles.findFirst({
         where: eq(profiles.userId, ctx.user.id),
@@ -228,6 +229,7 @@ export const clickRouter = createRouter({
         dailyRate: String(dailyRate),
         amount: String(actualEarning),
       });
+      console.info(`[click] earning recorded: userId=${ctx.user.id} amount=${actualEarning.toFixed(2)}`);
 
       const commissionsGiven: { tier: number; amount: number; toUserId: number }[] = [];
       const userReferrers = await db
@@ -278,7 +280,7 @@ export const clickRouter = createRouter({
         commissionsGiven.push({ tier: ref.tier, amount: paidCommission, toUserId: ref.referrerUserId });
       }
 
-      return {
+      const result = {
         success: true,
         earned: actualEarning,
         dailyRate,
@@ -287,5 +289,7 @@ export const clickRouter = createRouter({
         consecutiveClicks: newConsecutiveClicks,
         commissionsGiven,
       };
+      console.info(`[click] request completed: userId=${ctx.user.id} durationMs=${Date.now() - startedAt}`);
+      return result;
     }),
 });

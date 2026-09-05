@@ -159,7 +159,7 @@ export default function Account() {
     // Repeating this exact request is safe: the server deduplicates it with
     // clientRequestId and returns the already-created deposit.
     retry: (failureCount, error) => (
-      failureCount < 4
+      failureCount < 2
       && /load failed|failed to fetch|network request failed|fetch|network|timeout/i.test(error.message || '')
     ),
     retryDelay: (attemptIndex) => Math.min(400 * (attemptIndex + 1), 1600),
@@ -197,7 +197,7 @@ export default function Account() {
       // iOS Safari yanıtı kaybetse bile hem kendi hesaba hem başka üye ID'sine
       // yapılan yatırım, yalnızca bu isteğe ait tekil kimlikle doğrulanır.
       if (isNetworkError && variables.clientRequestId) {
-        for (let attempt = 0; attempt < 3; attempt += 1) {
+        for (let attempt = 0; attempt < 2; attempt += 1) {
           try {
             if (attempt > 0) await new Promise((resolve) => window.setTimeout(resolve, attempt * 500));
             const savedDeposit = await utils.deposit.requestStatus.fetch({

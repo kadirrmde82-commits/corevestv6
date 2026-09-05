@@ -105,7 +105,7 @@ export default function Quantify() {
     onError: async (error) => {
       const rawMessage = error.message || '';
       const normalizedMessage = rawMessage.toLocaleLowerCase('tr-TR');
-      const shouldReconcile = ['fetch', 'network', 'timeout', 'load failed', 'tıklama', 'tiklama']
+      const shouldReconcile = ['fetch', 'network', 'timeout', 'timed out', 'abort', 'load failed', 'tıklama', 'tiklama']
         .some((part) => normalizedMessage.includes(part));
 
       if (shouldReconcile) {
@@ -138,7 +138,7 @@ export default function Quantify() {
       setIsProcessingTrade(false);
       setIsCompletingTrade(false);
       setProcessingSecondsLeft(0);
-      const isFetchError = ['fetch', 'network', 'timeout', 'load failed']
+      const isFetchError = ['fetch', 'network', 'timeout', 'timed out', 'abort', 'load failed']
         .some((part) => normalizedMessage.includes(part));
       setTradeError(isFetchError
         ? 'Bağlantı kısa süreli koptu. İşlem durumunu kontrol etmek için sayfayı yenileyin; doğrulamadan tekrar tıklamayın.'
